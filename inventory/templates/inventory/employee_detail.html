@@ -1,0 +1,130 @@
+{% extends 'inventory/base.html' %}
+{% load static %}
+
+{% block title %}{{ employee.get_full_name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-user me-2"></i>{{ employee.get_full_name }}
+        </h1>
+        <div class="d-flex gap-2">
+            <a href="{% url 'inventory:employee_update' employee.pk %}" class="btn btn-primary">
+                <i class="fas fa-edit me-2"></i>Edit
+            </a>
+            <a href="{% url 'inventory:employee_delete' employee.pk %}" class="btn btn-danger">
+                <i class="fas fa-trash me-2"></i>Delete
+            </a>
+            <a href="{% url 'inventory:employee_list' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Back
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Employee Information -->
+        <div class="col-xl-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">Employee Information</h6>
+                    <form method="post" action="{% url 'inventory:employee_toggle_status' employee.pk %}" class="d-inline">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-sm {% if employee.is_active %}btn-success{% else %}btn-danger{% endif %}">
+                            {% if employee.is_active %}
+                                <i class="fas fa-user-check me-1"></i>Active
+                            {% else %}
+                                <i class="fas fa-user-times me-1"></i>Inactive
+                            {% endif %}
+                        </button>
+                    </form>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label text-muted">Employee ID</label>
+                        <p class="mb-0">{{ employee.employee_id }}</p>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted">National ID</label>
+                        <p class="mb-0">{{ employee.national_id }}</p>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted">Email</label>
+                        <p class="mb-0">{{ employee.email }}</p>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted">Phone</label>
+                        <p class="mb-0">{{ employee.phone_number }}</p>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted">Department</label>
+                        <p class="mb-0">{{ employee.department.get_name_display }}</p>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted">Position</label>
+                        <p class="mb-0">{{ employee.position }}</p>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted">Company</label>
+                        <p class="mb-0">{{ employee.get_company_display }}</p>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted">Hire Date</label>
+                        <p class="mb-0">{{ employee.hire_date|date:"F j, Y" }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Assigned Assets -->
+        <div class="col-xl-8">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">Assigned Assets</h6>
+                    <a href="{% url 'inventory:asset_assign' %}?employee={{ employee.pk }}" class="btn btn-primary btn-sm">
+                        <i class="fas fa-plus me-1"></i>Assign Asset
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if employee.itasset_set.exists %}
+                        <div class="table-responsive">
+                            <table class="table table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Type</th>
+                                        <th>Serial Number</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for asset in employee.itasset_set.all %}
+                                        <tr>
+                                            <td>{{ asset.name }}</td>
+                                            <td>{{ asset.get_asset_type_display }}</td>
+                                            <td>{{ asset.serial_number }}</td>
+                                            <td>
+                                                <span class="badge {% if asset.status == 'assigned' %}bg-success{% else %}bg-warning{% endif %}">
+                                                    {{ asset.get_status_display }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <a href="{% url 'inventory:asset_detail' asset.pk %}" class="btn btn-info btn-sm">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-muted mb-0">No assets assigned to this employee.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

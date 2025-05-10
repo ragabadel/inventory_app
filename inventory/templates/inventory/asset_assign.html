@@ -1,0 +1,58 @@
+{% extends 'inventory/base.html' %}
+{% load static %}
+
+{% block title %}Assign Asset{% if employee %} to {{ employee.get_full_name }}{% endif %}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-laptop me-2"></i>Assign Asset
+            {% if employee %}
+                to {{ employee.get_full_name }}
+            {% endif %}
+        </h1>
+        <a href="{% if employee %}{% url 'inventory:employee_detail' employee.pk %}{% else %}{% url 'inventory:employee_list' %}{% endif %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Back
+        </a>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-body">
+            <form method="post" class="needs-validation" novalidate>
+                {% csrf_token %}
+                
+                {% if employee %}
+                    <input type="hidden" name="employee" value="{{ employee.pk }}">
+                {% else %}
+                    <div class="mb-3">
+                        <label for="employee" class="form-label">Select Employee</label>
+                        <select name="employee" id="employee" class="form-select" required>
+                            <option value="">Select Employee</option>
+                            {% for emp in employees %}
+                                <option value="{{ emp.pk }}">{{ emp.get_full_name }} ({{ emp.employee_id }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                {% endif %}
+
+                <div class="mb-3">
+                    <label for="asset" class="form-label">Select Asset</label>
+                    <select name="asset" id="asset" class="form-select" required>
+                        <option value="">Select Asset</option>
+                        {% for asset in available_assets %}
+                            <option value="{{ asset.pk }}">{{ asset.name }} ({{ asset.asset_type }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="d-flex justify-content-end">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-2"></i>Assign Asset
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %} 
