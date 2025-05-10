@@ -1,0 +1,87 @@
+{% extends 'inventory/base.html' %}
+{% load i18n %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="mb-4">Dashboard</h1>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Total Employees Card -->
+        <div class="col-md-4 mb-4">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Total Employees</h5>
+                    <h2 class="display-4">{{ total_employees }}</h2>
+                    <a href="{% url 'inventory:employee_list' %}" class="btn btn-primary mt-3">
+                        View Employees
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Total Assets Card -->
+        <div class="col-md-4 mb-4">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Total Assets</h5>
+                    <h2 class="display-4">{{ total_assets }}</h2>
+                    <a href="{% url 'inventory:asset_list' %}" class="btn btn-primary mt-3">
+                        View Assets
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Available Assets Card -->
+        <div class="col-md-4 mb-4">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Available Assets</h5>
+                    <h2 class="display-4">{{ available_assets }}</h2>
+                    <a href="{% url 'inventory:asset_list' %}?status=available" class="btn btn-primary mt-3">
+                        View Available Assets
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Quick Actions</h5>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="list-group">
+                                <a href="{% url 'inventory:employee_create' %}" class="list-group-item list-group-item-action">
+                                    <i class="fas fa-user-plus"></i> Add New Employee
+                                </a>
+                                <a href="{% url 'inventory:asset_create' %}" class="list-group-item list-group-item-action">
+                                    <i class="fas fa-laptop"></i> Add New Asset
+                                </a>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="list-group">
+                                <a href="{% url 'admin:inventory_employee_changelist' %}" class="list-group-item list-group-item-action">
+                                    <i class="fas fa-cog"></i> Manage Employees
+                                </a>
+                                <a href="{% url 'admin:inventory_itasset_changelist' %}" class="list-group-item list-group-item-action">
+                                    <i class="fas fa-cog"></i> Manage Assets
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 
