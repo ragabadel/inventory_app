@@ -57,7 +57,7 @@ class Employee(models.Model):
 
     user = models.OneToOneField(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='employee_profile')
     employee_id = models.CharField(max_length=20, unique=True)
-    national_id = models.CharField(max_length=14, unique=True, null=True, blank=True, help_text="Enter the 14-digit national ID number")
+    national_id = models.CharField(max_length=14, unique=True, help_text="Enter the 14-digit national ID number")
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)
     email = models.EmailField(unique=True)
