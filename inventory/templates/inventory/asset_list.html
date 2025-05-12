@@ -1,0 +1,177 @@
+{% extends 'inventory/base.html' %}
+{% load static %}
+
+{% block title %}IT Assets{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-laptop me-2"></i>IT Assets
+        </h1>
+        <a href="{% url 'inventory:asset_create' %}" class="btn btn-primary">
+            <i class="fas fa-plus me-2"></i>Add Asset
+        </a>
+    </div>
+
+    <!-- Filters -->
+    <div class="card shadow mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-3">
+                    <input type="text" name="search" class="form-control" placeholder="Search assets..." value="{{ request.GET.search }}">
+                </div>
+                <div class="col-md-2">
+                    <select name="asset_type" class="form-select">
+                        <option value="">All Types</option>
+                        {% for type in asset_types %}
+                            <option value="{{ type.0 }}" {% if request.GET.asset_type == type.0 %}selected{% endif %}>
+                                {{ type.1 }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select name="status" class="form-select">
+                        <option value="">All Status</option>
+                        {% for status in status_choices %}
+                            <option value="{{ status.0 }}" {% if request.GET.status == status.0 %}selected{% endif %}>
+                                {{ status.1 }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select name="manufacturer" class="form-select">
+                        <option value="">All Manufacturers</option>
+                        {% for manufacturer in manufacturers %}
+                            <option value="{{ manufacturer }}" {% if request.GET.manufacturer == manufacturer %}selected{% endif %}>
+                                {{ manufacturer }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-search me-2"></i>Filter
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Asset List -->
+    <div class="card shadow mb-4">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Type</th>
+                            <th>Serial Number</th>
+                            <th>Manufacturer</th>
+                            <th>Status</th>
+                            <th>Assigned To</th>
+                            <th>Purchase Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for asset in assets %}
+                            <tr>
+                                <td>{{ asset.name }}</td>
+                                <td>{{ asset.get_asset_type_display }}</td>
+                                <td>{{ asset.serial_number }}</td>
+                                <td>{{ asset.manufacturer }}</td>
+                                <td>
+                                    <span class="badge {% if asset.status == 'available' %}bg-success{% elif asset.status == 'assigned' %}bg-primary{% elif asset.status == 'maintenance' %}bg-warning{% else %}bg-danger{% endif %}">
+                                        {{ asset.get_status_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if asset.assigned_to %}
+                                        <a href="{% url 'inventory:employee_detail' asset.assigned_to.pk %}">
+                                            {{ asset.assigned_to.get_full_name }}
+                                        </a>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ asset.purchase_date|date:"M d, Y" }}</td>
+                                <td>
+                                    <div class="btn-group">
+                                        <a href="{% url 'inventory:asset_detail' asset.pk %}" class="btn btn-info btn-sm" title="View Details">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a href="{% url 'inventory:asset_update' asset.pk %}" class="btn btn-primary btn-sm" title="Edit">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <a href="{% url 'inventory:asset_delete' asset.pk %}" class="btn btn-danger btn-sm" title="Delete">
+                                            <i class="fas fa-trash"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="8" class="text-center py-4">
+                                    <div class="text-muted">
+                                        <i class="fas fa-laptop fa-2x mb-3"></i>
+                                        <p class="mb-0">No assets found.</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            {% if is_paginated %}
+                <nav aria-label="Page navigation" class="mt-4">
+                    <ul class="pagination justify-content-center">
+                        {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page=1{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.asset_type %}&asset_type={{ request.GET.asset_type }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.manufacturer %}&manufacturer={{ request.GET.manufacturer }}{% endif %}" aria-label="First">
+                                    <span aria-hidden="true">&laquo;&laquo;</span>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.asset_type %}&asset_type={{ request.GET.asset_type }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.manufacturer %}&manufacturer={{ request.GET.manufacturer }}{% endif %}" aria-label="Previous">
+                                    <span aria-hidden="true">&laquo;</span>
+                                </a>
+                            </li>
+                        {% endif %}
+
+                        {% for num in page_obj.paginator.page_range %}
+                            {% if page_obj.number == num %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ num }}</span>
+                                </li>
+                            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ num }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.asset_type %}&asset_type={{ request.GET.asset_type }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.manufacturer %}&manufacturer={{ request.GET.manufacturer }}{% endif %}">{{ num }}</a>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+
+                        {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.asset_type %}&asset_type={{ request.GET.asset_type }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.manufacturer %}&manufacturer={{ request.GET.manufacturer }}{% endif %}" aria-label="Next">
+                                    <span aria-hidden="true">&raquo;</span>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.asset_type %}&asset_type={{ request.GET.asset_type }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.manufacturer %}&manufacturer={{ request.GET.manufacturer }}{% endif %}" aria-label="Last">
+                                    <span aria-hidden="true">&raquo;&raquo;</span>
+                                </a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %} 

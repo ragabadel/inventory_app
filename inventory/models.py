@@ -89,6 +89,7 @@ class ITAsset(models.Model):
         ('phone', 'Phone'),
         ('tablet', 'Tablet'),
         ('printer', 'Printer'),
+        ('ups', 'UPS Device'),
         ('other', 'Other'),
     ]
 
@@ -99,16 +100,74 @@ class ITAsset(models.Model):
         ('retired', 'Retired'),
     ]
 
+    OWNER_CHOICES = [
+        ('AMAN', 'Aman'),
+        ('CTP', 'CTP'),
+        ('MISR_ASSIST', 'Misr Assist'),
+    ]
+
+    PRINTER_TYPE_CHOICES = [
+        ('laser', 'Laser'),
+        ('inkjet', 'Inkjet'),
+        ('dot_matrix', 'Dot Matrix'),
+        ('thermal', 'Thermal'),
+        ('3d', '3D Printer'),
+    ]
+
+    CONNECTION_TYPE_CHOICES = [
+        ('usb', 'USB'),
+        ('network', 'Network'),
+        ('wireless', 'Wireless'),
+        ('bluetooth', 'Bluetooth'),
+    ]
+
+    # Basic Information
     name = models.CharField(max_length=100, default='Unknown Asset')
     asset_type = models.CharField(max_length=20, choices=ASSET_TYPE_CHOICES)
     serial_number = models.CharField(max_length=50, unique=True)
     model = models.CharField(max_length=100)
     manufacturer = models.CharField(max_length=100)
+    owner = models.CharField(max_length=20, choices=OWNER_CHOICES, default='CTP')
     purchase_date = models.DateField()
     warranty_expiry = models.DateField(null=True, blank=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='available')
     assigned_to = models.ForeignKey(Employee, on_delete=models.SET_NULL, null=True, blank=True, related_name='assets')
     notes = models.TextField(blank=True)
+
+    # Network Information
+    mac_address_wifi = models.CharField(max_length=17, null=True, blank=True, help_text="Format: XX:XX:XX:XX:XX:XX")
+    mac_address_ethernet = models.CharField(max_length=17, null=True, blank=True, help_text="Format: XX:XX:XX:XX:XX:XX")
+    ip_address = models.GenericIPAddressField(null=True, blank=True, protocol='IPv4')
+
+    # Assignment Information
+    delivery_letter_code = models.CharField(max_length=50, null=True, blank=True)
+    receipt_date = models.DateField(null=True, blank=True)
+
+    # Computer Specifications
+    processor = models.CharField(max_length=100, null=True, blank=True)
+    ram_size = models.CharField(max_length=50, null=True, blank=True)
+    hdd1_capacity = models.CharField(max_length=50, null=True, blank=True, help_text="Primary Storage")
+    hdd2_capacity = models.CharField(max_length=50, null=True, blank=True, help_text="Secondary Storage")
+    operating_system = models.CharField(max_length=50, null=True, blank=True)
+    os_version = models.CharField(max_length=50, null=True, blank=True)
+
+    # Printer Specifications
+    printer_type = models.CharField(max_length=20, choices=PRINTER_TYPE_CHOICES, null=True, blank=True)
+    connection_type = models.CharField(max_length=20, choices=CONNECTION_TYPE_CHOICES, null=True, blank=True)
+    printer_department = models.ForeignKey(Department, on_delete=models.SET_NULL, null=True, blank=True, related_name='printers')
+    printer_responsible = models.ForeignKey(Employee, on_delete=models.SET_NULL, null=True, blank=True, related_name='responsible_printers')
+    last_maintenance_date = models.DateField(null=True, blank=True)
+    toner_cartridge_model = models.CharField(max_length=100, null=True, blank=True)
+    paper_size_support = models.CharField(max_length=100, null=True, blank=True, help_text="e.g., A4, A3, Legal")
+    duplex_printing = models.BooleanField(default=False)
+
+    # UPS Specific Fields
+    ups_capacity = models.IntegerField(null=True, blank=True, help_text="Capacity in VA")
+    ups_battery_count = models.IntegerField(null=True, blank=True, help_text="Number of batteries")
+    ups_battery_life = models.IntegerField(null=True, blank=True, help_text="Remaining battery life in months")
+    ups_battery_replacement_date = models.DateField(null=True, blank=True)
+    ups_manufacturer = models.CharField(max_length=100, null=True, blank=True)
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
