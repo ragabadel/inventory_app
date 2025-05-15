@@ -49,14 +49,33 @@ def employee_list(request):
     
     # Paginate the results
     paginator = Paginator(employees, 10)  # Show 10 employees per page
-    page_number = request.GET.get('page')
+    page_number = request.GET.get('page', 1)
     page_obj = paginator.get_page(page_number)
+    
+    # Get the current page number
+    current_page = page_obj.number
+    total_pages = paginator.num_pages
+    
+    # Calculate the range of page numbers to show
+    if total_pages <= 5:
+        page_range = range(1, total_pages + 1)
+    else:
+        if current_page <= 3:
+            page_range = range(1, 6)
+        elif current_page >= total_pages - 2:
+            page_range = range(total_pages - 4, total_pages + 1)
+        else:
+            page_range = range(current_page - 2, current_page + 3)
     
     context = {
         'employees': page_obj,
         'departments': departments,
         'companies': Employee.COMPANY_CHOICES,
         'is_paginated': page_obj.has_other_pages(),
+        'page_obj': page_obj,
+        'page_range': page_range,
+        'current_page': current_page,
+        'total_pages': total_pages,
     }
     
     return render(request, 'inventory/employee_list.html', context)

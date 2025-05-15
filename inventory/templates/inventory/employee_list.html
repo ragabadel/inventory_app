@@ -127,16 +127,10 @@
                             </li>
                         {% endif %}
 
-                        {% for num in page_obj.paginator.page_range %}
-                            {% if page_obj.number == num %}
-                                <li class="page-item active">
-                                    <span class="page-link">{{ num }}</span>
-                                </li>
-                            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
-                                <li class="page-item">
-                                    <a class="page-link" href="?page={{ num }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.department %}&department={{ request.GET.department }}{% endif %}{% if request.GET.company %}&company={{ request.GET.company }}{% endif %}">{{ num }}</a>
-                                </li>
-                            {% endif %}
+                        {% for num in page_range %}
+                            <li class="page-item {% if num == current_page %}active{% endif %}">
+                                <a class="page-link" href="?page={{ num }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.department %}&department={{ request.GET.department }}{% endif %}{% if request.GET.company %}&company={{ request.GET.company }}{% endif %}">{{ num }}</a>
+                            </li>
                         {% endfor %}
 
                         {% if page_obj.has_next %}
@@ -146,7 +140,7 @@
                                 </a>
                             </li>
                             <li class="page-item">
-                                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.department %}&department={{ request.GET.department }}{% endif %}{% if request.GET.company %}&company={{ request.GET.company }}{% endif %}" aria-label="Last">
+                                <a class="page-link" href="?page={{ total_pages }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.department %}&department={{ request.GET.department }}{% endif %}{% if request.GET.company %}&company={{ request.GET.company }}{% endif %}" aria-label="Last">
                                     <span aria-hidden="true">&raquo;&raquo;</span>
                                 </a>
                             </li>
