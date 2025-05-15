@@ -214,13 +214,23 @@ def employee_upload(request):
                 # Skip header row
                 for row in ws.iter_rows(min_row=2):
                     try:
-                        # Get or create department
+                        # Get or create department first
                         department_name = row[5].value
-                        department, _ = Department.objects.get_or_create(name=department_name)
-                        
-                        # Get or create position
-                        position_name = row[6].value
-                        position, _ = Position.objects.get_or_create(name=position_name)
+                        if department_name:
+                            department, _ = Department.objects.get_or_create(name=department_name)
+                            
+                            # Get or create position with department
+                            position_name = row[6].value
+                            if position_name:
+                                position, _ = Position.objects.get_or_create(
+                                    name=position_name,
+                                    department=department  # Set the department for the position
+                                )
+                            else:
+                                position = None
+                        else:
+                            department = None
+                            position = None
                         
                         # Create employee
                         employee = Employee(
@@ -279,9 +289,22 @@ def download_employee_template(request):
     ]
     ws.append(example)
     
+    # Add available departments
+    departments = Department.objects.all()
+    if departments.exists():
+        ws.append([])  # Add empty row
+        ws.append(['Available Departments:'])
+        for dept in departments:
+            ws.append([dept.name])
+    
     # Style the header row
     for cell in ws[1]:
         cell.font = openpyxl.styles.Font(bold=True)
+    
+    # Style the departments section
+    if departments.exists():
+        dept_header = ws.cell(row=4, column=1)
+        dept_header.font = openpyxl.styles.Font(bold=True)
     
     # Adjust column widths
     for column in ws.columns:
