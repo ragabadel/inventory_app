@@ -33,7 +33,8 @@ def employee_list(request):
             Q(first_name__icontains=search_query) |
             Q(last_name__icontains=search_query) |
             Q(email__icontains=search_query) |
-            Q(employee_id__icontains=search_query)
+            Q(employee_id__icontains=search_query) |
+            Q(national_id__icontains=search_query)  # Add national_id to search
         )
     
     # Apply department filter if provided
@@ -186,6 +187,45 @@ class ITAssetListView(LoginRequiredMixin, ListView):
     template_name = 'inventory/asset_list.html'
     context_object_name = 'assets'
     paginate_by = 10
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        
+        # Get filter parameters
+        search_query = self.request.GET.get('search', '')
+        asset_type = self.request.GET.get('asset_type', '')
+        status = self.request.GET.get('status', '')
+        manufacturer = self.request.GET.get('manufacturer', '')
+        
+        # Apply search filter
+        if search_query:
+            queryset = queryset.filter(
+                Q(name__icontains=search_query) |
+                Q(serial_number__icontains=search_query) |
+                Q(model__icontains=search_query) |
+                Q(delivery_letter_code__icontains=search_query)  # Add delivery letter code to search
+            )
+        
+        # Apply asset type filter
+        if asset_type:
+            queryset = queryset.filter(asset_type=asset_type)
+        
+        # Apply status filter
+        if status:
+            queryset = queryset.filter(status=status)
+        
+        # Apply manufacturer filter
+        if manufacturer:
+            queryset = queryset.filter(manufacturer=manufacturer)
+        
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['asset_types'] = ITAsset.ASSET_TYPE_CHOICES
+        context['status_choices'] = ITAsset.STATUS_CHOICES
+        context['manufacturers'] = ITAsset.objects.exclude(manufacturer='').values_list('manufacturer', flat=True).distinct()
+        return context
 
 class ITAssetDetailView(LoginRequiredMixin, DetailView):
     model = ITAsset
@@ -400,6 +440,263 @@ def download_employee_data(request):
     # Create response
     response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
     response['Content-Disposition'] = 'attachment; filename=employees.xlsx'
+    
+    wb.save(response)
+    return response
+
+@login_required
+def download_asset_template(request):
+    wb = Workbook()
+    ws = wb.active
+    
+    # Add headers
+    headers = [
+        'Asset Name *',
+        'Asset Type *',
+        'Serial Number *',
+        'Model',
+        'Manufacturer',
+        'Owner',
+        'Wi-Fi MAC Address',
+        'Ethernet MAC Address',
+        'Delivery Letter Code',
+        'Status *',
+        'Purchase Date',
+        'Receipt Date',
+        'Warranty Expiry'
+    ]
+    ws.append(headers)
+    
+    # Add example row
+    example = [
+        'Laptop-001',
+        'Laptop',
+        'SN123456',
+        'ThinkPad X1',
+        'Lenovo',
+        'John Doe (CTP)',
+        '00:1A:2B:3C:4D:5E',
+        '00:1A:2B:3C:4D:5F',
+        'DL-2024-001',
+        'Available',
+        '2024-01-01',
+        '2024-01-15',
+        '2027-01-01'
+    ]
+    ws.append(example)
+    
+    # Add available asset types
+    ws.append([])  # Add empty row
+    ws.append(['Available Asset Types:'])
+    for asset_type in ITAsset.ASSET_TYPE_CHOICES:
+        ws.append([asset_type[1]])
+    
+    # Add available statuses
+    ws.append([])  # Add empty row
+    ws.append(['Available Statuses:'])
+    for status in ITAsset.STATUS_CHOICES:
+        ws.append([status[1]])
+    
+    # Add company owners section
+    ws.append([])  # Add empty row
+    ws.append(['Company Owners:'])
+    companies = ['Aman', 'CTP', 'Misr Assist']
+    for company in companies:
+        ws.append([company])
+    
+    # Add available owners (employees) with their companies
+    ws.append([])  # Add empty row
+    ws.append(['Available Owners (Employees):'])
+    ws.append(['Format: Full Name (Company)'])
+    ws.append([])  # Add empty row
+    
+    # Group employees by company
+    for company in companies:
+        ws.append([f'--- {company} Employees ---'])
+        employees = Employee.objects.filter(
+            is_active=True,
+            company=company
+        ).order_by('first_name', 'last_name')
+        
+        for employee in employees:
+            ws.append([f"{employee.first_name} {employee.last_name} ({company})"])
+        ws.append([])  # Add empty row between companies
+    
+    # Style the header row
+    for cell in ws[1]:
+        cell.font = openpyxl.styles.Font(bold=True)
+    
+    # Style the sections headers
+    ws.cell(row=4, column=1).font = openpyxl.styles.Font(bold=True)
+    ws.cell(row=7, column=1).font = openpyxl.styles.Font(bold=True)
+    ws.cell(row=10, column=1).font = openpyxl.styles.Font(bold=True)
+    ws.cell(row=13, column=1).font = openpyxl.styles.Font(bold=True)
+    
+    # Style company headers
+    for row in range(15, 25):  # Adjust range based on your data
+        cell = ws.cell(row=row, column=1)
+        if cell.value and '---' in str(cell.value):
+            cell.font = openpyxl.styles.Font(bold=True)
+    
+    # Adjust column widths
+    for column in ws.columns:
+        max_length = 0
+        column_letter = openpyxl.utils.get_column_letter(column[0].column)
+        for cell in column:
+            try:
+                if len(str(cell.value)) > max_length:
+                    max_length = len(str(cell.value))
+            except:
+                pass
+        adjusted_width = (max_length + 2)
+        ws.column_dimensions[column_letter].width = adjusted_width
+    
+    # Create response
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = 'attachment; filename=asset_template.xlsx'
+    
+    wb.save(response)
+    return response
+
+@login_required
+def asset_upload(request):
+    if request.method == 'POST':
+        excel_file = request.FILES.get('excel_file')
+        if excel_file:
+            try:
+                wb = openpyxl.load_workbook(excel_file)
+                ws = wb.active
+                
+                # Skip header row
+                for row in ws.iter_rows(min_row=2):
+                    try:
+                        # Get the owner if provided
+                        owner_name = row[5].value
+                        owner = None
+                        if owner_name:
+                            try:
+                                # Try to find owner by full name
+                                first_name, last_name = owner_name.split(' ', 1)
+                                owner = Employee.objects.get(first_name=first_name, last_name=last_name)
+                            except (ValueError, Employee.DoesNotExist):
+                                messages.warning(request, f'Owner "{owner_name}" not found. Asset will be created without owner.')
+                        
+                        # Create asset
+                        asset = ITAsset(
+                            name=row[0].value,
+                            asset_type=row[1].value,
+                            serial_number=row[2].value,
+                            model=row[3].value,
+                            manufacturer=row[4].value,
+                            assigned_to=owner,
+                            wifi_mac=row[6].value,
+                            ethernet_mac=row[7].value,
+                            delivery_letter_code=row[8].value,
+                            status=row[9].value,
+                            purchase_date=row[10].value,
+                            receipt_date=row[11].value,
+                            warranty_expiry=row[12].value
+                        )
+                        asset.save()
+                    except Exception as e:
+                        messages.error(request, f'Error processing row: {str(e)}')
+                        continue
+                
+                messages.success(request, 'Assets uploaded successfully!')
+                return redirect('inventory:asset_list')
+            except Exception as e:
+                messages.error(request, f'Error uploading file: {str(e)}')
+    
+    return render(request, 'inventory/asset_upload.html')
+
+@login_required
+def download_asset_data(request):
+    wb = Workbook()
+    ws = wb.active
+    
+    # Add headers
+    headers = [
+        'Asset Name',
+        'Asset Type',
+        'Serial Number',
+        'Model',
+        'Manufacturer',
+        'Owner',
+        'Wi-Fi MAC Address',
+        'Ethernet MAC Address',
+        'Delivery Letter Code',
+        'Status',
+        'Purchase Date',
+        'Receipt Date',
+        'Warranty Expiry'
+    ]
+    ws.append(headers)
+    
+    # Get filtered queryset using the same filters as the list view
+    assets = ITAsset.objects.all()
+    
+    # Apply search filter
+    search_query = request.GET.get('search', '')
+    if search_query:
+        assets = assets.filter(
+            Q(name__icontains=search_query) |
+            Q(serial_number__icontains=search_query) |
+            Q(model__icontains=search_query) |
+            Q(delivery_letter_code__icontains=search_query)
+        )
+    
+    # Apply other filters
+    asset_type = request.GET.get('asset_type', '')
+    if asset_type:
+        assets = assets.filter(asset_type=asset_type)
+    
+    status = request.GET.get('status', '')
+    if status:
+        assets = assets.filter(status=status)
+    
+    manufacturer = request.GET.get('manufacturer', '')
+    if manufacturer:
+        assets = assets.filter(manufacturer=manufacturer)
+    
+    # Add asset data
+    for asset in assets:
+        row = [
+            asset.name,
+            asset.get_asset_type_display(),
+            asset.serial_number,
+            asset.model,
+            asset.manufacturer,
+            f"{asset.assigned_to.get_full_name()} ({asset.assigned_to.company})" if asset.assigned_to else '',
+            asset.mac_address_wifi,
+            asset.mac_address_ethernet,
+            asset.delivery_letter_code,
+            asset.get_status_display(),
+            asset.purchase_date,
+            asset.receipt_date,
+            asset.warranty_expiry
+        ]
+        ws.append(row)
+    
+    # Style the header row
+    for cell in ws[1]:
+        cell.font = openpyxl.styles.Font(bold=True)
+    
+    # Adjust column widths
+    for column in ws.columns:
+        max_length = 0
+        column_letter = openpyxl.utils.get_column_letter(column[0].column)
+        for cell in column:
+            try:
+                if len(str(cell.value)) > max_length:
+                    max_length = len(str(cell.value))
+            except:
+                pass
+        adjusted_width = (max_length + 2)
+        ws.column_dimensions[column_letter].width = adjusted_width
+    
+    # Create response
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = 'attachment; filename=assets.xlsx'
     
     wb.save(response)
     return response  

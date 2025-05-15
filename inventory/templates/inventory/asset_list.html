@@ -9,17 +9,25 @@
         <h1 class="h3 mb-0 text-gray-800">
             <i class="fas fa-laptop me-2"></i>IT Assets
         </h1>
-        <a href="{% url 'inventory:asset_create' %}" class="btn btn-primary">
-            <i class="fas fa-plus me-2"></i>Add Asset
-        </a>
+        <div>
+            <a href="{% url 'inventory:asset_upload' %}" class="btn btn-success me-2">
+                <i class="fas fa-upload me-2"></i>Upload Assets
+            </a>
+            <a href="{% url 'inventory:download_asset_data' %}{% if request.GET %}?{{ request.GET.urlencode }}{% endif %}" class="btn btn-info me-2">
+                <i class="fas fa-download me-2"></i>Download Data
+            </a>
+            <a href="{% url 'inventory:asset_create' %}" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>Add Asset
+            </a>
+        </div>
     </div>
 
     <!-- Filters -->
     <div class="card shadow mb-4">
         <div class="card-body">
             <form method="get" class="row g-3">
-                <div class="col-md-3">
-                    <input type="text" name="search" class="form-control" placeholder="Search assets..." value="{{ request.GET.search }}">
+                <div class="col-md-4">
+                    <input type="text" name="search" class="form-control" placeholder="Search by name, serial number, model, or delivery letter code..." value="{{ request.GET.search }}">
                 </div>
                 <div class="col-md-2">
                     <select name="asset_type" class="form-select">
@@ -33,7 +41,7 @@
                 </div>
                 <div class="col-md-2">
                     <select name="status" class="form-select">
-                        <option value="">All Status</option>
+                        <option value="">All Statuses</option>
                         {% for status in status_choices %}
                             <option value="{{ status.0 }}" {% if request.GET.status == status.0 %}selected{% endif %}>
                                 {{ status.1 }}
@@ -51,7 +59,7 @@
                         {% endfor %}
                     </select>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-2">
                     <button type="submit" class="btn btn-primary w-100">
                         <i class="fas fa-search me-2"></i>Filter
                     </button>
@@ -119,6 +127,14 @@
                                     <div class="text-muted">
                                         <i class="fas fa-laptop fa-2x mb-3"></i>
                                         <p class="mb-0">No assets found.</p>
+                                        <p class="mt-2">
+                                            <a href="{% url 'inventory:asset_upload' %}" class="btn btn-success btn-sm me-2">
+                                                <i class="fas fa-upload me-2"></i>Upload Assets
+                                            </a>
+                                            <a href="{% url 'inventory:asset_create' %}" class="btn btn-primary btn-sm">
+                                                <i class="fas fa-plus me-2"></i>Add Asset
+                                            </a>
+                                        </p>
                                     </div>
                                 </td>
                             </tr>

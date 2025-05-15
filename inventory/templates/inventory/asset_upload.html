@@ -1,0 +1,50 @@
+{% extends 'inventory/base.html' %}
+{% load static %}
+
+{% block title %}Upload Assets{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-upload me-2"></i>Upload Assets
+        </h1>
+        <div>
+            <a href="{% url 'inventory:download_asset_template' %}" class="btn btn-info me-2">
+                <i class="fas fa-download"></i> Download Template
+            </a>
+            <a href="{% url 'inventory:asset_list' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Assets
+            </a>
+        </div>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-body">
+            <div class="alert alert-info">
+                <h5 class="alert-heading"><i class="fas fa-info-circle me-2"></i>Instructions</h5>
+                <p>Please follow these steps to upload assets:</p>
+                <ol>
+                    <li>Download the template file using the "Download Template" button above</li>
+                    <li>Fill in the required fields (marked with *) in the template</li>
+                    <li>For the Owner field, use the employee's full name (e.g., "John Doe")</li>
+                    <li>For Asset Type and Status, use only the values listed in the template</li>
+                    <li>Save the file and upload it using the form below</li>
+                </ol>
+            </div>
+
+            <form method="post" enctype="multipart/form-data" class="mt-4">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label for="excel_file" class="form-label">Select Excel File</label>
+                    <input type="file" class="form-control" id="excel_file" name="excel_file" accept=".xlsx" required>
+                    <div class="form-text">Only .xlsx files are accepted</div>
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-upload me-2"></i>Upload Assets
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %} 
