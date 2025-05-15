@@ -13,6 +13,9 @@ urlpatterns = [
     path('employees/<int:pk>/update/', views.employee_update, name='employee_update'),
     path('employees/<int:pk>/delete/', views.employee_delete, name='employee_delete'),
     path('employees/<int:pk>/toggle-status/', views.employee_toggle_status, name='employee_toggle_status'),
+    path('employees/upload/', views.employee_upload, name='employee_upload'),
+    path('employees/download-template/', views.download_employee_template, name='download_employee_template'),
+    path('employees/download-data/', views.download_employee_data, name='download_employee_data'),
     
     # IT Asset URLs
     path('assets/', views.ITAssetListView.as_view(), name='asset_list'),

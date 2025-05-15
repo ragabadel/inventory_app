@@ -9,6 +9,10 @@ from django.core.paginator import Paginator
 from django.db.models import Q
 from .models import Employee, ITAsset, Department, Position
 from .forms import EmployeeForm, ITAssetForm
+from django.http import HttpResponse
+import openpyxl
+from openpyxl import Workbook
+from datetime import datetime
 
 def home(request):
     return render(request, 'inventory/home.html')
@@ -196,4 +200,164 @@ class ITAssetDeleteView(LoginRequiredMixin, DeleteView):
 
     def delete(self, request, *args, **kwargs):
         messages.success(request, 'IT Asset deleted successfully.')
-        return super().delete(request, *args, **kwargs)  
+        return super().delete(request, *args, **kwargs)
+
+@login_required
+def employee_upload(request):
+    if request.method == 'POST':
+        excel_file = request.FILES.get('excel_file')
+        if excel_file:
+            try:
+                wb = openpyxl.load_workbook(excel_file)
+                ws = wb.active
+                
+                # Skip header row
+                for row in ws.iter_rows(min_row=2):
+                    try:
+                        # Get or create department
+                        department_name = row[5].value
+                        department, _ = Department.objects.get_or_create(name=department_name)
+                        
+                        # Get or create position
+                        position_name = row[6].value
+                        position, _ = Position.objects.get_or_create(name=position_name)
+                        
+                        # Create employee
+                        employee = Employee(
+                            employee_id=row[0].value,
+                            national_id=row[1].value,
+                            first_name=row[2].value,
+                            last_name=row[3].value,
+                            email=row[4].value,
+                            department=department,
+                            position=position,
+                            company=row[7].value,
+                            hire_date=row[8].value
+                        )
+                        employee.save()
+                    except Exception as e:
+                        messages.error(request, f'Error processing row: {str(e)}')
+                        continue
+                
+                messages.success(request, 'Employees uploaded successfully!')
+                return redirect('inventory:employee_list')
+            except Exception as e:
+                messages.error(request, f'Error uploading file: {str(e)}')
+    
+    return render(request, 'inventory/employee_upload.html')
+
+@login_required
+def download_employee_template(request):
+    wb = Workbook()
+    ws = wb.active
+    
+    # Add headers
+    headers = [
+        'Employee ID *',
+        'National ID *',
+        'First Name *',
+        'Last Name *',
+        'Email *',
+        'Department *',
+        'Position *',
+        'Company *',
+        'Hire Date *'
+    ]
+    ws.append(headers)
+    
+    # Add example row
+    example = [
+        'EMP001',
+        '12345678901234',
+        'John',
+        'Doe',
+        'john.doe@example.com',
+        'IT',
+        'Software Engineer',
+        'Main Company',
+        '2024-01-01'
+    ]
+    ws.append(example)
+    
+    # Style the header row
+    for cell in ws[1]:
+        cell.font = openpyxl.styles.Font(bold=True)
+    
+    # Adjust column widths
+    for column in ws.columns:
+        max_length = 0
+        column_letter = openpyxl.utils.get_column_letter(column[0].column)
+        for cell in column:
+            try:
+                if len(str(cell.value)) > max_length:
+                    max_length = len(str(cell.value))
+            except:
+                pass
+        adjusted_width = (max_length + 2)
+        ws.column_dimensions[column_letter].width = adjusted_width
+    
+    # Create response
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = 'attachment; filename=employee_template.xlsx'
+    
+    wb.save(response)
+    return response
+
+@login_required
+def download_employee_data(request):
+    wb = Workbook()
+    ws = wb.active
+    
+    # Add headers
+    headers = [
+        'Employee ID',
+        'National ID',
+        'First Name',
+        'Last Name',
+        'Email',
+        'Department',
+        'Position',
+        'Company',
+        'Hire Date'
+    ]
+    ws.append(headers)
+    
+    # Add employee data
+    employees = Employee.objects.all()
+    for employee in employees:
+        row = [
+            employee.employee_id,
+            employee.national_id,
+            employee.first_name,
+            employee.last_name,
+            employee.email,
+            employee.department.name if employee.department else '',
+            employee.position.name if employee.position else '',
+            employee.company,
+            employee.hire_date
+        ]
+        ws.append(row)
+    
+    # Style the header row
+    for cell in ws[1]:
+        cell.font = openpyxl.styles.Font(bold=True)
+    
+    # Adjust column widths
+    for column in ws.columns:
+        max_length = 0
+        column_letter = openpyxl.utils.get_column_letter(column[0].column)
+        for cell in column:
+            try:
+                if len(str(cell.value)) > max_length:
+                    max_length = len(str(cell.value))
+            except:
+                pass
+        adjusted_width = (max_length + 2)
+        ws.column_dimensions[column_letter].width = adjusted_width
+    
+    # Create response
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = 'attachment; filename=employees.xlsx'
+    
+    wb.save(response)
+    return response  

@@ -1,0 +1,174 @@
+{% extends 'inventory/base.html' %}
+{% load static %}
+
+{% block title %}Asset Details{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+    .card {
+        border: none;
+        box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075);
+        margin-bottom: 1.5rem;
+    }
+    .card-header {
+        background-color: #2c3e50;
+        color: white;
+        border-bottom: none;
+        padding: 1rem;
+    }
+    .card-header h5 { margin: 0; font-weight: 500; }
+    .card-body { background-color: #f8f9fa; }
+    .section-title { color: #2c3e50; font-weight: 600; margin-bottom: 1rem; }
+    .info-label { font-weight: 500; color: #34495e; }
+    .info-value { color: #2c3e50; }
+    .icon { width: 1.5em; text-align: center; }
+    .btn-action { margin-right: 0.5rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12 d-flex justify-content-between align-items-center mt-4 mb-3">
+            <h1 class="h2"><i class="fas fa-desktop me-2"></i>Asset Details</h1>
+            <div>
+                <a href="{% url 'inventory:asset_update' object.pk %}" class="btn btn-primary btn-action"><i class="fas fa-edit"></i> Edit</a>
+                <a href="{% url 'inventory:asset_delete' object.pk %}" class="btn btn-danger btn-action"><i class="fas fa-trash"></i> Delete</a>
+                <a href="{% url 'inventory:asset_list' %}" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Back to List</a>
+            </div>
+        </div>
+        <div class="col-12 col-lg-10 mx-auto">
+            <!-- Basic Information -->
+            <div class="card">
+                <div class="card-header"><h5><i class="fas fa-info-circle icon"></i> Basic Information</h5></div>
+                <div class="card-body row">
+                    <div class="col-md-6 mb-2"><span class="info-label">Asset Name:</span> <span class="info-value">{{ object.name }}</span></div>
+                    <div class="col-md-6 mb-2"><span class="info-label">Asset Type:</span> <span class="info-value">{{ object.get_asset_type_display }}</span></div>
+                    <div class="col-md-6 mb-2"><span class="info-label">Serial Number:</span> <span class="info-value">{{ object.serial_number }}</span></div>
+                    <div class="col-md-6 mb-2"><span class="info-label">Model:</span> <span class="info-value">{{ object.model }}</span></div>
+                    <div class="col-md-6 mb-2"><span class="info-label">Manufacturer:</span> <span class="info-value">{{ object.manufacturer }}</span></div>
+                    <div class="col-md-6 mb-2"><span class="info-label">Owner:</span> <span class="info-value">{{ object.get_owner_display }}</span></div>
+                    <div class="col-md-6 mb-2"><span class="info-label">Status:</span> <span class="info-value">{{ object.get_status_display }}</span></div>
+                    <div class="col-md-6 mb-2"><span class="info-label">Assigned To:</span> <span class="info-value">{{ object.assigned_to }}</span></div>
+                </div>
+            </div>
+
+            <!-- Computer Specifications -->
+            {% if object.asset_type == 'laptop' or object.asset_type == 'desktop' %}
+            <div class="card">
+                <div class="card-header"><h5><i class="fas fa-laptop icon"></i> Computer Specifications</h5></div>
+                <div class="card-body row">
+                    <div class="col-md-6 mb-2"><span class="info-label">Processor:</span> <span class="info-value">{{ object.processor }}</span></div>
+                    <div class="col-md-6 mb-2"><span class="info-label">RAM Size:</span> <span class="info-value">{{ object.ram_size }}</span></div>
+                    <div class="col-md-6 mb-2"><span class="info-label">Primary Storage:</span> <span class="info-value">{{ object.hdd1_capacity }}</span></div>
+                    <div class="col-md-6 mb-2"><span class="info-label">Secondary Storage:</span> <span class="info-value">{{ object.hdd2_capacity }}</span></div>
+                    <div class="col-md-6 mb-2"><span class="info-label">Operating System:</span> <span class="info-value">{{ object.operating_system }}</span></div>
+                    <div class="col-md-6 mb-2"><span class="info-label">OS Version:</span> <span class="info-value">{{ object.os_version }}</span></div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Monitor Specifications -->
+            {% if object.asset_type == 'monitor' %}
+            <div class="card">
+                <div class="card-header"><h5><i class="fas fa-desktop icon"></i> Monitor Specifications</h5></div>
+                <div class="card-body row">
+                    <div class="col-md-6 mb-2"><span class="info-label">Monitor Type:</span> <span class="info-value">{{ object.get_monitor_type_display }}</span></div>
+                    <div class="col-md-6 mb-2"><span class="info-label">Panel Type:</span> <span class="info-value">{{ object.get_panel_type_display }}</span></div>
+                    <div class="col-md-6 mb-2"><span class="info-label">Screen Size:</span> <span class="info-value">{{ object.screen_size }}</span></div>
+                    <div class="col-md-6 mb-2"><span class="info-label">Resolution:</span> <span class="info-value">{{ object.resolution }}</span></div>
+                    <div class="col-md-6 mb-2"><span class="info-label">VESA Mount:</span> <span class="info-value">{{ object.vesa_mount|yesno:'Yes,No' }}</span></div>
+                    <div class="col-md-6 mb-2"><span class="info-label">Built-in Speakers:</span> <span class="info-value">{{ object.built_in_speakers|yesno:'Yes,No' }}</span></div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Printer Specifications -->
+            {% if object.asset_type == 'printer' %}
+            <div class="card">
+                <div class="card-header"><h5><i class="fas fa-print icon"></i> Printer Specifications</h5></div>
+                <div class="card-body row">
+                    <div class="col-md-6 mb-2"><span class="info-label">Printer Type:</span> <span class="info-value">{{ object.get_printer_type_display }}</span></div>
+                    <div class="col-md-6 mb-2"><span class="info-label">Connection Type:</span> <span class="info-value">{{ object.get_connection_type_display }}</span></div>
+                    <div class="col-md-6 mb-2"><span class="info-label">Department:</span> <span class="info-value">{{ object.printer_department }}</span></div>
+                    <div class="col-md-6 mb-2"><span class="info-label">Responsible Person:</span> <span class="info-value">{{ object.printer_responsible }}</span></div>
+                    <div class="col-md-6 mb-2"><span class="info-label">Last Maintenance Date:</span> <span class="info-value">{{ object.last_maintenance_date }}</span></div>
+                    <div class="col-md-6 mb-2"><span class="info-label">Toner Cartridge Model:</span> <span class="info-value">{{ object.toner_cartridge_model }}</span></div>
+                    <div class="col-md-6 mb-2"><span class="info-label">Paper Size Support:</span> <span class="info-value">{{ object.paper_size_support }}</span></div>
+                    <div class="col-md-6 mb-2"><span class="info-label">Duplex Printing:</span> <span class="info-value">{{ object.duplex_printing|yesno:'Yes,No' }}</span></div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- UPS Specifications -->
+            {% if object.asset_type == 'ups' %}
+            <div class="card">
+                <div class="card-header"><h5><i class="fas fa-bolt icon"></i> UPS Specifications</h5></div>
+                <div class="card-body row">
+                    <div class="col-md-6 mb-2"><span class="info-label">Capacity (VA):</span> <span class="info-value">{{ object.ups_capacity }}</span></div>
+                    <div class="col-md-6 mb-2"><span class="info-label">Number of Batteries:</span> <span class="info-value">{{ object.ups_battery_count }}</span></div>
+                    <div class="col-md-6 mb-2"><span class="info-label">Remaining Battery Life (months):</span> <span class="info-value">{{ object.ups_battery_life }}</span></div>
+                    <div class="col-md-6 mb-2"><span class="info-label">Battery Replacement Date:</span> <span class="info-value">{{ object.ups_battery_replacement_date }}</span></div>
+                    <div class="col-md-6 mb-2"><span class="info-label">UPS Manufacturer:</span> <span class="info-value">{{ object.ups_manufacturer }}</span></div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Switch Specifications -->
+            {% if object.asset_type == 'switch' %}
+            <div class="card">
+                <div class="card-header"><h5><i class="fas fa-network-wired icon"></i> Switch Specifications</h5></div>
+                <div class="card-body row">
+                    <div class="col-md-6 mb-2"><span class="info-label">Switch Type:</span> <span class="info-value">{{ object.switch_type }}</span></div>
+                    <div class="col-md-6 mb-2"><span class="info-label">Port Count:</span> <span class="info-value">{{ object.port_count }}</span></div>
+                    <div class="col-md-6 mb-2"><span class="info-label">Port Speed:</span> <span class="info-value">{{ object.port_speed }}</span></div>
+                    <div class="col-md-6 mb-2"><span class="info-label">Management Type:</span> <span class="info-value">{{ object.management_type }}</span></div>
+                    <div class="col-md-6 mb-2"><span class="info-label">PoE Support:</span> <span class="info-value">{{ object.poe_support|yesno:'Yes,No' }}</span></div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Network Information -->
+            <div class="card">
+                <div class="card-header"><h5><i class="fas fa-network-wired icon"></i> Network Information</h5></div>
+                <div class="card-body row">
+                    <div class="col-md-4 mb-2"><span class="info-label">Wi-Fi MAC Address:</span> <span class="info-value">{{ object.mac_address_wifi }}</span></div>
+                    <div class="col-md-4 mb-2"><span class="info-label">Ethernet MAC Address:</span> <span class="info-value">{{ object.mac_address_ethernet }}</span></div>
+                    <div class="col-md-4 mb-2"><span class="info-label">IP Address:</span> <span class="info-value">{{ object.ip_address }}</span></div>
+                </div>
+            </div>
+
+            <!-- Assignment Information -->
+            <div class="card">
+                <div class="card-header"><h5><i class="fas fa-user-check icon"></i> Assignment Information</h5></div>
+                <div class="card-body row">
+                    <div class="col-md-6 mb-2"><span class="info-label">Delivery Letter Code:</span> <span class="info-value">{{ object.delivery_letter_code }}</span></div>
+                    <div class="col-md-6 mb-2"><span class="info-label">Status:</span> <span class="info-value">{{ object.get_status_display }}</span></div>
+                    <div class="col-md-6 mb-2"><span class="info-label">Assigned To:</span> <span class="info-value">{{ object.assigned_to }}</span></div>
+                </div>
+            </div>
+
+            <!-- Dates Information -->
+            <div class="card">
+                <div class="card-header"><h5><i class="fas fa-calendar-alt icon"></i> Dates Information</h5></div>
+                <div class="card-body row">
+                    <div class="col-md-4 mb-2"><span class="info-label">Purchase Date:</span> <span class="info-value">{{ object.purchase_date }}</span></div>
+                    <div class="col-md-4 mb-2"><span class="info-label">Receipt Date:</span> <span class="info-value">{{ object.receipt_date }}</span></div>
+                    <div class="col-md-4 mb-2"><span class="info-label">Warranty Expiry:</span> <span class="info-value">{{ object.warranty_expiry }}</span></div>
+                </div>
+            </div>
+
+            <!-- Notes -->
+            {% if object.notes %}
+            <div class="card">
+                <div class="card-header"><h5><i class="fas fa-sticky-note icon"></i> Additional Information</h5></div>
+                <div class="card-body">
+                    <span class="info-value">{{ object.notes|linebreaksbr }}</span>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %} 
