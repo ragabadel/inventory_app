@@ -331,8 +331,8 @@ def download_employee_data(request):
             employee.first_name,
             employee.last_name,
             employee.email,
-            employee.department.name if employee.department else '',
-            employee.position.name if employee.position else '',
+            str(employee.department) if employee.department else '',
+            str(employee.position) if employee.position else '',
             employee.company,
             employee.hire_date
         ]
