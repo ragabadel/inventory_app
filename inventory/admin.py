@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Employee, ITAsset, Department, Position
+from .models import Employee, ITAsset, Department, Position, AssetType, OwnerCompany
 
 @admin.register(Department)
 class DepartmentAdmin(admin.ModelAdmin):
@@ -35,12 +35,24 @@ class EmployeeAdmin(admin.ModelAdmin):
         }),
     )
 
+@admin.register(AssetType)
+class AssetTypeAdmin(admin.ModelAdmin):
+    list_display = ('name', 'display_name')
+    search_fields = ('name', 'display_name')
+    ordering = ('display_name',)
+
+@admin.register(OwnerCompany)
+class OwnerCompanyAdmin(admin.ModelAdmin):
+    list_display = ('code', 'name')
+    search_fields = ('code', 'name')
+    ordering = ('name',)
+
 @admin.register(ITAsset)
 class ITAssetAdmin(admin.ModelAdmin):
-    list_display = ('name', 'asset_type', 'serial_number', 'status', 'assigned_to', 'purchase_date')
-    list_filter = ('asset_type', 'status', 'manufacturer')
+    list_display = ('name', 'asset_type', 'serial_number', 'owner', 'status', 'assigned_to')
+    list_filter = ('asset_type', 'owner', 'status')
     search_fields = ('name', 'serial_number', 'model', 'manufacturer')
-    ordering = ('-created_at',)
+    ordering = ('name',)
     fieldsets = (
         ('Asset Information', {
             'fields': ('name', 'asset_type', 'serial_number', 'model', 'manufacturer')

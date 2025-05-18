@@ -72,11 +72,78 @@
                                 {% endif %}
                             </div>
                         </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.status.id_for_label }}" class="form-label">Status</label>
+                                {{ form.status }}
+                                {% if form.status.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.status.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.assigned_to.id_for_label }}" class="form-label">Assigned To</label>
+                                {{ form.assigned_to }}
+                                {% if form.assigned_to.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.assigned_to.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.purchase_date.id_for_label }}" class="form-label">Purchase Date</label>
+                                {{ form.purchase_date }}
+                                {% if form.purchase_date.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.purchase_date.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.warranty_expiry.id_for_label }}" class="form-label">Warranty Expiry</label>
+                                {{ form.warranty_expiry }}
+                                {% if form.warranty_expiry.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.warranty_expiry.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Asset Type Specific Fields -->
-                <div id="laptopDesktopFields" class="asset-type-fields" style="display: none;">
+                <!-- Network Information -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-network-wired me-2"></i>
+                            Network Information
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label for="{{ form.mac_address_wifi.id_for_label }}" class="form-label">Wi-Fi MAC Address</label>
+                                {{ form.mac_address_wifi }}
+                                {% if form.mac_address_wifi.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.mac_address_wifi.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="{{ form.mac_address_ethernet.id_for_label }}" class="form-label">Ethernet MAC Address</label>
+                                {{ form.mac_address_ethernet }}
+                                {% if form.mac_address_ethernet.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.mac_address_ethernet.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="{{ form.ip_address.id_for_label }}" class="form-label">IP Address</label>
+                                {{ form.ip_address }}
+                                {% if form.ip_address.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.ip_address.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Computer Specifications -->
+                <div id="computerFields" class="asset-type-fields" style="display: none;">
                     <div class="card mb-4">
                         <div class="card-header">
                             <h5 class="mb-0">
@@ -119,6 +186,7 @@
                     </div>
                 </div>
 
+                <!-- Monitor Specifications -->
                 <div id="monitorFields" class="asset-type-fields" style="display: none;">
                     <div class="card mb-4">
                         <div class="card-header">
@@ -138,10 +206,39 @@
                                     {{ form.resolution }}
                                 </div>
                             </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ form.refresh_rate.id_for_label }}" class="form-label">Refresh Rate</label>
+                                    {{ form.refresh_rate }}
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ form.panel_type.id_for_label }}" class="form-label">Panel Type</label>
+                                    {{ form.panel_type }}
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <div class="form-check">
+                                        {{ form.vesa_mount }}
+                                        <label class="form-check-label" for="{{ form.vesa_mount.id_for_label }}">
+                                            VESA Mount Support
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <div class="form-check">
+                                        {{ form.built_in_speakers }}
+                                        <label class="form-check-label" for="{{ form.built_in_speakers.id_for_label }}">
+                                            Built-in Speakers
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
 
+                <!-- Printer Specifications -->
                 <div id="printerFields" class="asset-type-fields" style="display: none;">
                     <div class="card mb-4">
                         <div class="card-header">
@@ -171,10 +268,31 @@
                                     {{ form.printer_responsible }}
                                 </div>
                             </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ form.paper_size_support.id_for_label }}" class="form-label">Paper Size Support</label>
+                                    {{ form.paper_size_support }}
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ form.toner_cartridge_model.id_for_label }}" class="form-label">Toner Cartridge Model</label>
+                                    {{ form.toner_cartridge_model }}
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <div class="form-check">
+                                        {{ form.duplex_printing }}
+                                        <label class="form-check-label" for="{{ form.duplex_printing.id_for_label }}">
+                                            Duplex Printing Support
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
 
+                <!-- UPS Specifications -->
                 <div id="upsFields" class="asset-type-fields" style="display: none;">
                     <div class="card mb-4">
                         <div class="card-header">
@@ -188,122 +306,27 @@
                                 <div class="col-md-6 mb-3">
                                     <label for="{{ form.ups_capacity.id_for_label }}" class="form-label">Capacity (VA)</label>
                                     {{ form.ups_capacity }}
-                                    {% if form.ups_capacity.errors %}
-                                        <div class="invalid-feedback d-block">{{ form.ups_capacity.errors }}</div>
-                                    {% endif %}
                                 </div>
                                 <div class="col-md-6 mb-3">
                                     <label for="{{ form.ups_battery_count.id_for_label }}" class="form-label">Number of Batteries</label>
                                     {{ form.ups_battery_count }}
-                                    {% if form.ups_battery_count.errors %}
-                                        <div class="invalid-feedback d-block">{{ form.ups_battery_count.errors }}</div>
-                                    {% endif %}
                                 </div>
                             </div>
                             <div class="row">
                                 <div class="col-md-6 mb-3">
-                                    <label for="{{ form.ups_battery_life.id_for_label }}" class="form-label">Remaining Battery Life (months)</label>
+                                    <label for="{{ form.ups_battery_life.id_for_label }}" class="form-label">Battery Life (months)</label>
                                     {{ form.ups_battery_life }}
-                                    {% if form.ups_battery_life.errors %}
-                                        <div class="invalid-feedback d-block">{{ form.ups_battery_life.errors }}</div>
-                                    {% endif %}
                                 </div>
                                 <div class="col-md-6 mb-3">
                                     <label for="{{ form.ups_battery_replacement_date.id_for_label }}" class="form-label">Battery Replacement Date</label>
                                     {{ form.ups_battery_replacement_date }}
-                                    {% if form.ups_battery_replacement_date.errors %}
-                                        <div class="invalid-feedback d-block">{{ form.ups_battery_replacement_date.errors }}</div>
-                                    {% endif %}
                                 </div>
                             </div>
                             <div class="row">
                                 <div class="col-md-6 mb-3">
                                     <label for="{{ form.ups_manufacturer.id_for_label }}" class="form-label">UPS Manufacturer</label>
                                     {{ form.ups_manufacturer }}
-                                    {% if form.ups_manufacturer.errors %}
-                                        <div class="invalid-feedback d-block">{{ form.ups_manufacturer.errors }}</div>
-                                    {% endif %}
                                 </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Network Information -->
-                <div class="card mb-4">
-                    <div class="card-header">
-                        <h5 class="mb-0">
-                            <i class="fas fa-network-wired me-2"></i>
-                            Network Information
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-4 mb-3">
-                                <label for="{{ form.mac_address_wifi.id_for_label }}" class="form-label">Wi-Fi MAC Address</label>
-                                {{ form.mac_address_wifi }}
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                <label for="{{ form.mac_address_ethernet.id_for_label }}" class="form-label">Ethernet MAC Address</label>
-                                {{ form.mac_address_ethernet }}
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                <label for="{{ form.ip_address.id_for_label }}" class="form-label">IP Address</label>
-                                {{ form.ip_address }}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Assignment Information -->
-                <div class="card mb-4">
-                    <div class="card-header">
-                        <h5 class="mb-0">
-                            <i class="fas fa-user-check me-2"></i>
-                            Assignment Information
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="{{ form.delivery_letter_code.id_for_label }}" class="form-label">Delivery Letter Code</label>
-                                {{ form.delivery_letter_code }}
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="{{ form.status.id_for_label }}" class="form-label">Status</label>
-                                {{ form.status }}
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="{{ form.assigned_to.id_for_label }}" class="form-label">Assigned To</label>
-                                {{ form.assigned_to }}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Dates Information -->
-                <div class="card mb-4">
-                    <div class="card-header">
-                        <h5 class="mb-0">
-                            <i class="fas fa-calendar-alt me-2"></i>
-                            Dates Information
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-4 mb-3">
-                                <label for="{{ form.purchase_date.id_for_label }}" class="form-label">Purchase Date</label>
-                                {{ form.purchase_date }}
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                <label for="{{ form.receipt_date.id_for_label }}" class="form-label">Receipt Date</label>
-                                {{ form.receipt_date }}
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                <label for="{{ form.warranty_expiry.id_for_label }}" class="form-label">Warranty Expiry</label>
-                                {{ form.warranty_expiry }}
                             </div>
                         </div>
                     </div>
@@ -346,34 +369,30 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const assetTypeSelect = document.getElementById('{{ form.asset_type.id_for_label }}');
-    const laptopDesktopFields = document.getElementById('laptopDesktopFields');
+    const computerFields = document.getElementById('computerFields');
     const monitorFields = document.getElementById('monitorFields');
     const printerFields = document.getElementById('printerFields');
     const upsFields = document.getElementById('upsFields');
 
     function updateFieldsVisibility() {
-        const selectedType = assetTypeSelect.value;
-        
         // Hide all specific fields first
         document.querySelectorAll('.asset-type-fields').forEach(field => {
             field.style.display = 'none';
         });
 
+        // Get the selected option's text
+        const selectedOption = assetTypeSelect.options[assetTypeSelect.selectedIndex];
+        const selectedType = selectedOption ? selectedOption.text.toLowerCase() : '';
+
         // Show relevant fields based on selection
-        switch(selectedType) {
-            case 'laptop':
-            case 'desktop':
-                laptopDesktopFields.style.display = 'block';
-                break;
-            case 'monitor':
-                monitorFields.style.display = 'block';
-                break;
-            case 'printer':
-                printerFields.style.display = 'block';
-                break;
-            case 'ups':
-                upsFields.style.display = 'block';
-                break;
+        if (selectedType.includes('laptop') || selectedType.includes('desktop')) {
+            computerFields.style.display = 'block';
+        } else if (selectedType.includes('monitor')) {
+            monitorFields.style.display = 'block';
+        } else if (selectedType.includes('printer')) {
+            printerFields.style.display = 'block';
+        } else if (selectedType.includes('ups')) {
+            upsFields.style.display = 'block';
         }
     }
 

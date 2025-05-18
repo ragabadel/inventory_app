@@ -81,100 +81,100 @@ class Employee(models.Model):
         verbose_name = 'Employee'
         verbose_name_plural = 'Employees'
 
-class ITAsset(models.Model):
-    ASSET_TYPE_CHOICES = [
-        ('laptop', 'Laptop'),
-        ('desktop', 'Desktop'),
-        ('monitor', 'Monitor'),
-        ('phone', 'Phone'),
-        ('tablet', 'Tablet'),
-        ('printer', 'Printer'),
-        ('ups', 'UPS Device'),
-        ('other', 'Other'),
-    ]
+class AssetType(models.Model):
+    name = models.CharField(max_length=50, unique=True)
+    display_name = models.CharField(max_length=100)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
+    class Meta:
+        ordering = ['display_name']
+        verbose_name = 'Asset Type'
+        verbose_name_plural = 'Asset Types'
+
+    def __str__(self):
+        return self.display_name
+
+class OwnerCompany(models.Model):
+    code = models.CharField(max_length=20, unique=True)
+    name = models.CharField(max_length=100)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['name']
+        verbose_name = 'Owner Company'
+        verbose_name_plural = 'Owner Companies'
+
+    def __str__(self):
+        return self.name
+
+class ITAsset(models.Model):
     STATUS_CHOICES = [
         ('available', 'Available'),
         ('assigned', 'Assigned'),
-        ('maintenance', 'In Maintenance'),
+        ('maintenance', 'Under Maintenance'),
         ('retired', 'Retired'),
-    ]
-
-    OWNER_CHOICES = [
-        ('AMAN', 'Aman'),
-        ('CTP', 'CTP'),
-        ('MISR_ASSIST', 'Misr Assist'),
-    ]
-
-    PRINTER_TYPE_CHOICES = [
-        ('laser', 'Laser'),
-        ('inkjet', 'Inkjet'),
-        ('dot_matrix', 'Dot Matrix'),
-        ('thermal', 'Thermal'),
-        ('3d', '3D Printer'),
-    ]
-
-    CONNECTION_TYPE_CHOICES = [
-        ('usb', 'USB'),
-        ('network', 'Network'),
-        ('wireless', 'Wireless'),
-        ('bluetooth', 'Bluetooth'),
     ]
 
     # Basic Information
     name = models.CharField(max_length=100, default='Unknown Asset')
-    asset_type = models.CharField(max_length=20, choices=ASSET_TYPE_CHOICES)
+    asset_type = models.ForeignKey(AssetType, on_delete=models.PROTECT)
     serial_number = models.CharField(max_length=50, unique=True)
     model = models.CharField(max_length=100)
     manufacturer = models.CharField(max_length=100)
-    owner = models.CharField(max_length=20, choices=OWNER_CHOICES, default='CTP')
+    owner = models.ForeignKey(OwnerCompany, on_delete=models.PROTECT)
     purchase_date = models.DateField()
     warranty_expiry = models.DateField(null=True, blank=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='available')
-    assigned_to = models.ForeignKey(Employee, on_delete=models.SET_NULL, null=True, blank=True, related_name='assets')
+    assigned_to = models.ForeignKey(Employee, on_delete=models.SET_NULL, null=True, blank=True)
     notes = models.TextField(blank=True)
 
     # Network Information
-    mac_address_wifi = models.CharField(max_length=17, null=True, blank=True, help_text="Format: XX:XX:XX:XX:XX:XX")
-    mac_address_ethernet = models.CharField(max_length=17, null=True, blank=True, help_text="Format: XX:XX:XX:XX:XX:XX")
-    ip_address = models.GenericIPAddressField(null=True, blank=True, protocol='IPv4')
+    mac_address_wifi = models.CharField(max_length=17, blank=True, verbose_name='Wi-Fi MAC Address')
+    mac_address_ethernet = models.CharField(max_length=17, blank=True, verbose_name='Ethernet MAC Address')
+    ip_address = models.CharField(max_length=15, blank=True, verbose_name='IP Address')
 
-    # Assignment Information
-    delivery_letter_code = models.CharField(max_length=50, null=True, blank=True)
+    # Delivery Information
+    delivery_letter_code = models.CharField(max_length=50, blank=True)
     receipt_date = models.DateField(null=True, blank=True)
 
-    # Computer Specifications
-    processor = models.CharField(max_length=100, null=True, blank=True)
-    ram_size = models.CharField(max_length=50, null=True, blank=True)
-    hdd1_capacity = models.CharField(max_length=50, null=True, blank=True, help_text="Primary Storage")
-    hdd2_capacity = models.CharField(max_length=50, null=True, blank=True, help_text="Secondary Storage")
-    operating_system = models.CharField(max_length=50, null=True, blank=True)
-    os_version = models.CharField(max_length=50, null=True, blank=True)
+    # Computer Specifications (for laptops and desktops)
+    processor = models.CharField(max_length=100, blank=True, null=True)
+    ram_size = models.CharField(max_length=50, blank=True, null=True)
+    hdd1_capacity = models.CharField(max_length=50, blank=True, null=True, verbose_name='Primary Storage')
+    hdd2_capacity = models.CharField(max_length=50, blank=True, null=True, verbose_name='Secondary Storage')
+    operating_system = models.CharField(max_length=50, blank=True, null=True)
+    os_version = models.CharField(max_length=50, blank=True, null=True)
+
+    # Monitor Specifications
+    screen_size = models.CharField(max_length=20, blank=True, null=True)
+    resolution = models.CharField(max_length=50, blank=True, null=True)
+    refresh_rate = models.CharField(max_length=20, blank=True, null=True)
+    panel_type = models.CharField(max_length=50, blank=True, null=True)
+    vesa_mount = models.BooleanField(default=False)
+    built_in_speakers = models.BooleanField(default=False)
 
     # Printer Specifications
-    printer_type = models.CharField(max_length=20, choices=PRINTER_TYPE_CHOICES, null=True, blank=True)
-    connection_type = models.CharField(max_length=20, choices=CONNECTION_TYPE_CHOICES, null=True, blank=True)
-    printer_department = models.ForeignKey(Department, on_delete=models.SET_NULL, null=True, blank=True, related_name='printers')
-    printer_responsible = models.ForeignKey(Employee, on_delete=models.SET_NULL, null=True, blank=True, related_name='responsible_printers')
-    last_maintenance_date = models.DateField(null=True, blank=True)
-    toner_cartridge_model = models.CharField(max_length=100, null=True, blank=True)
-    paper_size_support = models.CharField(max_length=100, null=True, blank=True, help_text="e.g., A4, A3, Legal")
+    printer_type = models.CharField(max_length=50, blank=True, null=True)
+    connection_type = models.CharField(max_length=50, blank=True, null=True)
+    printer_department = models.CharField(max_length=100, blank=True, null=True)
+    printer_responsible = models.CharField(max_length=100, blank=True, null=True)
+    paper_size_support = models.CharField(max_length=100, blank=True, null=True)
     duplex_printing = models.BooleanField(default=False)
+    toner_cartridge_model = models.CharField(max_length=100, blank=True, null=True)
 
-    # UPS Specific Fields
-    ups_capacity = models.IntegerField(null=True, blank=True, help_text="Capacity in VA")
-    ups_battery_count = models.IntegerField(null=True, blank=True, help_text="Number of batteries")
-    ups_battery_life = models.IntegerField(null=True, blank=True, help_text="Remaining battery life in months")
-    ups_battery_replacement_date = models.DateField(null=True, blank=True)
-    ups_manufacturer = models.CharField(max_length=100, null=True, blank=True)
+    # UPS Specifications
+    ups_capacity = models.IntegerField(blank=True, null=True, help_text='Capacity in VA')
+    ups_battery_count = models.IntegerField(blank=True, null=True, help_text='Number of batteries')
+    ups_battery_life = models.IntegerField(blank=True, null=True, help_text='Remaining battery life in months')
+    ups_battery_replacement_date = models.DateField(blank=True, null=True)
+    ups_manufacturer = models.CharField(max_length=100, blank=True, null=True)
 
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    class Meta:
+        ordering = ['name']
+        verbose_name = 'IT Asset'
+        verbose_name_plural = 'IT Assets'
 
     def __str__(self):
         return f"{self.name} ({self.serial_number})"
-
-    class Meta:
-        ordering = ['-created_at']
-        verbose_name = 'IT Asset'
-        verbose_name_plural = 'IT Assets'

@@ -27,4 +27,16 @@ urlpatterns = [
     path('assets/upload/', views.asset_upload, name='asset_upload'),
     path('assets/download-template/', views.download_asset_template, name='download_asset_template'),
     path('assets/download-data/', views.download_asset_data, name='download_asset_data'),
+    
+    # Asset Type URLs
+    path('asset-types/', views.AssetTypeListView.as_view(), name='asset_type_list'),
+    path('asset-types/create/', views.AssetTypeCreateView.as_view(), name='asset_type_create'),
+    path('asset-types/<int:pk>/update/', views.AssetTypeUpdateView.as_view(), name='asset_type_update'),
+    path('asset-types/<int:pk>/delete/', views.AssetTypeDeleteView.as_view(), name='asset_type_delete'),
+    
+    # Owner Company URLs
+    path('owner-companies/', views.OwnerCompanyListView.as_view(), name='owner_company_list'),
+    path('owner-companies/create/', views.OwnerCompanyCreateView.as_view(), name='owner_company_create'),
+    path('owner-companies/<int:pk>/update/', views.OwnerCompanyUpdateView.as_view(), name='owner_company_update'),
+    path('owner-companies/<int:pk>/delete/', views.OwnerCompanyDeleteView.as_view(), name='owner_company_delete'),
 ]

@@ -7,7 +7,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db.models import Q
-from .models import Employee, ITAsset, Department, Position
+from .models import Employee, ITAsset, Department, Position, AssetType, OwnerCompany
 from .forms import EmployeeForm, ITAssetForm
 from django.http import HttpResponse
 import openpyxl
@@ -204,12 +204,12 @@ class ITAssetListView(LoginRequiredMixin, ListView):
                 Q(name__icontains=search_query) |
                 Q(serial_number__icontains=search_query) |
                 Q(model__icontains=search_query) |
-                Q(delivery_letter_code__icontains=search_query)  # Add delivery letter code to search
+                Q(delivery_letter_code__icontains=search_query)
             )
         
         # Apply asset type filter
         if asset_type:
-            queryset = queryset.filter(asset_type=asset_type)
+            queryset = queryset.filter(asset_type_id=asset_type)
         
         # Apply status filter
         if status:
@@ -223,7 +223,7 @@ class ITAssetListView(LoginRequiredMixin, ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['asset_types'] = ITAsset.ASSET_TYPE_CHOICES
+        context['asset_types'] = AssetType.objects.all()
         context['status_choices'] = ITAsset.STATUS_CHOICES
         context['manufacturers'] = ITAsset.objects.exclude(manufacturer='').values_list('manufacturer', flat=True).distinct()
         return context
@@ -471,7 +471,7 @@ def download_asset_template(request):
     # Add example row
     example = [
         'Laptop-001',
-        'Laptop',
+        'laptop',  # Use the internal name, not display name
         'SN123456',
         'ThinkPad X1',
         'Lenovo',
@@ -479,7 +479,7 @@ def download_asset_template(request):
         '00:1A:2B:3C:4D:5E',
         '00:1A:2B:3C:4D:5F',
         'DL-2024-001',
-        'Available',
+        'available',  # Use the internal status value
         '2024-01-01',
         '2024-01-15',
         '2027-01-01'
@@ -489,21 +489,21 @@ def download_asset_template(request):
     # Add available asset types
     ws.append([])  # Add empty row
     ws.append(['Available Asset Types:'])
-    for asset_type in ITAsset.ASSET_TYPE_CHOICES:
-        ws.append([asset_type[1]])
+    ws.append(['Internal Name - Display Name'])
+    for asset_type in AssetType.objects.all().order_by('name'):
+        ws.append([f'{asset_type.name} - {asset_type.display_name}'])
     
     # Add available statuses
     ws.append([])  # Add empty row
     ws.append(['Available Statuses:'])
     for status in ITAsset.STATUS_CHOICES:
-        ws.append([status[1]])
+        ws.append([status[0]])  # Use the internal status value
     
-    # Add company owners section
+    # Add owner companies section
     ws.append([])  # Add empty row
-    ws.append(['Company Owners:'])
-    companies = ['Aman', 'CTP', 'Misr Assist']
-    for company in companies:
-        ws.append([company])
+    ws.append(['Owner Companies:'])
+    for company in OwnerCompany.objects.all().order_by('name'):
+        ws.append([company.name])
     
     # Add available owners (employees) with their companies
     ws.append([])  # Add empty row
@@ -512,15 +512,15 @@ def download_asset_template(request):
     ws.append([])  # Add empty row
     
     # Group employees by company
-    for company in companies:
-        ws.append([f'--- {company} Employees ---'])
+    for company in OwnerCompany.objects.all():
+        ws.append([f'--- {company.name} Employees ---'])
         employees = Employee.objects.filter(
             is_active=True,
-            company=company
+            company=company.code
         ).order_by('first_name', 'last_name')
         
         for employee in employees:
-            ws.append([f"{employee.first_name} {employee.last_name} ({company})"])
+            ws.append([f"{employee.first_name} {employee.last_name} ({company.name})"])
         ws.append([])  # Add empty row between companies
     
     # Style the header row
@@ -529,14 +529,13 @@ def download_asset_template(request):
     
     # Style the sections headers
     ws.cell(row=4, column=1).font = openpyxl.styles.Font(bold=True)
-    ws.cell(row=7, column=1).font = openpyxl.styles.Font(bold=True)
-    ws.cell(row=10, column=1).font = openpyxl.styles.Font(bold=True)
-    ws.cell(row=13, column=1).font = openpyxl.styles.Font(bold=True)
+    ws.cell(row=5, column=1).font = openpyxl.styles.Font(italic=True)  # Style the "Internal Name - Display Name" row
     
-    # Style company headers
-    for row in range(15, 25):  # Adjust range based on your data
+    # Find and style other section headers
+    for row in range(1, ws.max_row + 1):
         cell = ws.cell(row=row, column=1)
-        if cell.value and '---' in str(cell.value):
+        if cell.value in ['Available Statuses:', 'Owner Companies:', 'Available Owners (Employees):'] or \
+           (cell.value and isinstance(cell.value, str) and cell.value.startswith('---')):
             cell.font = openpyxl.styles.Font(bold=True)
     
     # Adjust column widths
@@ -571,6 +570,15 @@ def asset_upload(request):
                 # Skip header row
                 for row in ws.iter_rows(min_row=2):
                     try:
+                        # Get or create asset type
+                        asset_type_name = row[1].value
+                        if asset_type_name:
+                            try:
+                                asset_type = AssetType.objects.get(name__iexact=asset_type_name)
+                            except AssetType.DoesNotExist:
+                                messages.warning(request, f'Asset Type "{asset_type_name}" not found. Please create it first.')
+                                continue
+
                         # Get the owner if provided
                         owner_name = row[5].value
                         owner = None
@@ -585,13 +593,13 @@ def asset_upload(request):
                         # Create asset
                         asset = ITAsset(
                             name=row[0].value,
-                            asset_type=row[1].value,
+                            asset_type=asset_type,
                             serial_number=row[2].value,
                             model=row[3].value,
                             manufacturer=row[4].value,
                             assigned_to=owner,
-                            wifi_mac=row[6].value,
-                            ethernet_mac=row[7].value,
+                            mac_address_wifi=row[6].value,
+                            mac_address_ethernet=row[7].value,
                             delivery_letter_code=row[8].value,
                             status=row[9].value,
                             purchase_date=row[10].value,
@@ -649,7 +657,7 @@ def download_asset_data(request):
     # Apply other filters
     asset_type = request.GET.get('asset_type', '')
     if asset_type:
-        assets = assets.filter(asset_type=asset_type)
+        assets = assets.filter(asset_type_id=asset_type)
     
     status = request.GET.get('status', '')
     if status:
@@ -663,7 +671,7 @@ def download_asset_data(request):
     for asset in assets:
         row = [
             asset.name,
-            asset.get_asset_type_display(),
+            asset.asset_type.name,  # Use the internal name for consistency
             asset.serial_number,
             asset.model,
             asset.manufacturer,
@@ -671,7 +679,7 @@ def download_asset_data(request):
             asset.mac_address_wifi,
             asset.mac_address_ethernet,
             asset.delivery_letter_code,
-            asset.get_status_display(),
+            asset.status,  # Use the internal status value for consistency
             asset.purchase_date,
             asset.receipt_date,
             asset.warranty_expiry
@@ -700,4 +708,74 @@ def download_asset_data(request):
     response['Content-Disposition'] = 'attachment; filename=assets.xlsx'
     
     wb.save(response)
-    return response  
+    return response
+
+# Asset Type Views
+class AssetTypeListView(LoginRequiredMixin, ListView):
+    model = AssetType
+    template_name = 'inventory/asset_type_list.html'
+    context_object_name = 'asset_types'
+
+class AssetTypeCreateView(LoginRequiredMixin, CreateView):
+    model = AssetType
+    template_name = 'inventory/asset_type_form.html'
+    fields = ['name', 'display_name']
+    success_url = reverse_lazy('inventory:asset_type_list')
+
+    def form_valid(self, form):
+        messages.success(self.request, 'Asset Type created successfully.')
+        return super().form_valid(form)
+
+class AssetTypeUpdateView(LoginRequiredMixin, UpdateView):
+    model = AssetType
+    template_name = 'inventory/asset_type_form.html'
+    fields = ['name', 'display_name']
+    success_url = reverse_lazy('inventory:asset_type_list')
+
+    def form_valid(self, form):
+        messages.success(self.request, 'Asset Type updated successfully.')
+        return super().form_valid(form)
+
+class AssetTypeDeleteView(LoginRequiredMixin, DeleteView):
+    model = AssetType
+    template_name = 'inventory/asset_type_confirm_delete.html'
+    success_url = reverse_lazy('inventory:asset_type_list')
+
+    def delete(self, request, *args, **kwargs):
+        messages.success(request, 'Asset Type deleted successfully.')
+        return super().delete(request, *args, **kwargs)
+
+# Owner Company Views
+class OwnerCompanyListView(LoginRequiredMixin, ListView):
+    model = OwnerCompany
+    template_name = 'inventory/owner_company_list.html'
+    context_object_name = 'companies'
+
+class OwnerCompanyCreateView(LoginRequiredMixin, CreateView):
+    model = OwnerCompany
+    template_name = 'inventory/owner_company_form.html'
+    fields = ['code', 'name']
+    success_url = reverse_lazy('inventory:owner_company_list')
+
+    def form_valid(self, form):
+        messages.success(self.request, 'Owner Company created successfully.')
+        return super().form_valid(form)
+
+class OwnerCompanyUpdateView(LoginRequiredMixin, UpdateView):
+    model = OwnerCompany
+    template_name = 'inventory/owner_company_form.html'
+    fields = ['code', 'name']
+    success_url = reverse_lazy('inventory:owner_company_list')
+
+    def form_valid(self, form):
+        messages.success(self.request, 'Owner Company updated successfully.')
+        return super().form_valid(form)
+
+class OwnerCompanyDeleteView(LoginRequiredMixin, DeleteView):
+    model = OwnerCompany
+    template_name = 'inventory/owner_company_confirm_delete.html'
+    success_url = reverse_lazy('inventory:owner_company_list')
+
+    def delete(self, request, *args, **kwargs):
+        messages.success(request, 'Owner Company deleted successfully.')
+        return super().delete(request, *args, **kwargs)  

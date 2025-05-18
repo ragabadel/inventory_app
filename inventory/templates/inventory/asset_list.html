@@ -33,8 +33,8 @@
                     <select name="asset_type" class="form-select">
                         <option value="">All Types</option>
                         {% for type in asset_types %}
-                            <option value="{{ type.0 }}" {% if request.GET.asset_type == type.0 %}selected{% endif %}>
-                                {{ type.1 }}
+                            <option value="{{ type.id }}" {% if request.GET.asset_type == type.id|stringformat:"s" %}selected{% endif %}>
+                                {{ type.display_name }}
                             </option>
                         {% endfor %}
                     </select>
@@ -89,7 +89,7 @@
                         {% for asset in assets %}
                             <tr>
                                 <td>{{ asset.name }}</td>
-                                <td>{{ asset.get_asset_type_display }}</td>
+                                <td>{{ asset.asset_type.display_name }}</td>
                                 <td>{{ asset.serial_number }}</td>
                                 <td>{{ asset.manufacturer }}</td>
                                 <td>
