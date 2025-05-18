@@ -55,7 +55,9 @@ ROOT_URLCONF = 'inventory_app.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [
+            BASE_DIR / 'inventory' / 'templates',
+        ],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -129,3 +131,8 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Authentication Settings
+LOGIN_REDIRECT_URL = '/inventory/'  # Redirect to inventory home page after login
+LOGOUT_REDIRECT_URL = '/accounts/login/'  # Redirect to login page after logout
+LOGIN_URL = '/accounts/login/'  # URL where requests are redirected for login

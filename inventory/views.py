@@ -14,6 +14,7 @@ import openpyxl
 from openpyxl import Workbook
 from datetime import datetime
 
+@login_required
 def home(request):
     return render(request, 'inventory/home.html')
 

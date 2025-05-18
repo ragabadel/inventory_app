@@ -1,0 +1,213 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Login to Inventory Management System">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="{% static 'images/favicon.ico' %}">
+    
+    <title>Login - Inventory Management System</title>
+    
+    <!-- CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary-color: #0d6efd;
+            --secondary-color: #6c757d;
+            --success-color: #198754;
+            --light-color: #f8f9fa;
+            --dark-color: #212529;
+            --card-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, var(--light-color) 0%, #ffffff 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+        }
+        
+        .login-container {
+            max-width: 420px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+        
+        .login-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        
+        .login-header i {
+            font-size: 3rem;
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+        }
+        
+        .login-header h1 {
+            font-size: 1.75rem;
+            color: var(--dark-color);
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+        
+        .login-header p {
+            color: var(--secondary-color);
+            font-size: 1rem;
+        }
+        
+        .login-form {
+            background: white;
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: var(--card-shadow);
+        }
+        
+        .form-floating {
+            margin-bottom: 1rem;
+        }
+        
+        .form-floating label {
+            color: var(--secondary-color);
+        }
+        
+        .form-control:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+        }
+        
+        .btn-login {
+            width: 100%;
+            padding: 0.75rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .login-footer {
+            text-align: center;
+            margin-top: 1.5rem;
+            color: var(--secondary-color);
+            font-size: 0.875rem;
+        }
+        
+        .alert {
+            border: none;
+            border-radius: 0.5rem;
+        }
+        
+        .alert-danger {
+            background-color: #fff2f2;
+            color: #dc3545;
+        }
+        
+        .form-check-input:checked {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="login-container">
+            <!-- Login Header -->
+            <div class="login-header">
+                <i class="fas fa-boxes-stacked"></i>
+                <h1>Welcome Back</h1>
+                <p>Sign in to continue to Inventory Management System</p>
+            </div>
+
+            <!-- Login Form -->
+            <div class="login-form">
+                {% if messages %}
+                <div class="messages mb-4">
+                    {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                {% if form.errors %}
+                <div class="alert alert-danger mb-4" role="alert">
+                    <i class="fas fa-exclamation-circle me-2"></i>
+                    {% if form.errors.items|length == 1 %}Please correct the error below.{% else %}Please correct the errors below.{% endif %}
+                </div>
+                {% endif %}
+
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    
+                    <!-- Username -->
+                    <div class="form-floating {% if form.username.errors %}is-invalid{% endif %}">
+                        <input type="text" 
+                               name="username" 
+                               class="form-control {% if form.username.errors %}is-invalid{% endif %}" 
+                               id="id_username" 
+                               placeholder="Username"
+                               required
+                               value="{{ form.username.value|default:'' }}">
+                        <label for="id_username">Username</label>
+                        {% if form.username.errors %}
+                        <div class="invalid-feedback">
+                            {{ form.username.errors|join:", " }}
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Password -->
+                    <div class="form-floating {% if form.password.errors %}is-invalid{% endif %}">
+                        <input type="password" 
+                               name="password" 
+                               class="form-control {% if form.password.errors %}is-invalid{% endif %}" 
+                               id="id_password" 
+                               placeholder="Password"
+                               required>
+                        <label for="id_password">Password</label>
+                        {% if form.password.errors %}
+                        <div class="invalid-feedback">
+                            {{ form.password.errors|join:", " }}
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Remember Me -->
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" name="remember" id="id_remember">
+                        <label class="form-check-label" for="id_remember">
+                            Remember me
+                        </label>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <button type="submit" class="btn btn-primary btn-login">
+                        <i class="fas fa-sign-in-alt me-2"></i>Sign In
+                    </button>
+
+                    <!-- Hidden Next URL -->
+                    <input type="hidden" name="next" value="{{ next }}">
+                </form>
+            </div>
+
+            <!-- Login Footer -->
+            <div class="login-footer">
+                <p class="mb-0">
+                    © {% now "Y" %} Inventory Management System. All rights reserved.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html> 
