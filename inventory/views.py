@@ -13,6 +13,8 @@ from django.http import HttpResponse
 import openpyxl
 from openpyxl import Workbook
 from datetime import datetime, timedelta
+from openpyxl.utils import get_column_letter
+from openpyxl.worksheet.datavalidation import DataValidation
 
 @login_required
 def home(request):
@@ -74,7 +76,7 @@ def employee_list(request):
     # Get search and filter parameters
     search_query = request.GET.get('search', '')
     department_id = request.GET.get('department', '')
-    company = request.GET.get('company', '')
+    company_id = request.GET.get('company', '')
     
     # Start with all employees
     employees = Employee.objects.all()
@@ -94,11 +96,14 @@ def employee_list(request):
         employees = employees.filter(department_id=department_id)
     
     # Apply company filter if provided
-    if company:
-        employees = employees.filter(company=company)
+    if company_id:
+        employees = employees.filter(company_id=company_id)
     
     # Get all departments for filter dropdown
     departments = Department.objects.all()
+    
+    # Get all companies for filter dropdown
+    companies = OwnerCompany.objects.all()
     
     # Paginate the results
     paginator = Paginator(employees, 10)  # Show 10 employees per page
@@ -123,7 +128,7 @@ def employee_list(request):
     context = {
         'employees': page_obj,
         'departments': departments,
-        'companies': Employee.COMPANY_CHOICES,
+        'companies': companies,
         'is_paginated': page_obj.has_other_pages(),
         'page_obj': page_obj,
         'page_range': page_range,
@@ -343,6 +348,14 @@ def employee_upload(request):
                             department = None
                             position = None
                         
+                        # Get company
+                        company_name = row[7].value
+                        try:
+                            company = OwnerCompany.objects.get(name=company_name)
+                        except OwnerCompany.DoesNotExist:
+                            messages.error(request, f'Row {row[0].row}: Company "{company_name}" not found. Please create it first.')
+                            continue
+                        
                         # Create employee
                         employee = Employee(
                             employee_id=row[0].value,
@@ -352,7 +365,7 @@ def employee_upload(request):
                             email=row[4].value,
                             department=department,
                             position=position,
-                            company=row[7].value,
+                            company=company,  # Use the company object
                             hire_date=row[8].value
                         )
                         employee.save()
@@ -395,7 +408,7 @@ def download_employee_template(request):
         'john.doe@example.com',
         'IT',
         'Software Engineer',
-        'Main Company',
+        'CTP',
         '2024-01-01'
     ]
     ws.append(example)
@@ -406,21 +419,43 @@ def download_employee_template(request):
         ws.append([])  # Add empty row
         ws.append(['Available Departments:'])
         for dept in departments:
-            ws.append([dept.name])
+            ws.append([dept.get_name_display()])
+    
+    # Add available companies
+    companies = OwnerCompany.objects.all()
+    if companies.exists():
+        ws.append([])  # Add empty row
+        ws.append(['Available Companies:'])
+        for company in companies:
+            ws.append([company.name])
     
     # Style the header row
     for cell in ws[1]:
         cell.font = openpyxl.styles.Font(bold=True)
     
-    # Style the departments section
+    # Style the sections headers
     if departments.exists():
         dept_header = ws.cell(row=4, column=1)
         dept_header.font = openpyxl.styles.Font(bold=True)
     
+    if companies.exists():
+        company_header = ws.cell(row=departments.count() + 6, column=1)
+        company_header.font = openpyxl.styles.Font(bold=True)
+    
+    # Add data validation for company column
+    company_validation = DataValidation(type="list", formula1=f'"{",".join(companies.values_list("name", flat=True))}"')
+    company_validation.add(f'H2:H{len(example) + 1}')
+    ws.add_data_validation(company_validation)
+    
+    # Add data validation for department column
+    department_validation = DataValidation(type="list", formula1=f'"{",".join(departments.values_list("name", flat=True))}"')
+    department_validation.add(f'F2:F{len(example) + 1}')
+    ws.add_data_validation(department_validation)
+    
     # Adjust column widths
     for column in ws.columns:
         max_length = 0
-        column_letter = openpyxl.utils.get_column_letter(column[0].column)
+        column_letter = get_column_letter(column[0].column)
         for cell in column:
             try:
                 if len(str(cell.value)) > max_length:
@@ -467,7 +502,7 @@ def download_employee_data(request):
             employee.email,
             str(employee.department) if employee.department else '',
             str(employee.position) if employee.position else '',
-            employee.company,
+            str(employee.company.name) if employee.company else '',  # Convert company to string
             employee.hire_date
         ]
         ws.append(row)
@@ -479,7 +514,7 @@ def download_employee_data(request):
     # Adjust column widths
     for column in ws.columns:
         max_length = 0
-        column_letter = openpyxl.utils.get_column_letter(column[0].column)
+        column_letter = get_column_letter(column[0].column)
         for cell in column:
             try:
                 if len(str(cell.value)) > max_length:
@@ -508,11 +543,11 @@ def download_asset_template(request):
         'Serial Number *',
         'Model',
         'Manufacturer',
-        'Owner',
+        'Owner Company *',
+        'Assigned Employee ID',
         'Wi-Fi MAC Address',
         'Ethernet MAC Address',
         'Delivery Letter Code',
-        'Status *',
         'Purchase Date',
         'Receipt Date',
         'Warranty Expiry'
@@ -526,11 +561,11 @@ def download_asset_template(request):
         'SN123456',
         'ThinkPad X1',
         'Lenovo',
-        'John Doe (CTP)',
+        'CTP',  # Company name
+        'EMP001',  # Employee ID
         '00:1A:2B:3C:4D:5E',
         '00:1A:2B:3C:4D:5F',
         'DL-2024-001',
-        'available',  # Use the internal status value
         '2024-01-01',
         '2024-01-15',
         '2027-01-01'
@@ -544,23 +579,17 @@ def download_asset_template(request):
     for asset_type in AssetType.objects.all().order_by('name'):
         ws.append([f'{asset_type.name} - {asset_type.display_name}'])
     
-    # Add available statuses
-    ws.append([])  # Add empty row
-    ws.append(['Available Statuses:'])
-    for status in ITAsset.STATUS_CHOICES:
-        ws.append([status[0]])  # Use the internal status value
-    
     # Add owner companies section
     ws.append([])  # Add empty row
     ws.append(['Owner Companies:'])
     for company in OwnerCompany.objects.all().order_by('name'):
         ws.append([company.name])
     
-    # Add available owners (employees) with their companies
+    # Add available employees section
     ws.append([])  # Add empty row
-    ws.append(['Available Owners (Employees):'])
-    ws.append(['Format: Full Name (Company)'])
-    ws.append([])  # Add empty row
+    ws.append(['Available Employees:'])
+    ws.append(['Format: Employee ID - Full Name (Company)'])
+    ws.append([])
     
     # Group employees by company
     for company in OwnerCompany.objects.all():
@@ -568,10 +597,10 @@ def download_asset_template(request):
         employees = Employee.objects.filter(
             is_active=True,
             company=company.code
-        ).order_by('first_name', 'last_name')
+        ).order_by('employee_id')
         
         for employee in employees:
-            ws.append([f"{employee.first_name} {employee.last_name} ({company.name})"])
+            ws.append([f"{employee.employee_id} - {employee.get_full_name()} ({company.name})"])
         ws.append([])  # Add empty row between companies
     
     # Style the header row
@@ -585,14 +614,14 @@ def download_asset_template(request):
     # Find and style other section headers
     for row in range(1, ws.max_row + 1):
         cell = ws.cell(row=row, column=1)
-        if cell.value in ['Available Statuses:', 'Owner Companies:', 'Available Owners (Employees):'] or \
+        if cell.value in ['Owner Companies:', 'Available Employees:'] or \
            (cell.value and isinstance(cell.value, str) and cell.value.startswith('---')):
             cell.font = openpyxl.styles.Font(bold=True)
     
     # Adjust column widths
     for column in ws.columns:
         max_length = 0
-        column_letter = openpyxl.utils.get_column_letter(column[0].column)
+        column_letter = get_column_letter(column[0].column)
         for cell in column:
             try:
                 if len(str(cell.value)) > max_length:
@@ -621,25 +650,51 @@ def asset_upload(request):
                 # Skip header row
                 for row in ws.iter_rows(min_row=2):
                     try:
+                        # Check required fields
+                        required_fields = {
+                            'name': row[0].value,
+                            'asset_type': row[1].value,
+                            'serial_number': row[2].value,
+                            'owner_company': row[5].value,
+                            'model': row[3].value,
+                            'mac_address_ethernet': row[8].value
+                        }
+                        
+                        # Validate required fields
+                        missing_fields = [field for field, value in required_fields.items() if not value]
+                        if missing_fields:
+                            messages.error(request, f'Row {row[0].row}: Missing required fields: {", ".join(missing_fields)}')
+                            continue
+
                         # Get or create asset type
                         asset_type_name = row[1].value
-                        if asset_type_name:
-                            try:
-                                asset_type = AssetType.objects.get(name__iexact=asset_type_name)
-                            except AssetType.DoesNotExist:
-                                messages.warning(request, f'Asset Type "{asset_type_name}" not found. Please create it first.')
-                                continue
+                        try:
+                            asset_type = AssetType.objects.get(name__iexact=asset_type_name)
+                        except AssetType.DoesNotExist:
+                            messages.error(request, f'Row {row[0].row}: Asset Type "{asset_type_name}" not found. Please create it first.')
+                            continue
 
-                        # Get the owner if provided
-                        owner_name = row[5].value
-                        owner = None
-                        if owner_name:
+                        # Get the owner company
+                        owner_company_name = row[5].value
+                        try:
+                            owner_company = OwnerCompany.objects.get(name__iexact=owner_company_name)
+                        except OwnerCompany.DoesNotExist:
+                            messages.error(request, f'Row {row[0].row}: Owner Company "{owner_company_name}" not found. Please create it first.')
+                            continue
+
+                        # Get the assigned employee if provided
+                        assigned_employee_id = row[6].value
+                        assigned_employee = None
+                        if assigned_employee_id:
                             try:
-                                # Try to find owner by full name
-                                first_name, last_name = owner_name.split(' ', 1)
-                                owner = Employee.objects.get(first_name=first_name, last_name=last_name)
-                            except (ValueError, Employee.DoesNotExist):
-                                messages.warning(request, f'Owner "{owner_name}" not found. Asset will be created without owner.')
+                                assigned_employee = Employee.objects.get(employee_id=assigned_employee_id)
+                                # Verify employee belongs to the owner company
+                                if assigned_employee.company != owner_company.code:
+                                    messages.error(request, f'Row {row[0].row}: Employee {assigned_employee_id} does not belong to {owner_company_name}. Please assign an employee from the correct company.')
+                                    continue
+                            except Employee.DoesNotExist:
+                                messages.error(request, f'Row {row[0].row}: Employee with ID {assigned_employee_id} not found. Please use a valid employee ID.')
+                                continue
                         
                         # Create asset
                         asset = ITAsset(
@@ -648,21 +703,22 @@ def asset_upload(request):
                             serial_number=row[2].value,
                             model=row[3].value,
                             manufacturer=row[4].value,
-                            assigned_to=owner,
-                            mac_address_wifi=row[6].value,
-                            mac_address_ethernet=row[7].value,
-                            delivery_letter_code=row[8].value,
-                            status=row[9].value,
+                            owner=owner_company,
+                            assigned_to=assigned_employee,
+                            mac_address_wifi=row[7].value,
+                            mac_address_ethernet=row[8].value,
+                            delivery_letter_code=row[9].value,
+                            status='assigned' if assigned_employee else 'available',
                             purchase_date=row[10].value,
                             receipt_date=row[11].value,
                             warranty_expiry=row[12].value
                         )
                         asset.save()
+                        messages.success(request, f'Row {row[0].row}: Asset "{asset.name}" created successfully.')
                     except Exception as e:
-                        messages.error(request, f'Error processing row: {str(e)}')
+                        messages.error(request, f'Row {row[0].row}: Error processing row: {str(e)}')
                         continue
                 
-                messages.success(request, 'Assets uploaded successfully!')
                 return redirect('inventory:asset_list')
             except Exception as e:
                 messages.error(request, f'Error uploading file: {str(e)}')
@@ -744,7 +800,7 @@ def download_asset_data(request):
     # Adjust column widths
     for column in ws.columns:
         max_length = 0
-        column_letter = openpyxl.utils.get_column_letter(column[0].column)
+        column_letter = get_column_letter(column[0].column)
         for cell in column:
             try:
                 if len(str(cell.value)) > max_length:

@@ -43,8 +43,8 @@
                     <select name="company" class="form-select">
                         <option value="">All Companies</option>
                         {% for company in companies %}
-                            <option value="{{ company.0 }}" {% if request.GET.company == company.0 %}selected{% endif %}>
-                                {{ company.1 }}
+                            <option value="{{ company.id }}" {% if request.GET.company == company.id|stringformat:"i" %}selected{% endif %}>
+                                {{ company.name }}
                             </option>
                         {% endfor %}
                     </select>
@@ -81,7 +81,7 @@
                                 <td>{{ employee.get_full_name }}</td>
                                 <td>{{ employee.position }}</td>
                                 <td>{{ employee.department.get_name_display }}</td>
-                                <td>{{ employee.get_company_display }}</td>
+                                <td>{{ employee.company.name }}</td>
                                 <td>
                                     <span class="badge {% if employee.is_active %}bg-success{% else %}bg-danger{% endif %}">
                                         {{ employee.is_active|yesno:"Active,Inactive" }}

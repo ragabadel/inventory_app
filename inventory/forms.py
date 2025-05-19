@@ -1,5 +1,5 @@
 from django import forms
-from .models import Employee, ITAsset, Department
+from .models import Employee, ITAsset, Department, OwnerCompany
 
 class EmployeeForm(forms.ModelForm):
     """Form for creating and updating Employee records."""
@@ -20,15 +20,43 @@ class EmployeeForm(forms.ModelForm):
             'is_active',
         ]
         widgets = {
-            'employee_id': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter employee ID'}),
-            'national_id': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter 14-digit national ID'}),
-            'first_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter first name'}),
-            'last_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter last name'}),
-            'email': forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'Enter email address'}),
-            'phone_number': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter phone number'}),
+            'employee_id': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Enter employee ID (e.g., EMP001)',
+                'pattern': '^EMP\d{3}$',
+                'title': 'Employee ID must be in the format EMP001'
+            }),
+            'national_id': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Enter 14-digit national ID',
+                'pattern': '^\d{14}$',
+                'title': 'National ID must be exactly 14 digits'
+            }),
+            'first_name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Enter first name'
+            }),
+            'last_name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Enter last name'
+            }),
+            'email': forms.EmailInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Enter email address'
+            }),
+            'phone_number': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Enter phone number'
+            }),
             'department': forms.Select(attrs={'class': 'form-select'}),
-            'position': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter position'}),
-            'hire_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'position': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Enter position'
+            }),
+            'hire_date': forms.DateInput(attrs={
+                'class': 'form-control',
+                'type': 'date'
+            }),
             'company': forms.Select(attrs={'class': 'form-select'}),
             'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
@@ -45,13 +73,20 @@ class EmployeeForm(forms.ModelForm):
         # Update department choices
         self.fields['department'].queryset = Department.objects.all().order_by('name')
         self.fields['department'].empty_label = "Select Department"
-        self.fields['department'].label_from_instance = lambda obj: obj.get_name_display()
         
         # Update company choices
+        self.fields['company'].queryset = OwnerCompany.objects.all().order_by('name')
         self.fields['company'].empty_label = "Select Company"
         
         # Add help text for national ID
         self.fields['national_id'].help_text = "Enter the 14-digit national ID number"
+        
+        # Add help text for employee ID
+        self.fields['employee_id'].help_text = "Enter employee ID (letters and numbers only)"
+        self.fields['employee_id'].widget.attrs.update({
+            'pattern': '^[A-Za-z0-9]+$',
+            'title': 'Employee ID must contain only letters and numbers'
+        })
 
     def clean_email(self):
         email = self.cleaned_data.get('email')
@@ -61,6 +96,10 @@ class EmployeeForm(forms.ModelForm):
 
     def clean_employee_id(self):
         employee_id = self.cleaned_data.get('employee_id')
+        if not employee_id:
+            raise forms.ValidationError('Employee ID is required.')
+        if not employee_id.isalnum():
+            raise forms.ValidationError('Employee ID must contain only letters and numbers.')
         if Employee.objects.exclude(pk=self.instance.pk if self.instance else None).filter(employee_id=employee_id).exists():
             raise forms.ValidationError('This employee ID is already in use.')
         return employee_id
@@ -78,6 +117,12 @@ class EmployeeForm(forms.ModelForm):
         if not department:
             raise forms.ValidationError('Please select a department.')
         return department
+
+    def clean_company(self):
+        company = self.cleaned_data.get('company')
+        if not company:
+            raise forms.ValidationError('Please select a company.')
+        return company
 
 class ITAssetForm(forms.ModelForm):
     """Form for creating and updating ITAsset records."""

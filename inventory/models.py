@@ -49,14 +49,23 @@ class Position(models.Model):
     class Meta:
         ordering = ['department', 'name']
 
-class Employee(models.Model):
-    COMPANY_CHOICES = [
-        ('ACD', 'ACD'),
-        ('CTP', 'CTP'),
-    ]
+class OwnerCompany(models.Model):
+    code = models.CharField(max_length=20, unique=True)
+    name = models.CharField(max_length=100)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
+    class Meta:
+        ordering = ['name']
+        verbose_name = 'Owner Company'
+        verbose_name_plural = 'Owner Companies'
+
+    def __str__(self):
+        return self.name
+
+class Employee(models.Model):
     user = models.OneToOneField(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='employee_profile')
-    employee_id = models.CharField(max_length=20, unique=True)
+    employee_id = models.CharField(max_length=20, unique=True, help_text="Enter employee ID (e.g., EMP001 or ABC123)")
     national_id = models.CharField(max_length=14, unique=True, help_text="Enter the 14-digit national ID number")
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)
@@ -65,7 +74,7 @@ class Employee(models.Model):
     department = models.ForeignKey(Department, on_delete=models.PROTECT, related_name='employees')
     position = models.CharField(max_length=100)
     hire_date = models.DateField()
-    company = models.CharField(max_length=3, choices=COMPANY_CHOICES, default='ACD')
+    company = models.ForeignKey(OwnerCompany, on_delete=models.PROTECT, related_name='employees')
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -94,20 +103,6 @@ class AssetType(models.Model):
 
     def __str__(self):
         return self.display_name
-
-class OwnerCompany(models.Model):
-    code = models.CharField(max_length=20, unique=True)
-    name = models.CharField(max_length=100)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        ordering = ['name']
-        verbose_name = 'Owner Company'
-        verbose_name_plural = 'Owner Companies'
-
-    def __str__(self):
-        return self.name
 
 class ITAsset(models.Model):
     STATUS_CHOICES = [
