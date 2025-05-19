@@ -541,16 +541,17 @@ def download_asset_template(request):
         'Asset Name *',
         'Asset Type *',
         'Serial Number *',
-        'Model',
+        'Model *',
         'Manufacturer',
         'Owner Company *',
         'Assigned Employee ID',
         'Wi-Fi MAC Address',
-        'Ethernet MAC Address',
+        'Ethernet MAC Address *',
         'Delivery Letter Code',
         'Purchase Date',
         'Receipt Date',
-        'Warranty Expiry'
+        'Warranty Expiry',
+        'Status *'  # Added status field
     ]
     ws.append(headers)
     
@@ -568,7 +569,8 @@ def download_asset_template(request):
         'DL-2024-001',
         '2024-01-01',
         '2024-01-15',
-        '2027-01-01'
+        '2027-01-01',
+        'available'  # Default status
     ]
     ws.append(example)
     
@@ -578,6 +580,13 @@ def download_asset_template(request):
     ws.append(['Internal Name - Display Name'])
     for asset_type in AssetType.objects.all().order_by('name'):
         ws.append([f'{asset_type.name} - {asset_type.display_name}'])
+    
+    # Add available statuses
+    ws.append([])  # Add empty row
+    ws.append(['Available Statuses:'])
+    ws.append(['Internal Name - Display Name'])
+    for status_code, status_name in ITAsset.STATUS_CHOICES:
+        ws.append([f'{status_code} - {status_name}'])
     
     # Add owner companies section
     ws.append([])  # Add empty row
@@ -596,7 +605,7 @@ def download_asset_template(request):
         ws.append([f'--- {company.name} Employees ---'])
         employees = Employee.objects.filter(
             is_active=True,
-            company=company.code
+            company=company
         ).order_by('employee_id')
         
         for employee in employees:
@@ -614,9 +623,37 @@ def download_asset_template(request):
     # Find and style other section headers
     for row in range(1, ws.max_row + 1):
         cell = ws.cell(row=row, column=1)
-        if cell.value in ['Owner Companies:', 'Available Employees:'] or \
+        if cell.value in ['Owner Companies:', 'Available Employees:', 'Available Statuses:'] or \
            (cell.value and isinstance(cell.value, str) and cell.value.startswith('---')):
             cell.font = openpyxl.styles.Font(bold=True)
+    
+    # Add data validation for asset type column
+    asset_types = AssetType.objects.all()
+    if asset_types.exists():
+        asset_type_validation = DataValidation(
+            type="list",
+            formula1=f'"{",".join(asset_types.values_list("name", flat=True))}"'
+        )
+        asset_type_validation.add(f'B2:B{len(example) + 1}')
+        ws.add_data_validation(asset_type_validation)
+    
+    # Add data validation for company column
+    companies = OwnerCompany.objects.all()
+    if companies.exists():
+        company_validation = DataValidation(
+            type="list",
+            formula1=f'"{",".join(companies.values_list("name", flat=True))}"'
+        )
+        company_validation.add(f'F2:F{len(example) + 1}')
+        ws.add_data_validation(company_validation)
+    
+    # Add data validation for status column
+    status_validation = DataValidation(
+        type="list",
+        formula1=f'"{",".join([status[0] for status in ITAsset.STATUS_CHOICES])}"'
+    )
+    status_validation.add(f'N2:N{len(example) + 1}')
+    ws.add_data_validation(status_validation)
     
     # Adjust column widths
     for column in ws.columns:
@@ -655,9 +692,10 @@ def asset_upload(request):
                             'name': row[0].value,
                             'asset_type': row[1].value,
                             'serial_number': row[2].value,
-                            'owner_company': row[5].value,
                             'model': row[3].value,
-                            'mac_address_ethernet': row[8].value
+                            'owner_company': row[5].value,
+                            'mac_address_ethernet': row[8].value,
+                            'status': row[13].value  # Added status field
                         }
                         
                         # Validate required fields
@@ -682,6 +720,12 @@ def asset_upload(request):
                             messages.error(request, f'Row {row[0].row}: Owner Company "{owner_company_name}" not found. Please create it first.')
                             continue
 
+                        # Validate status
+                        status = row[13].value
+                        if status not in dict(ITAsset.STATUS_CHOICES):
+                            messages.error(request, f'Row {row[0].row}: Invalid status "{status}". Please use one of the available statuses.')
+                            continue
+
                         # Get the assigned employee if provided
                         assigned_employee_id = row[6].value
                         assigned_employee = None
@@ -689,7 +733,7 @@ def asset_upload(request):
                             try:
                                 assigned_employee = Employee.objects.get(employee_id=assigned_employee_id)
                                 # Verify employee belongs to the owner company
-                                if assigned_employee.company != owner_company.code:
+                                if assigned_employee.company != owner_company:
                                     messages.error(request, f'Row {row[0].row}: Employee {assigned_employee_id} does not belong to {owner_company_name}. Please assign an employee from the correct company.')
                                     continue
                             except Employee.DoesNotExist:
@@ -708,7 +752,7 @@ def asset_upload(request):
                             mac_address_wifi=row[7].value,
                             mac_address_ethernet=row[8].value,
                             delivery_letter_code=row[9].value,
-                            status='assigned' if assigned_employee else 'available',
+                            status=status,  # Use the provided status
                             purchase_date=row[10].value,
                             receipt_date=row[11].value,
                             warranty_expiry=row[12].value
