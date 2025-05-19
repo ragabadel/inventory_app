@@ -12,11 +12,62 @@ from .forms import EmployeeForm, ITAssetForm
 from django.http import HttpResponse
 import openpyxl
 from openpyxl import Workbook
-from datetime import datetime
+from datetime import datetime, timedelta
 
 @login_required
 def home(request):
-    return render(request, 'inventory/home.html')
+    # Get total counts
+    total_assets = ITAsset.objects.count()
+    total_employees = Employee.objects.count()
+    available_assets = ITAsset.objects.filter(status='available').count()
+    assigned_assets = ITAsset.objects.filter(status='assigned').count()
+    maintenance_assets = ITAsset.objects.filter(status='maintenance').count()
+    retired_assets = ITAsset.objects.filter(status='retired').count()
+
+    # Get asset type distribution
+    asset_types = AssetType.objects.all()
+    asset_type_distribution = []
+    for asset_type in asset_types:
+        count = ITAsset.objects.filter(asset_type=asset_type).count()
+        asset_type_distribution.append({
+            'name': asset_type.display_name,
+            'count': count
+        })
+
+    # Get owner company distribution
+    owner_companies = OwnerCompany.objects.all()
+    owner_company_distribution = []
+    for company in owner_companies:
+        count = ITAsset.objects.filter(owner=company).count()
+        owner_company_distribution.append({
+            'name': company.name,
+            'count': count
+        })
+
+    # Get recent assets
+    recent_assets = ITAsset.objects.select_related('asset_type', 'owner', 'assigned_to').order_by('-id')[:5]
+
+    # Get assets with expiring warranty (within 3 months)
+    today = datetime.now().date()
+    three_months_later = today + timedelta(days=90)
+    expiring_warranty_assets = ITAsset.objects.filter(
+        warranty_expiry__gte=today,
+        warranty_expiry__lte=three_months_later
+    ).select_related('asset_type', 'owner', 'assigned_to')
+
+    context = {
+        'total_assets': total_assets,
+        'total_employees': total_employees,
+        'available_assets': available_assets,
+        'assigned_assets': assigned_assets,
+        'maintenance_assets': maintenance_assets,
+        'retired_assets': retired_assets,
+        'asset_type_distribution': asset_type_distribution,
+        'owner_company_distribution': owner_company_distribution,
+        'recent_assets': recent_assets,
+        'expiring_warranty_assets': expiring_warranty_assets,
+    }
+    return render(request, 'inventory/home.html', context)
 
 @login_required
 def employee_list(request):
