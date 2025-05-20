@@ -7,11 +7,12 @@ urlpatterns = [
     path('', views.home, name='home'),
     
     # Employee URLs
-    path('employees/', views.employee_list, name='employee_list'),
-    path('employees/create/', views.employee_create, name='employee_create'),
-    path('employees/<int:pk>/', views.employee_detail, name='employee_detail'),
-    path('employees/<int:pk>/update/', views.employee_update, name='employee_update'),
-    path('employees/<int:pk>/delete/', views.employee_delete, name='employee_delete'),
+    path('employees/', views.EmployeeListView.as_view(), name='employee_list'),
+    path('employees/create/', views.EmployeeCreateView.as_view(), name='employee_create'),
+    path('employees/<int:pk>/', views.EmployeeDetailView.as_view(), name='employee_detail'),
+    path('employees/<int:pk>/update/', views.EmployeeUpdateView.as_view(), name='employee_update'),
+    path('employees/<int:pk>/delete/', views.EmployeeDeleteView.as_view(), name='employee_delete'),
+    path('employees/<int:pk>/pdf/', views.EmployeePDFView.as_view(), name='employee_pdf'),
     path('employees/<int:pk>/toggle-status/', views.employee_toggle_status, name='employee_toggle_status'),
     path('employees/upload/', views.employee_upload, name='employee_upload'),
     path('employees/download-template/', views.download_employee_template, name='download_employee_template'),

@@ -252,6 +252,71 @@
                 </div>
             </div>
         </div>
+
+        <!-- Device History -->
+        <div class="col-12 mt-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">Device History</h5>
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-sm btn-outline-primary" id="filterAll">All</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary" id="filterReceived">Received</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary" id="filterAssigned">Assigned</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary" id="filterMaintenance">Maintenance</button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="historyTable">
+                            <thead>
+                                <tr>
+                                    <th>Device</th>
+                                    <th>Type</th>
+                                    <th>Action</th>
+                                    <th>Employee</th>
+                                    <th>Date</th>
+                                    <th>Notes</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for history in asset_history %}
+                                <tr class="history-row" data-action="{{ history.action }}">
+                                    <td>
+                                        <a href="{% url 'inventory:asset_detail' history.asset.pk %}" class="text-decoration-none">
+                                            {{ history.asset.name }}
+                                        </a>
+                                    </td>
+                                    <td>{{ history.asset.asset_type.display_name }}</td>
+                                    <td>
+                                        <span class="badge {% if history.action == 'received' %}bg-success{% elif history.action == 'assigned' %}bg-primary{% elif history.action == 'maintenance' %}bg-warning{% elif history.action == 'returned' %}bg-info{% else %}bg-secondary{% endif %}">
+                                            {{ history.get_action_display }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if history.employee %}
+                                            <a href="{% url 'inventory:employee_detail' history.employee.pk %}" class="text-decoration-none">
+                                                {{ history.employee.get_full_name }}
+                                            </a>
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ history.date|date:"M d, Y H:i" }}</td>
+                                    <td>{{ history.notes|truncatechars:50 }}</td>
+                                    <td>
+                                        <span class="badge {% if history.asset.status == 'available' %}bg-success{% elif history.asset.status == 'assigned' %}bg-primary{% elif history.asset.status == 'maintenance' %}bg-warning{% else %}bg-secondary{% endif %}">
+                                            {{ history.asset.get_status_display }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}
@@ -319,6 +384,34 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
         }
+    });
+
+    // Device History Filtering
+    const filterButtons = {
+        'filterAll': 'all',
+        'filterReceived': 'received',
+        'filterAssigned': 'assigned',
+        'filterMaintenance': 'maintenance'
+    };
+
+    Object.entries(filterButtons).forEach(([buttonId, action]) => {
+        document.getElementById(buttonId).addEventListener('click', function() {
+            // Update button states
+            Object.keys(filterButtons).forEach(id => {
+                document.getElementById(id).classList.remove('active');
+            });
+            this.classList.add('active');
+
+            // Filter rows
+            const rows = document.querySelectorAll('.history-row');
+            rows.forEach(row => {
+                if (action === 'all' || row.dataset.action === action) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        });
     });
 });
 </script>
