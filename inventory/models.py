@@ -173,3 +173,27 @@ class ITAsset(models.Model):
 
     def __str__(self):
         return f"{self.name} ({self.serial_number})"
+
+class AssetHistory(models.Model):
+    ACTION_CHOICES = [
+        ('received', 'Received'),
+        ('assigned', 'Assigned'),
+        ('returned', 'Returned'),
+        ('maintenance', 'Maintenance'),
+        ('retired', 'Retired'),
+    ]
+
+    asset = models.ForeignKey(ITAsset, on_delete=models.CASCADE, related_name='history')
+    action = models.CharField(max_length=20, choices=ACTION_CHOICES)
+    employee = models.ForeignKey(Employee, on_delete=models.SET_NULL, null=True, blank=True)
+    date = models.DateTimeField(auto_now_add=True)
+    notes = models.TextField(blank=True)
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+
+    class Meta:
+        ordering = ['-date']
+        verbose_name = 'Asset History'
+        verbose_name_plural = 'Asset Histories'
+
+    def __str__(self):
+        return f"{self.asset.name} - {self.get_action_display()} ({self.date.strftime('%Y-%m-%d')})"

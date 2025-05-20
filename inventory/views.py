@@ -7,7 +7,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db.models import Q
-from .models import Employee, ITAsset, Department, Position, AssetType, OwnerCompany
+from .models import Employee, ITAsset, Department, Position, AssetType, OwnerCompany, AssetHistory
 from .forms import EmployeeForm, ITAssetForm
 from django.http import HttpResponse
 import openpyxl
@@ -15,6 +15,10 @@ from openpyxl import Workbook
 from datetime import datetime, timedelta
 from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.datavalidation import DataValidation
+from django.template.loader import render_to_string
+from xhtml2pdf import pisa
+from django.conf import settings
+import os
 
 @login_required
 def home(request):
@@ -57,6 +61,11 @@ def home(request):
         warranty_expiry__lte=three_months_later
     ).select_related('asset_type', 'owner', 'assigned_to')
 
+    # Get asset history
+    asset_history = AssetHistory.objects.select_related(
+        'asset', 'asset__asset_type', 'employee'
+    ).order_by('-date')[:50]  # Show last 50 history entries
+
     context = {
         'total_assets': total_assets,
         'total_employees': total_employees,
@@ -68,6 +77,7 @@ def home(request):
         'owner_company_distribution': owner_company_distribution,
         'recent_assets': recent_assets,
         'expiring_warranty_assets': expiring_warranty_assets,
+        'asset_history': asset_history,
     }
     return render(request, 'inventory/home.html', context)
 
@@ -208,6 +218,15 @@ def asset_assign(request):
             asset = ITAsset.objects.get(pk=asset_id)
             employee = Employee.objects.get(pk=employee_id)
             
+            # Create history record before updating asset
+            AssetHistory.objects.create(
+                asset=asset,
+                action='assigned',
+                employee=employee,
+                notes=f'Asset assigned to {employee.get_full_name()}',
+                created_by=request.user
+            )
+            
             asset.assigned_to = employee
             asset.status = 'assigned'
             asset.save()
@@ -296,6 +315,14 @@ class ITAssetCreateView(LoginRequiredMixin, CreateView):
     success_url = reverse_lazy('inventory:asset_list')
 
     def form_valid(self, form):
+        asset = form.save()
+        # Create history record for new asset
+        AssetHistory.objects.create(
+            asset=asset,
+            action='received',
+            notes=f'Asset received and added to inventory',
+            created_by=self.request.user
+        )
         messages.success(self.request, 'IT Asset created successfully.')
         return super().form_valid(form)
 
@@ -306,6 +333,54 @@ class ITAssetUpdateView(LoginRequiredMixin, UpdateView):
     success_url = reverse_lazy('inventory:asset_list')
 
     def form_valid(self, form):
+        old_asset = self.get_object()
+        old_status = old_asset.status
+        old_assigned_to = old_asset.assigned_to
+        
+        asset = form.save()
+        
+        # Check if status changed
+        if old_status != asset.status:
+            action = asset.status
+            notes = f'Asset status changed from {old_status} to {asset.status}'
+            
+            # If status changed to maintenance
+            if asset.status == 'maintenance':
+                notes = f'Asset sent for maintenance'
+            
+            # If status changed to retired
+            elif asset.status == 'retired':
+                notes = f'Asset retired from inventory'
+            
+            AssetHistory.objects.create(
+                asset=asset,
+                action=action,
+                employee=asset.assigned_to,
+                notes=notes,
+                created_by=self.request.user
+            )
+        
+        # Check if assigned employee changed
+        if old_assigned_to != asset.assigned_to:
+            if asset.assigned_to:
+                # New assignment
+                AssetHistory.objects.create(
+                    asset=asset,
+                    action='assigned',
+                    employee=asset.assigned_to,
+                    notes=f'Asset assigned to {asset.assigned_to.get_full_name()}',
+                    created_by=self.request.user
+                )
+            else:
+                # Returned to inventory
+                AssetHistory.objects.create(
+                    asset=asset,
+                    action='returned',
+                    employee=old_assigned_to,
+                    notes=f'Asset returned from {old_assigned_to.get_full_name()}',
+                    created_by=self.request.user
+                )
+        
         messages.success(self.request, 'IT Asset updated successfully.')
         return super().form_valid(form)
 
@@ -752,12 +827,32 @@ def asset_upload(request):
                             mac_address_wifi=row[7].value,
                             mac_address_ethernet=row[8].value,
                             delivery_letter_code=row[9].value,
-                            status=status,  # Use the provided status
+                            status=status,
                             purchase_date=row[10].value,
                             receipt_date=row[11].value,
                             warranty_expiry=row[12].value
                         )
                         asset.save()
+
+                        # Create history record for new asset
+                        AssetHistory.objects.create(
+                            asset=asset,
+                            action='received',
+                            employee=assigned_employee,
+                            notes=f'Asset received and added to inventory via bulk upload',
+                            created_by=request.user
+                        )
+
+                        # If asset is assigned, create assignment history
+                        if assigned_employee:
+                            AssetHistory.objects.create(
+                                asset=asset,
+                                action='assigned',
+                                employee=assigned_employee,
+                                notes=f'Asset assigned to {assigned_employee.get_full_name()} during bulk upload',
+                                created_by=request.user
+                            )
+
                         messages.success(request, f'Row {row[0].row}: Asset "{asset.name}" created successfully.')
                     except Exception as e:
                         messages.error(request, f'Row {row[0].row}: Error processing row: {str(e)}')
@@ -929,4 +1024,102 @@ class OwnerCompanyDeleteView(LoginRequiredMixin, DeleteView):
 
     def delete(self, request, *args, **kwargs):
         messages.success(request, 'Owner Company deleted successfully.')
+        return super().delete(request, *args, **kwargs)
+
+class EmployeePDFView(LoginRequiredMixin, DetailView):
+    model = Employee
+    template_name = 'inventory/employee_pdf.html'
+    
+    def get(self, request, *args, **kwargs):
+        employee = self.get_object()
+        html_string = render_to_string(self.template_name, {'employee': employee})
+        
+        # Create PDF
+        response = HttpResponse(content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="employee_{employee.employee_id}.pdf"'
+        
+        # Generate PDF
+        pisa_status = pisa.CreatePDF(
+            html_string,
+            dest=response,
+            encoding='utf-8'
+        )
+        
+        if pisa_status.err:
+            return HttpResponse('Error generating PDF')
+        
+        return response
+
+class EmployeeListView(LoginRequiredMixin, ListView):
+    model = Employee
+    template_name = 'inventory/employee_list.html'
+    context_object_name = 'employees'
+    paginate_by = 10
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        
+        # Get search and filter parameters
+        search_query = self.request.GET.get('search', '')
+        department_id = self.request.GET.get('department', '')
+        company_id = self.request.GET.get('company', '')
+        
+        # Apply search filter if provided
+        if search_query:
+            queryset = queryset.filter(
+                Q(first_name__icontains=search_query) |
+                Q(last_name__icontains=search_query) |
+                Q(email__icontains=search_query) |
+                Q(employee_id__icontains=search_query) |
+                Q(national_id__icontains=search_query)
+            )
+        
+        # Apply department filter if provided
+        if department_id:
+            queryset = queryset.filter(department_id=department_id)
+        
+        # Apply company filter if provided
+        if company_id:
+            queryset = queryset.filter(company_id=company_id)
+        
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['departments'] = Department.objects.all()
+        context['companies'] = OwnerCompany.objects.all()
+        return context
+
+class EmployeeDetailView(LoginRequiredMixin, DetailView):
+    model = Employee
+    template_name = 'inventory/employee_detail.html'
+    context_object_name = 'employee'
+
+class EmployeeCreateView(LoginRequiredMixin, CreateView):
+    model = Employee
+    form_class = EmployeeForm
+    template_name = 'inventory/employee_form.html'
+    success_url = reverse_lazy('inventory:employee_list')
+
+    def form_valid(self, form):
+        messages.success(self.request, 'Employee created successfully.')
+        return super().form_valid(form)
+
+class EmployeeUpdateView(LoginRequiredMixin, UpdateView):
+    model = Employee
+    form_class = EmployeeForm
+    template_name = 'inventory/employee_form.html'
+    success_url = reverse_lazy('inventory:employee_list')
+
+    def form_valid(self, form):
+        messages.success(self.request, 'Employee updated successfully.')
+        return super().form_valid(form)
+
+class EmployeeDeleteView(LoginRequiredMixin, DeleteView):
+    model = Employee
+    template_name = 'inventory/employee_confirm_delete.html'
+    success_url = reverse_lazy('inventory:employee_list')
+
+    def delete(self, request, *args, **kwargs):
+        messages.success(request, 'Employee deleted successfully.')
         return super().delete(request, *args, **kwargs)  
