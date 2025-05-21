@@ -1,0 +1,302 @@
+# Arabic translations for IT Asset Management System
+msgid ""
+msgstr ""
+"Project-Id-Version: IT Asset Management\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2024-05-21 19:30+0000\n"
+"PO-Revision-Date: 2024-05-21 19:30+0000\n"
+"Last-Translator: \n"
+"Language-Team: Arabic\n"
+"Language: ar\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=6; plural=n==0 ? 0 : n==1 ? 1 : n==2 ? 2 : n%100>=3 && n%100<=10 ? 3 : n%100>=11 && n%100<=99 ? 4 : 5;\n"
+
+msgid "Dashboard"
+msgstr "لوحة التحكم"
+
+msgid "Welcome to your IT Asset Management Dashboard"
+msgstr "مرحباً بك في لوحة تحكم إدارة الأصول التقنية"
+
+msgid "Add New Asset"
+msgstr "إضافة أصل جديد"
+
+msgid "Add New Employee"
+msgstr "إضافة موظف جديد"
+
+msgid "Total Assets"
+msgstr "إجمالي الأصول"
+
+msgid "Total Employees"
+msgstr "إجمالي الموظفين"
+
+msgid "Available Assets"
+msgstr "الأصول المتاحة"
+
+msgid "Assigned Assets"
+msgstr "الأصول المسندة"
+
+msgid "Asset Type Distribution"
+msgstr "توزيع أنواع الأصول"
+
+msgid "Owner Company Distribution"
+msgstr "توزيع الشركات المالكة"
+
+msgid "Recent Assets"
+msgstr "الأصول الأخيرة"
+
+msgid "View All"
+msgstr "عرض الكل"
+
+msgid "Name"
+msgstr "الاسم"
+
+msgid "Type"
+msgstr "النوع"
+
+msgid "Owner"
+msgstr "المالك"
+
+msgid "Status"
+msgstr "الحالة"
+
+msgid "Assigned To"
+msgstr "مسند إلى"
+
+msgid "Warranty Alerts"
+msgstr "تنبيهات الضمان"
+
+msgid "No assets with expiring warranty."
+msgstr "لا توجد أصول منتهية الضمان."
+
+msgid "Device History"
+msgstr "سجل الأجهزة"
+
+msgid "All"
+msgstr "الكل"
+
+msgid "Received"
+msgstr "تم الاستلام"
+
+msgid "Assigned"
+msgstr "تم التسند"
+
+msgid "Maintenance"
+msgstr "الصيانة"
+
+msgid "Device"
+msgstr "الجهاز"
+
+msgid "Action"
+msgstr "الإجراء"
+
+msgid "Employee"
+msgstr "الموظف"
+
+msgid "Date"
+msgstr "التاريخ"
+
+msgid "Notes"
+msgstr "ملاحظات"
+
+msgid "Employees"
+msgstr "الموظفين"
+
+msgid "Upload Employees"
+msgstr "رفع الموظفين"
+
+msgid "Download Data"
+msgstr "تحميل البيانات"
+
+msgid "Add Employee"
+msgstr "إضافة موظف"
+
+msgid "Search by name, email, ID, or National ID..."
+msgstr "البحث بالاسم، البريد الإلكتروني، الرقم الوظيفي، أو الرقم القومي..."
+
+msgid "All Departments"
+msgstr "جميع الأقسام"
+
+msgid "All Companies"
+msgstr "جميع الشركات"
+
+msgid "Filter"
+msgstr "تصفية"
+
+msgid "Employee ID"
+msgstr "الرقم الوظيفي"
+
+msgid "Position"
+msgstr "المنصب"
+
+msgid "Department"
+msgstr "القسم"
+
+msgid "Company"
+msgstr "الشركة"
+
+msgid "Actions"
+msgstr "الإجراءات"
+
+msgid "Active"
+msgstr "نشط"
+
+msgid "Inactive"
+msgstr "غير نشط"
+
+msgid "No employees found."
+msgstr "لم يتم العثور على موظفين."
+
+msgid "Employee Details"
+msgstr "تفاصيل الموظف"
+
+msgid "Back to List"
+msgstr "العودة للقائمة"
+
+msgid "Edit"
+msgstr "تعديل"
+
+msgid "Print"
+msgstr "طباعة"
+
+msgid "Download PDF"
+msgstr "تحميل PDF"
+
+msgid "Employee Information"
+msgstr "معلومات الموظف"
+
+msgid "National ID"
+msgstr "الرقم القومي"
+
+msgid "Email"
+msgstr "البريد الإلكتروني"
+
+msgid "Phone"
+msgstr "الهاتف"
+
+msgid "Hire Date"
+msgstr "تاريخ التعيين"
+
+msgid "Assign Asset"
+msgstr "إسناد أصل"
+
+msgid "Serial Number"
+msgstr "الرقم التسلسلي"
+
+msgid "Confirm Deletion"
+msgstr "تأكيد الحذف"
+
+msgid "Are you sure you want to delete the employee"
+msgstr "هل أنت متأكد من حذف الموظف"
+
+msgid "Warning"
+msgstr "تحذير"
+
+msgid "This action cannot be undone. All associated data will be permanently deleted."
+msgstr "لا يمكن التراجع عن هذا الإجراء. سيتم حذف جميع البيانات المرتبطة بشكل دائم."
+
+msgid "Cancel"
+msgstr "إلغاء"
+
+msgid "Delete Employee"
+msgstr "حذف الموظف"
+
+msgid "Download Template"
+msgstr "تحميل النموذج"
+
+msgid "Instructions"
+msgstr "التعليمات"
+
+msgid "Please follow these steps to upload employees:"
+msgstr "يرجى اتباع هذه الخطوات لرفع الموظفين:"
+
+msgid "Required fields"
+msgstr "الحقول المطلوبة"
+
+msgid "Select Employee"
+msgstr "اختر الموظف"
+
+msgid "Personal Information"
+msgstr "المعلومات الشخصية"
+
+msgid "First Name"
+msgstr "الاسم الأول"
+
+msgid "Last Name"
+msgstr "الاسم الأخير"
+
+msgid "No assets assigned to this employee."
+msgstr "لا توجد أصول مسندة لهذا الموظف."
+
+msgid "Assets"
+msgstr "الأصول"
+
+msgid "Upload Assets"
+msgstr "رفع الأصول"
+
+msgid "Add Asset"
+msgstr "إضافة أصل"
+
+msgid "Search by name, serial number, model, or delivery letter code..."
+msgstr "البحث بالاسم، الرقم التسلسلي، الموديل، أو رمز خطاب التسليم..."
+
+msgid "All Types"
+msgstr "جميع الأنواع"
+
+msgid "All Statuses"
+msgstr "جميع الحالات"
+
+msgid "All Manufacturers"
+msgstr "جميع الشركات المصنعة"
+
+msgid "Manufacturer"
+msgstr "الشركة المصنعة"
+
+msgid "Purchase Date"
+msgstr "تاريخ الشراء"
+
+msgid "View Details"
+msgstr "عرض التفاصيل"
+
+msgid "Delete"
+msgstr "حذف"
+
+msgid "No Assets Found"
+msgstr "لم يتم العثور على أصول"
+
+msgid "Start by adding your first asset."
+msgstr "ابدأ بإضافة أول أصل."
+
+msgid "Asset Types"
+msgstr "أنواع الأصول"
+
+msgid "Add Asset Type"
+msgstr "إضافة نوع أصل"
+
+msgid "Internal Name"
+msgstr "الاسم الداخلي"
+
+msgid "Display Name"
+msgstr "الاسم المعروض"
+
+msgid "No Asset Types Found"
+msgstr "لم يتم العثور على أنواع أصول"
+
+msgid "Start by adding your first asset type."
+msgstr "ابدأ بإضافة أول نوع أصل."
+
+msgid "Owner Companies"
+msgstr "الشركات المالكة"
+
+msgid "Add Company"
+msgstr "إضافة شركة"
+
+msgid "Code"
+msgstr "الرمز"
+
+msgid "No Companies Found"
+msgstr "لم يتم العثور على شركات"
+
+msgid "Start by adding your first company."
+msgstr "ابدأ بإضافة أول شركة." 

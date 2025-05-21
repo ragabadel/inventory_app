@@ -1,16 +1,17 @@
 {% extends 'inventory/base.html' %}
 {% load static %}
+{% load i18n %}
 
-{% block title %}Owner Companies{% endblock %}
+{% block title %}{% trans "Owner Companies" %}{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="h3 mb-0 text-gray-800">
-            <i class="fas fa-building me-2"></i>Owner Companies
+            <i class="fas fa-building me-2"></i>{% trans "Owner Companies" %}
         </h1>
         <a href="{% url 'inventory:owner_company_create' %}" class="btn btn-primary">
-            <i class="fas fa-plus me-2"></i>Add Company
+            <i class="fas fa-plus me-2"></i>{% trans "Add Company" %}
         </a>
     </div>
 
@@ -21,9 +22,9 @@
                 <table class="table table-hover">
                     <thead class="table-light">
                         <tr>
-                            <th>Code</th>
-                            <th>Name</th>
-                            <th>Actions</th>
+                            <th>{% trans "Code" %}</th>
+                            <th>{% trans "Name" %}</th>
+                            <th>{% trans "Actions" %}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -34,11 +35,13 @@
                             <td>
                                 <div class="btn-group">
                                     <a href="{% url 'inventory:owner_company_update' company.pk %}" 
-                                       class="btn btn-sm btn-outline-primary">
+                                       class="btn btn-sm btn-outline-primary"
+                                       title="{% trans 'Edit' %}">
                                         <i class="fas fa-edit"></i>
                                     </a>
                                     <a href="{% url 'inventory:owner_company_delete' company.pk %}" 
-                                       class="btn btn-sm btn-outline-danger">
+                                       class="btn btn-sm btn-outline-danger"
+                                       title="{% trans 'Delete' %}">
                                         <i class="fas fa-trash"></i>
                                     </a>
                                 </div>
@@ -51,10 +54,10 @@
             {% else %}
             <div class="text-center py-4">
                 <i class="fas fa-building fa-3x text-muted mb-3"></i>
-                <h5 class="text-muted">No Companies Found</h5>
-                <p class="text-muted">Start by adding your first company.</p>
+                <h5 class="text-muted">{% trans "No Companies Found" %}</h5>
+                <p class="text-muted">{% trans "Start by adding your first company." %}</p>
                 <a href="{% url 'inventory:owner_company_create' %}" class="btn btn-primary">
-                    <i class="fas fa-plus me-2"></i>Add Company
+                    <i class="fas fa-plus me-2"></i>{% trans "Add Company" %}
                 </a>
             </div>
             {% endif %}

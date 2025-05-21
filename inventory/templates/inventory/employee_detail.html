@@ -1,7 +1,8 @@
 {% extends 'inventory/base.html' %}
 {% load static %}
+{% load i18n %}
 
-{% block title %}Employee Details - {{ employee.get_full_name }}{% endblock %}
+{% block title %}{% trans "Employee Details" %} - {{ employee.get_full_name }}{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -46,16 +47,16 @@
         </h1>
         <div class="btn-group">
             <a href="{% url 'inventory:employee_list' %}" class="btn btn-secondary">
-                <i class="fas fa-arrow-left me-2"></i>Back to List
+                <i class="fas fa-arrow-left me-2"></i>{% trans "Back to List" %}
             </a>
             <a href="{% url 'inventory:employee_update' employee.pk %}" class="btn btn-primary">
-                <i class="fas fa-edit me-2"></i>Edit
+                <i class="fas fa-edit me-2"></i>{% trans "Edit" %}
             </a>
             <button onclick="window.print()" class="btn btn-info">
-                <i class="fas fa-print me-2"></i>Print
+                <i class="fas fa-print me-2"></i>{% trans "Print" %}
             </button>
             <a href="{% url 'inventory:employee_pdf' employee.pk %}" class="btn btn-success">
-                <i class="fas fa-file-pdf me-2"></i>Download PDF
+                <i class="fas fa-file-pdf me-2"></i>{% trans "Download PDF" %}
             </a>
         </div>
     </div>
@@ -65,14 +66,14 @@
         <div class="col-xl-4">
             <div class="card shadow mb-4">
                 <div class="card-header py-3 d-flex justify-content-between align-items-center">
-                    <h6 class="m-0 font-weight-bold text-primary">Employee Information</h6>
+                    <h6 class="m-0 font-weight-bold text-primary">{% trans "Employee Information" %}</h6>
                     <form method="post" action="{% url 'inventory:employee_toggle_status' employee.pk %}" class="d-inline">
                         {% csrf_token %}
                         <button type="submit" class="btn btn-sm {% if employee.is_active %}btn-success{% else %}btn-danger{% endif %}">
                             {% if employee.is_active %}
-                                <i class="fas fa-user-check me-1"></i>Active
+                                <i class="fas fa-user-check me-1"></i>{% trans "Active" %}
                             {% else %}
-                                <i class="fas fa-user-times me-1"></i>Inactive
+                                <i class="fas fa-user-times me-1"></i>{% trans "Inactive" %}
                             {% endif %}
                         </button>
                     </form>
@@ -88,35 +89,35 @@
                         {% endif %}
                     </div>
                     <div class="mb-3">
-                        <label class="form-label text-muted">Employee ID</label>
+                        <label class="form-label text-muted">{% trans "Employee ID" %}</label>
                         <p class="mb-0">{{ employee.employee_id }}</p>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label text-muted">National ID</label>
+                        <label class="form-label text-muted">{% trans "National ID" %}</label>
                         <p class="mb-0">{{ employee.national_id }}</p>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label text-muted">Email</label>
+                        <label class="form-label text-muted">{% trans "Email" %}</label>
                         <p class="mb-0">{{ employee.email }}</p>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label text-muted">Phone</label>
+                        <label class="form-label text-muted">{% trans "Phone" %}</label>
                         <p class="mb-0">{{ employee.phone_number }}</p>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label text-muted">Department</label>
+                        <label class="form-label text-muted">{% trans "Department" %}</label>
                         <p class="mb-0">{{ employee.department.get_name_display }}</p>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label text-muted">Position</label>
+                        <label class="form-label text-muted">{% trans "Position" %}</label>
                         <p class="mb-0">{{ employee.position }}</p>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label text-muted">Company</label>
+                        <label class="form-label text-muted">{% trans "Company" %}</label>
                         <p class="mb-0">{{ employee.company.name }}</p>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label text-muted">Hire Date</label>
+                        <label class="form-label text-muted">{% trans "Hire Date" %}</label>
                         <p class="mb-0">{{ employee.hire_date|date:"F j, Y" }}</p>
                     </div>
                 </div>
@@ -127,9 +128,9 @@
         <div class="col-xl-8">
             <div class="card shadow mb-4">
                 <div class="card-header py-3 d-flex justify-content-between align-items-center">
-                    <h6 class="m-0 font-weight-bold text-primary">Assigned Assets</h6>
+                    <h6 class="m-0 font-weight-bold text-primary">{% trans "Assigned Assets" %}</h6>
                     <a href="{% url 'inventory:asset_assign' %}?employee={{ employee.pk }}" class="btn btn-primary btn-sm">
-                        <i class="fas fa-plus me-1"></i>Assign Asset
+                        <i class="fas fa-plus me-1"></i>{% trans "Assign Asset" %}
                     </a>
                 </div>
                 <div class="card-body">
@@ -138,18 +139,18 @@
                             <table class="table table-bordered">
                                 <thead>
                                     <tr>
-                                        <th>Name</th>
-                                        <th>Type</th>
-                                        <th>Serial Number</th>
-                                        <th>Status</th>
-                                        <th>Actions</th>
+                                        <th>{% trans "Name" %}</th>
+                                        <th>{% trans "Type" %}</th>
+                                        <th>{% trans "Serial Number" %}</th>
+                                        <th>{% trans "Status" %}</th>
+                                        <th>{% trans "Actions" %}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {% for asset in employee.itasset_set.all %}
                                         <tr>
                                             <td>{{ asset.name }}</td>
-                                            <td>{{ asset.get_asset_type_display }}</td>
+                                            <td>{{ asset.asset_type.display_name }}</td>
                                             <td>{{ asset.serial_number }}</td>
                                             <td>
                                                 <span class="badge {% if asset.status == 'assigned' %}bg-success{% else %}bg-warning{% endif %}">
@@ -167,7 +168,7 @@
                             </table>
                         </div>
                     {% else %}
-                        <p class="text-muted mb-0">No assets assigned to this employee.</p>
+                        <p class="text-muted mb-0">{% trans "No assets assigned to this employee." %}</p>
                     {% endif %}
                 </div>
             </div>

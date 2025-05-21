@@ -1,0 +1,302 @@
+# German translations for IT Asset Management System
+msgid ""
+msgstr ""
+"Project-Id-Version: IT Asset Management\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2024-05-21 19:30+0000\n"
+"PO-Revision-Date: 2024-05-21 19:30+0000\n"
+"Last-Translator: \n"
+"Language-Team: German\n"
+"Language: de\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Dashboard"
+msgstr "Dashboard"
+
+msgid "Welcome to your IT Asset Management Dashboard"
+msgstr "Willkommen in Ihrem IT-Asset-Management-Dashboard"
+
+msgid "Add New Asset"
+msgstr "Neues Asset hinzufügen"
+
+msgid "Add New Employee"
+msgstr "Neuen Mitarbeiter hinzufügen"
+
+msgid "Total Assets"
+msgstr "Gesamt-Assets"
+
+msgid "Total Employees"
+msgstr "Gesamt-Mitarbeiter"
+
+msgid "Available Assets"
+msgstr "Verfügbare Assets"
+
+msgid "Assigned Assets"
+msgstr "Zugewiesene Assets"
+
+msgid "Asset Type Distribution"
+msgstr "Asset-Typ-Verteilung"
+
+msgid "Owner Company Distribution"
+msgstr "Eigentümer-Unternehmensverteilung"
+
+msgid "Recent Assets"
+msgstr "Neueste Assets"
+
+msgid "View All"
+msgstr "Alle anzeigen"
+
+msgid "Name"
+msgstr "Name"
+
+msgid "Type"
+msgstr "Typ"
+
+msgid "Owner"
+msgstr "Eigentümer"
+
+msgid "Status"
+msgstr "Status"
+
+msgid "Assigned To"
+msgstr "Zugewiesen an"
+
+msgid "Warranty Alerts"
+msgstr "Garantie-Warnungen"
+
+msgid "No assets with expiring warranty."
+msgstr "Keine Assets mit ablaufender Garantie."
+
+msgid "Device History"
+msgstr "Geräteverlauf"
+
+msgid "All"
+msgstr "Alle"
+
+msgid "Received"
+msgstr "Empfangen"
+
+msgid "Assigned"
+msgstr "Zugewiesen"
+
+msgid "Maintenance"
+msgstr "Wartung"
+
+msgid "Device"
+msgstr "Gerät"
+
+msgid "Action"
+msgstr "Aktion"
+
+msgid "Employee"
+msgstr "Mitarbeiter"
+
+msgid "Date"
+msgstr "Datum"
+
+msgid "Notes"
+msgstr "Notizen"
+
+msgid "Employees"
+msgstr "Mitarbeiter"
+
+msgid "Upload Employees"
+msgstr "Mitarbeiter hochladen"
+
+msgid "Download Data"
+msgstr "Daten herunterladen"
+
+msgid "Add Employee"
+msgstr "Mitarbeiter hinzufügen"
+
+msgid "Search by name, email, ID, or National ID..."
+msgstr "Suche nach Name, E-Mail, ID oder Personalausweis..."
+
+msgid "All Departments"
+msgstr "Alle Abteilungen"
+
+msgid "All Companies"
+msgstr "Alle Unternehmen"
+
+msgid "Filter"
+msgstr "Filtern"
+
+msgid "Employee ID"
+msgstr "Mitarbeiter-ID"
+
+msgid "Position"
+msgstr "Position"
+
+msgid "Department"
+msgstr "Abteilung"
+
+msgid "Company"
+msgstr "Unternehmen"
+
+msgid "Actions"
+msgstr "Aktionen"
+
+msgid "Active"
+msgstr "Aktiv"
+
+msgid "Inactive"
+msgstr "Inaktiv"
+
+msgid "No employees found."
+msgstr "Keine Mitarbeiter gefunden."
+
+msgid "Employee Details"
+msgstr "Mitarbeiterdetails"
+
+msgid "Back to List"
+msgstr "Zurück zur Liste"
+
+msgid "Edit"
+msgstr "Bearbeiten"
+
+msgid "Print"
+msgstr "Drucken"
+
+msgid "Download PDF"
+msgstr "PDF herunterladen"
+
+msgid "Employee Information"
+msgstr "Mitarbeiterinformationen"
+
+msgid "National ID"
+msgstr "Personalausweis"
+
+msgid "Email"
+msgstr "E-Mail"
+
+msgid "Phone"
+msgstr "Telefon"
+
+msgid "Hire Date"
+msgstr "Einstellungsdatum"
+
+msgid "Assign Asset"
+msgstr "Asset zuweisen"
+
+msgid "Serial Number"
+msgstr "Seriennummer"
+
+msgid "Confirm Deletion"
+msgstr "Löschung bestätigen"
+
+msgid "Are you sure you want to delete the employee"
+msgstr "Sind Sie sicher, dass Sie den Mitarbeiter löschen möchten"
+
+msgid "Warning"
+msgstr "Warnung"
+
+msgid "This action cannot be undone. All associated data will be permanently deleted."
+msgstr "Diese Aktion kann nicht rückgängig gemacht werden. Alle zugehörigen Daten werden dauerhaft gelöscht."
+
+msgid "Cancel"
+msgstr "Abbrechen"
+
+msgid "Delete Employee"
+msgstr "Mitarbeiter löschen"
+
+msgid "Download Template"
+msgstr "Vorlage herunterladen"
+
+msgid "Instructions"
+msgstr "Anleitung"
+
+msgid "Please follow these steps to upload employees:"
+msgstr "Bitte folgen Sie diesen Schritten zum Hochladen von Mitarbeitern:"
+
+msgid "Required fields"
+msgstr "Pflichtfelder"
+
+msgid "Select Employee"
+msgstr "Mitarbeiter auswählen"
+
+msgid "Personal Information"
+msgstr "Persönliche Informationen"
+
+msgid "First Name"
+msgstr "Vorname"
+
+msgid "Last Name"
+msgstr "Nachname"
+
+msgid "No assets assigned to this employee."
+msgstr "Keine Assets diesem Mitarbeiter zugewiesen."
+
+msgid "Assets"
+msgstr "Assets"
+
+msgid "Upload Assets"
+msgstr "Assets hochladen"
+
+msgid "Add Asset"
+msgstr "Asset hinzufügen"
+
+msgid "Search by name, serial number, model, or delivery letter code..."
+msgstr "Suche nach Name, Seriennummer, Modell oder Lieferbriefcode..."
+
+msgid "All Types"
+msgstr "Alle Typen"
+
+msgid "All Statuses"
+msgstr "Alle Status"
+
+msgid "All Manufacturers"
+msgstr "Alle Hersteller"
+
+msgid "Manufacturer"
+msgstr "Hersteller"
+
+msgid "Purchase Date"
+msgstr "Kaufdatum"
+
+msgid "View Details"
+msgstr "Details anzeigen"
+
+msgid "Delete"
+msgstr "Löschen"
+
+msgid "No Assets Found"
+msgstr "Keine Assets gefunden"
+
+msgid "Start by adding your first asset."
+msgstr "Beginnen Sie mit dem Hinzufügen Ihres ersten Assets."
+
+msgid "Asset Types"
+msgstr "Asset-Typen"
+
+msgid "Add Asset Type"
+msgstr "Asset-Typ hinzufügen"
+
+msgid "Internal Name"
+msgstr "Interner Name"
+
+msgid "Display Name"
+msgstr "Anzeigename"
+
+msgid "No Asset Types Found"
+msgstr "Keine Asset-Typen gefunden"
+
+msgid "Start by adding your first asset type."
+msgstr "Beginnen Sie mit dem Hinzufügen Ihres ersten Asset-Typs."
+
+msgid "Owner Companies"
+msgstr "Eigentümer-Unternehmen"
+
+msgid "Add Company"
+msgstr "Unternehmen hinzufügen"
+
+msgid "Code"
+msgstr "Code"
+
+msgid "No Companies Found"
+msgstr "Keine Unternehmen gefunden"
+
+msgid "Start by adding your first company."
+msgstr "Beginnen Sie mit dem Hinzufügen Ihres ersten Unternehmens." 
