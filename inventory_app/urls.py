@@ -18,6 +18,7 @@ from django.contrib import admin
 from django.urls import path, include
 from django.contrib.auth import views as auth_views
 from django.shortcuts import redirect
+from django.conf.urls.i18n import i18n_patterns
 
 def redirect_to_login(request):
     return redirect('login')
@@ -26,9 +27,13 @@ def custom_logout(request):
     return auth_views.LogoutView.as_view(next_page='/')(request)
 
 urlpatterns = [
+    path('i18n/', include('django.conf.urls.i18n')),  # Language prefix URL
+]
+
+urlpatterns += i18n_patterns(
     path('', redirect_to_login, name='index'),  # Redirect root URL to login
     path('admin/', admin.site.urls),
     path('inventory/', include('inventory.urls', namespace='inventory')),
     path('accounts/logout/', custom_logout, name='logout'),  # Custom logout view
     path('accounts/', include('django.contrib.auth.urls')),  # Add authentication URLs
-]
+)

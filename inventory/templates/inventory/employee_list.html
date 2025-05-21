@@ -1,23 +1,24 @@
 {% extends 'inventory/base.html' %}
 {% load static %}
+{% load i18n %}
 
-{% block title %}Employees{% endblock %}
+{% block title %}{% trans "Employees" %}{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="h3 mb-0 text-gray-800">
-            <i class="fas fa-users me-2"></i>Employees
+            <i class="fas fa-users me-2"></i>{% trans "Employees" %}
         </h1>
         <div>
             <a href="{% url 'inventory:employee_upload' %}" class="btn btn-success me-2">
-                <i class="fas fa-upload"></i> Upload Employees
+                <i class="fas fa-upload"></i> {% trans "Upload Employees" %}
             </a>
             <a href="{% url 'inventory:download_employee_data' %}" class="btn btn-info me-2">
-                <i class="fas fa-download"></i> Download Data
+                <i class="fas fa-download"></i> {% trans "Download Data" %}
             </a>
             <a href="{% url 'inventory:employee_create' %}" class="btn btn-primary">
-                <i class="fas fa-plus"></i> Add Employee
+                <i class="fas fa-plus"></i> {% trans "Add Employee" %}
             </a>
         </div>
     </div>
@@ -27,11 +28,11 @@
         <div class="card-body">
             <form method="get" class="row g-3">
                 <div class="col-md-4">
-                    <input type="text" name="search" class="form-control" placeholder="Search by name, email, ID, or National ID..." value="{{ request.GET.search }}">
+                    <input type="text" name="search" class="form-control" placeholder="{% trans 'Search by name, email, ID, or National ID...' %}" value="{{ request.GET.search }}">
                 </div>
                 <div class="col-md-3">
                     <select name="department" class="form-select">
-                        <option value="">All Departments</option>
+                        <option value="">{% trans "All Departments" %}</option>
                         {% for dept in departments %}
                             <option value="{{ dept.pk }}" {% if request.GET.department == dept.pk|stringformat:"i" %}selected{% endif %}>
                                 {{ dept.get_name_display }}
@@ -41,7 +42,7 @@
                 </div>
                 <div class="col-md-3">
                     <select name="company" class="form-select">
-                        <option value="">All Companies</option>
+                        <option value="">{% trans "All Companies" %}</option>
                         {% for company in companies %}
                             <option value="{{ company.id }}" {% if request.GET.company == company.id|stringformat:"i" %}selected{% endif %}>
                                 {{ company.name }}
@@ -51,7 +52,7 @@
                 </div>
                 <div class="col-md-2">
                     <button type="submit" class="btn btn-primary w-100">
-                        <i class="fas fa-search me-2"></i>Filter
+                        <i class="fas fa-search me-2"></i>{% trans "Filter" %}
                     </button>
                 </div>
             </form>
@@ -65,13 +66,13 @@
                 <table class="table table-bordered">
                     <thead>
                         <tr>
-                            <th>Employee ID</th>
-                            <th>Name</th>
-                            <th>Position</th>
-                            <th>Department</th>
-                            <th>Company</th>
-                            <th>Status</th>
-                            <th>Actions</th>
+                            <th>{% trans "Employee ID" %}</th>
+                            <th>{% trans "Name" %}</th>
+                            <th>{% trans "Position" %}</th>
+                            <th>{% trans "Department" %}</th>
+                            <th>{% trans "Company" %}</th>
+                            <th>{% trans "Status" %}</th>
+                            <th>{% trans "Actions" %}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -84,7 +85,7 @@
                                 <td>{{ employee.company.name }}</td>
                                 <td>
                                     <span class="badge {% if employee.is_active %}bg-success{% else %}bg-danger{% endif %}">
-                                        {{ employee.is_active|yesno:"Active,Inactive" }}
+                                        {{ employee.is_active|yesno:_("Active,Inactive") }}
                                     </span>
                                 </td>
                                 <td>
@@ -103,7 +104,7 @@
                             </tr>
                         {% empty %}
                             <tr>
-                                <td colspan="7" class="text-center">No employees found.</td>
+                                <td colspan="7" class="text-center">{% trans "No employees found." %}</td>
                             </tr>
                         {% endfor %}
                         <!-- pagination -->

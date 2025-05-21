@@ -1,7 +1,7 @@
 {% extends 'inventory/base.html' %}
 {% load i18n %}
 
-{% block title %}Dashboard{% endblock %}
+{% block title %}{% trans "Dashboard" %}{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -50,16 +50,16 @@
     <div class="container-fluid">
         <div class="row align-items-center">
             <div class="col-md-6">
-                <h1></h1>
-                <p class="mb-0">    </p>
+                <h1>{% trans "Dashboard" %}</h1>
+                <p class="mb-0">{% trans "Welcome to your IT Asset Management Dashboard" %}</p>
             </div>
             <div class="col-md-6 text-md-end">
                 <div class="btn-group">
                     <a href="{% url 'inventory:asset_create' %}" class="btn btn-primary">
-                        <i class="fas fa-plus me-2"></i>Add New Asset
+                        <i class="fas fa-plus me-2"></i>{% trans "Add New Asset" %}
                     </a>
                     <a href="{% url 'inventory:employee_create' %}" class="btn btn-outline-primary">
-                        <i class="fas fa-user-plus me-2"></i>Add New Employee
+                        <i class="fas fa-user-plus me-2"></i>{% trans "Add New Employee" %}
                     </a>
                 </div>
             </div>
@@ -76,7 +76,7 @@
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <h6 class="text-muted mb-2">Total Assets</h6>
+                            <h6 class="text-muted mb-2">{% trans "Total Assets" %}</h6>
                             <h2 class="mb-0">{{ total_assets }}</h2>
                         </div>
                         <div class="bg-primary bg-opacity-10 p-3 rounded">
@@ -93,7 +93,7 @@
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <h6 class="text-muted mb-2">Available Assets</h6>
+                            <h6 class="text-muted mb-2">{% trans "Available Assets" %}</h6>
                             <h2 class="mb-0">{{ available_assets }}</h2>
                         </div>
                         <div class="bg-success bg-opacity-10 p-3 rounded">
@@ -110,7 +110,7 @@
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <h6 class="text-muted mb-2">Assigned Assets</h6>
+                            <h6 class="text-muted mb-2">{% trans "Assigned Assets" %}</h6>
                             <h2 class="mb-0">{{ assigned_assets }}</h2>
                         </div>
                         <div class="bg-info bg-opacity-10 p-3 rounded">
@@ -127,7 +127,7 @@
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <h6 class="text-muted mb-2">Total Employees</h6>
+                            <h6 class="text-muted mb-2">{% trans "Total Employees" %}</h6>
                             <h2 class="mb-0">{{ total_employees }}</h2>
                         </div>
                         <div class="bg-warning bg-opacity-10 p-3 rounded">
@@ -145,7 +145,7 @@
         <div class="col-md-6">
             <div class="card border-0 shadow-sm h-100">
                 <div class="card-header bg-white">
-                    <h5 class="card-title mb-0">Asset Type Distribution</h5>
+                    <h5 class="card-title mb-0">{% trans "Asset Type Distribution" %}</h5>
                 </div>
                 <div class="card-body">
                     <div class="chart-container">
@@ -162,7 +162,7 @@
         <div class="col-md-6">
             <div class="card border-0 shadow-sm h-100">
                 <div class="card-header bg-white">
-                    <h5 class="card-title mb-0">Owner Company Distribution</h5>
+                    <h5 class="card-title mb-0">{% trans "Owner Company Distribution" %}</h5>
                 </div>
                 <div class="card-body">
                     <div class="chart-container">
@@ -179,19 +179,19 @@
         <div class="col-md-8">
             <div class="card border-0 shadow-sm">
                 <div class="card-header bg-white d-flex justify-content-between align-items-center">
-                    <h5 class="card-title mb-0">Recent Assets</h5>
-                    <a href="{% url 'inventory:asset_list' %}" class="btn btn-sm btn-outline-primary">View All</a>
+                    <h5 class="card-title mb-0">{% trans "Recent Assets" %}</h5>
+                    <a href="{% url 'inventory:asset_list' %}" class="btn btn-sm btn-outline-primary">{% trans "View All" %}</a>
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
                         <table class="table table-hover">
                             <thead>
                                 <tr>
-                                    <th>Name</th>
-                                    <th>Type</th>
-                                    <th>Owner</th>
-                                    <th>Status</th>
-                                    <th>Assigned To</th>
+                                    <th>{% trans "Name" %}</th>
+                                    <th>{% trans "Type" %}</th>
+                                    <th>{% trans "Owner" %}</th>
+                                    <th>{% trans "Status" %}</th>
+                                    <th>{% trans "Assigned To" %}</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -229,7 +229,7 @@
         <div class="col-md-4">
             <div class="card border-0 shadow-sm">
                 <div class="card-header bg-white">
-                    <h5 class="card-title mb-0">Warranty Alerts</h5>
+                    <h5 class="card-title mb-0">{% trans "Warranty Alerts" %}</h5>
                 </div>
                 <div class="card-body">
                     {% if expiring_warranty_assets %}
@@ -247,7 +247,7 @@
                             {% endfor %}
                         </div>
                     {% else %}
-                        <p class="text-muted mb-0">No assets with expiring warranty.</p>
+                        <p class="text-muted mb-0">{% trans "No assets with expiring warranty." %}</p>
                     {% endif %}
                 </div>
             </div>
@@ -257,12 +257,12 @@
         <div class="col-12 mt-4">
             <div class="card border-0 shadow-sm">
                 <div class="card-header bg-white d-flex justify-content-between align-items-center">
-                    <h5 class="card-title mb-0">Device History</h5>
+                    <h5 class="card-title mb-0">{% trans "Device History" %}</h5>
                     <div class="btn-group">
-                        <button type="button" class="btn btn-sm btn-outline-primary" id="filterAll">All</button>
-                        <button type="button" class="btn btn-sm btn-outline-primary" id="filterReceived">Received</button>
-                        <button type="button" class="btn btn-sm btn-outline-primary" id="filterAssigned">Assigned</button>
-                        <button type="button" class="btn btn-sm btn-outline-primary" id="filterMaintenance">Maintenance</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary" id="filterAll">{% trans "All" %}</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary" id="filterReceived">{% trans "Received" %}</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary" id="filterAssigned">{% trans "Assigned" %}</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary" id="filterMaintenance">{% trans "Maintenance" %}</button>
                     </div>
                 </div>
                 <div class="card-body">
@@ -270,13 +270,13 @@
                         <table class="table table-hover" id="historyTable">
                             <thead>
                                 <tr>
-                                    <th>Device</th>
-                                    <th>Type</th>
-                                    <th>Action</th>
-                                    <th>Employee</th>
-                                    <th>Date</th>
-                                    <th>Notes</th>
-                                    <th>Status</th>
+                                    <th>{% trans "Device" %}</th>
+                                    <th>{% trans "Type" %}</th>
+                                    <th>{% trans "Action" %}</th>
+                                    <th>{% trans "Employee" %}</th>
+                                    <th>{% trans "Date" %}</th>
+                                    <th>{% trans "Notes" %}</th>
+                                    <th>{% trans "Status" %}</th>
                                 </tr>
                             </thead>
                             <tbody>

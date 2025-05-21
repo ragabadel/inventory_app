@@ -24,8 +24,43 @@
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
     {% block extra_css %}{% endblock %}
+    
+    <style>
+        /* RTL Support */
+        [lang="ar"] {
+            direction: rtl;
+            text-align: right;
+        }
+        
+        [lang="ar"] .navbar-nav {
+            padding-right: 0;
+        }
+        
+        [lang="ar"] .dropdown-menu {
+            text-align: right;
+        }
+        
+        [lang="ar"] .me-1 {
+            margin-left: 0.25rem !important;
+            margin-right: 0 !important;
+        }
+        
+        [lang="ar"] .me-2 {
+            margin-left: 0.5rem !important;
+            margin-right: 0 !important;
+        }
+        
+        [lang="ar"] .ms-auto {
+            margin-right: auto !important;
+            margin-left: 0 !important;
+        }
+        
+        [lang="ar"] .text-md-end {
+            text-align: left !important;
+        }
+    </style>
 </head>
-<body class="d-flex flex-column min-vh-100">
+<body class="d-flex flex-column min-vh-100" lang="{{ LANGUAGE_CODE }}">
     <!-- Skip to main content link for accessibility -->
     <a class="skip-link visually-hidden-focusable" href="#main-content">
         Skip to main content
@@ -70,6 +105,52 @@
                 </ul>
                 {% if user.is_authenticated %}
                 <ul class="navbar-nav ms-auto">
+                    <!-- Language Selector -->
+                    <li class="nav-item dropdown me-3">
+                        <a class="nav-link dropdown-toggle" href="#" id="languageDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-globe me-1"></i>
+                            {% if LANGUAGE_CODE == 'en' %}
+                                English
+                            {% elif LANGUAGE_CODE == 'ar' %}
+                                العربية
+                            {% elif LANGUAGE_CODE == 'de' %}
+                                Deutsch
+                            {% endif %}
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="languageDropdown">
+                            <li>
+                                <form action="{% url 'set_language' %}" method="post" class="d-inline">
+                                    {% csrf_token %}
+                                    <input name="next" type="hidden" value="{{ request.path }}">
+                                    <input name="language" type="hidden" value="en">
+                                    <button type="submit" class="dropdown-item {% if LANGUAGE_CODE == 'en' %}active{% endif %}">
+                                        English
+                                    </button>
+                                </form>
+                            </li>
+                            <li>
+                                <form action="{% url 'set_language' %}" method="post" class="d-inline">
+                                    {% csrf_token %}
+                                    <input name="next" type="hidden" value="{{ request.path }}">
+                                    <input name="language" type="hidden" value="ar">
+                                    <button type="submit" class="dropdown-item {% if LANGUAGE_CODE == 'ar' %}active{% endif %}">
+                                        العربية
+                                    </button>
+                                </form>
+                            </li>
+                            <li>
+                                <form action="{% url 'set_language' %}" method="post" class="d-inline">
+                                    {% csrf_token %}
+                                    <input name="next" type="hidden" value="{{ request.path }}">
+                                    <input name="language" type="hidden" value="de">
+                                    <button type="submit" class="dropdown-item {% if LANGUAGE_CODE == 'de' %}active{% endif %}">
+                                        Deutsch
+                                    </button>
+                                </form>
+                            </li>
+                        </ul>
+                    </li>
+                    <!-- User Profile -->
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                             <i class="fas fa-user-circle me-1"></i>
