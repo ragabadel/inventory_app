@@ -150,7 +150,7 @@
                                     {% for asset in employee.itasset_set.all %}
                                         <tr>
                                             <td>{{ asset.name }}</td>
-                                            <td>{{ asset.get_asset_type_display }}</td>
+                                            <td>{{ asset.asset_type.display_name }}</td>
                                             <td>{{ asset.serial_number }}</td>
                                             <td>
                                                 <span class="badge {% if asset.status == 'assigned' %}bg-success{% else %}bg-warning{% endif %}">

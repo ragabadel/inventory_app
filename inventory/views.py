@@ -57,9 +57,10 @@ def home(request):
     today = datetime.now().date()
     three_months_later = today + timedelta(days=90)
     expiring_warranty_assets = ITAsset.objects.filter(
+        warranty_expiry__isnull=False,
         warranty_expiry__gte=today,
         warranty_expiry__lte=three_months_later
-    ).select_related('asset_type', 'owner', 'assigned_to')
+    ).select_related('asset_type', 'owner', 'assigned_to').order_by('warranty_expiry')
 
     # Get asset history
     asset_history = AssetHistory.objects.select_related(
@@ -292,7 +293,7 @@ class ITAssetListView(LoginRequiredMixin, ListView):
         
         # Apply manufacturer filter
         if manufacturer:
-            queryset = queryset.filter(manufacturer=manufacturer)
+            queryset = queryset.filter(manufacturer__iexact=manufacturer)
         
         return queryset
 
@@ -300,7 +301,15 @@ class ITAssetListView(LoginRequiredMixin, ListView):
         context = super().get_context_data(**kwargs)
         context['asset_types'] = AssetType.objects.all()
         context['status_choices'] = ITAsset.STATUS_CHOICES
-        context['manufacturers'] = ITAsset.objects.exclude(manufacturer='').values_list('manufacturer', flat=True).distinct()
+        
+        # Get unique manufacturers, normalized to title case
+        manufacturers = ITAsset.objects.exclude(manufacturer='').values_list('manufacturer', flat=True)
+        normalized_manufacturers = set()
+        for m in manufacturers:
+            if m:
+                normalized_manufacturers.add(m.strip().title())
+        context['manufacturers'] = sorted(normalized_manufacturers)
+        
         return context
 
 class ITAssetDetailView(LoginRequiredMixin, DetailView):
@@ -1088,6 +1097,34 @@ class EmployeeListView(LoginRequiredMixin, ListView):
         context = super().get_context_data(**kwargs)
         context['departments'] = Department.objects.all()
         context['companies'] = OwnerCompany.objects.all()
+        
+        # Add pagination context
+        paginator = context['paginator']
+        page_obj = context['page_obj']
+        
+        # Get the current page number
+        current_page = page_obj.number
+        total_pages = paginator.num_pages
+        
+        # Calculate the range of page numbers to show
+        if total_pages <= 5:
+            page_range = range(1, total_pages + 1)
+        else:
+            if current_page <= 3:
+                page_range = range(1, 6)
+            elif current_page >= total_pages - 2:
+                page_range = range(total_pages - 4, total_pages + 1)
+            else:
+                page_range = range(current_page - 2, current_page + 3)
+        
+        context.update({
+            'is_paginated': page_obj.has_other_pages(),
+            'page_obj': page_obj,
+            'page_range': page_range,
+            'current_page': current_page,
+            'total_pages': total_pages,
+        })
+        
         return context
 
 class EmployeeDetailView(LoginRequiredMixin, DetailView):
