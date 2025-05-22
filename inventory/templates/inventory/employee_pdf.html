@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Employee Details - {{ employee.name }}</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 1.5cm;
+        }
+        body {
+            font-family: Helvetica, Arial, sans-serif;
+            line-height: 1.5;
+            color: #000;
+            margin: 0;
+            padding: 0;
+            font-size: 12pt;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #000;
+        }
+        .header h1 {
+            margin: 0 0 5px 0;
+            font-size: 20pt;
+        }
+        .content-wrapper {
+            width: 100%;
+            margin-bottom: 20px;
+        }
+        .info-section {
+            width: 65%;
+            float: left;
+        }
+        .photo-section {
+            width: 35%;
+            float: right;
+            text-align: center;
+        }
+        .info-row {
+            margin-bottom: 10px;
+        }
+        .info-label {
+            font-weight: bold;
+            display: inline-block;
+            width: 140px;
+        }
+        .info-value {
+            display: inline-block;
+        }
+        .employee-photo {
+            max-width: 180px;
+            max-height: 220px;
+            border: 1px solid #ddd;
+            margin-bottom: 10px;
+        }
+        .no-photo {
+            width: 180px;
+            height: 220px;
+            background: #f8f8f8;
+            border: 1px dashed #ccc;
+            display: inline-block;
+            line-height: 220px;
+            color: #666;
+        }
+        .signature-area {
+            clear: both;
+            padding-top: 50px;
+            text-align: center;
+        }
+        .signature-box {
+            display: inline-block;
+            padding: 15px 30px;
+            border-top: 1px solid #000;
+        }
+        .signature-text {
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>EMPLOYEE PROFILE</h1>
+        <p>Company Letterhead</p>
+    </div>
+
+    <div class="content-wrapper">
+        <div class="info-section">
+            <div class="info-row">
+                <span class="info-label">Full Name:</span>
+                <span class="info-value">{{ employee.name }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Employee ID:</span>
+                <span class="info-value">{{ employee.employee_id }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Department:</span>
+                <span class="info-value">{{ employee.department }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Position:</span>
+                <span class="info-value">{{ employee.position }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Contact Email:</span>
+                <span class="info-value">{{ employee.email }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Phone Number:</span>
+                <span class="info-value">{{ employee.phone }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Employment Date:</span>
+                <span class="info-value">{{ employee.hire_date|date:"F d, Y" }}</span>
+            </div>
+        </div>
+
+        <div class="photo-section">
+            {% if employee.photo %}
+                <img src="{{ employee.photo.url }}" alt="Employee Photo" class="employee-photo">
+            {% else %}
+                <div class="no-photo">Photo Not Available</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="signature-area">
+        <div class="signature-box">
+            <p class="signature-text">Employee Signature</p>
+            <p class="signature-text">{{ employee.name }}</p>
+            <p class="signature-text">Date: {% now "m/d/Y" %}</p>
+        </div>
+    </div>
+</body>
+</html>
