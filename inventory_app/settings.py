@@ -142,6 +142,6 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Authentication Settings
-LOGIN_REDIRECT_URL = '/inventory/'  # Redirect to inventory home page after login
-LOGOUT_REDIRECT_URL = '/'  # Redirect to home page after logout
+LOGIN_REDIRECT_URL = '/inventory/'  # Redirect to inventory landing page after login
+LOGOUT_REDIRECT_URL = '/inventory/'  # Redirect to landing page after logout
 LOGIN_URL = '/accounts/login/'  # URL where requests are redirected for login

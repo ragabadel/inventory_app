@@ -63,7 +63,30 @@ class OwnerCompany(models.Model):
     def __str__(self):
         return self.name
 
+class UserProfile(models.Model):
+    LANGUAGE_CHOICES = [
+        ('en', 'English'),
+        ('ar', 'Arabic'),
+    ]
+    
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
+    language = models.CharField(max_length=2, choices=LANGUAGE_CHOICES, default='en')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.user.username}'s profile"
+
+    class Meta:
+        verbose_name = 'User Profile'
+        verbose_name_plural = 'User Profiles'
+
 class Employee(models.Model):
+    LANGUAGE_CHOICES = [
+        ('en', 'English'),
+        ('ar', 'Arabic'),
+    ]
+    
     user = models.OneToOneField(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='employee_profile')
     employee_id = models.CharField(max_length=20, unique=True, help_text="Enter employee ID (e.g., EMP001 or ABC123)")
     national_id = models.CharField(max_length=14, unique=True, help_text="Enter the 14-digit national ID number")
@@ -76,6 +99,7 @@ class Employee(models.Model):
     hire_date = models.DateField()
     company = models.ForeignKey(OwnerCompany, on_delete=models.PROTECT, related_name='employees')
     is_active = models.BooleanField(default=True)
+    language = models.CharField(max_length=2, choices=LANGUAGE_CHOICES, default='en')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -197,3 +221,62 @@ class AssetHistory(models.Model):
 
     def __str__(self):
         return f"{self.asset.name} - {self.get_action_display()} ({self.date.strftime('%Y-%m-%d')})"
+
+class Notification(models.Model):
+    NOTIFICATION_TYPES = [
+        ('warranty_expiry', 'Warranty Expiry'),
+        ('serial_expiry', 'Serial Expiry'),
+        ('new_device_request', 'New Device Request'),
+        ('maintenance_request', 'Maintenance Request'),
+        ('damaged_device', 'Damaged Device'),
+        ('lost_device', 'Lost Device'),
+    ]
+
+    notification_type = models.CharField(max_length=50, choices=NOTIFICATION_TYPES)
+    title = models.CharField(max_length=200)
+    message = models.TextField()
+    recipient = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications')
+    asset = models.ForeignKey('ITAsset', on_delete=models.CASCADE, null=True, blank=True)
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Notification'
+        verbose_name_plural = 'Notifications'
+
+    def __str__(self):
+        return f"{self.get_notification_type_display()} - {self.title}"
+
+class WorkflowRequest(models.Model):
+    REQUEST_TYPES = [
+        ('new_device', 'New Device Request'),
+        ('maintenance', 'Maintenance Request'),
+        ('damage_report', 'Damage Report'),
+        ('loss_report', 'Loss Report'),
+    ]
+
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected'),
+    ]
+
+    request_type = models.CharField(max_length=50, choices=REQUEST_TYPES)
+    requester = models.ForeignKey(User, on_delete=models.CASCADE, related_name='workflow_requests')
+    asset = models.ForeignKey('ITAsset', on_delete=models.CASCADE, null=True, blank=True)
+    description = models.TextField()
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    approved_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='approved_requests')
+    approval_date = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Workflow Request'
+        verbose_name_plural = 'Workflow Requests'
+
+    def __str__(self):
+        return f"{self.get_request_type_display()} - {self.requester.username}"

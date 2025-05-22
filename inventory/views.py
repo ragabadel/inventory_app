@@ -1,24 +1,30 @@
 # inventory/views.py
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
-from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
+from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView, View, TemplateView
 from django.urls import reverse_lazy
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.core.paginator import Paginator
 from django.db.models import Q
-from .models import Employee, ITAsset, Department, Position, AssetType, OwnerCompany, AssetHistory
-from .forms import EmployeeForm, ITAssetForm
-from django.http import HttpResponse
+from .models import Employee, ITAsset, Department, Position, AssetType, OwnerCompany, AssetHistory, Notification, WorkflowRequest, UserProfile
+from .forms import EmployeeForm, ITAssetForm, WorkflowRequestForm, WorkflowRequestApprovalForm, UserProfileForm
+from django.http import HttpResponse, JsonResponse
 import openpyxl
 from openpyxl import Workbook
 from datetime import datetime, timedelta
+from django.utils import timezone
 from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.datavalidation import DataValidation
 from django.template.loader import render_to_string
 from xhtml2pdf import pisa
 from django.conf import settings
 import os
+from django.contrib.auth.models import User, Group, Permission
+from django.contrib.auth.forms import UserCreationForm
+from django.utils.translation import gettext as _
+from django.db.models.deletion import ProtectedError
+from django.db import transaction
 
 @login_required
 def home(request):
@@ -259,7 +265,47 @@ def asset_assign(request):
     
     return render(request, 'inventory/asset_assign.html', context)
 
-class ITAssetListView(LoginRequiredMixin, ListView):
+class NotificationMixin:
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        if self.request.user.is_authenticated:
+            # Get unread notifications count
+            context['unread_notifications_count'] = Notification.objects.filter(
+                recipient=self.request.user,
+                is_read=False
+            ).count()
+            
+            # Get recent notifications
+            context['notifications'] = Notification.objects.filter(
+                recipient=self.request.user
+            ).order_by('-created_at')[:5]  # Show last 5 notifications
+            
+            # Check for warranty expiry notifications
+            today = timezone.now().date()
+            expiring_warranty_assets = ITAsset.objects.filter(
+                warranty_expiry__isnull=False,
+                warranty_expiry__gte=today,
+                warranty_expiry__lte=today + timedelta(days=30)  # Next 30 days
+            )
+            
+            for asset in expiring_warranty_assets:
+                if not Notification.objects.filter(
+                    recipient=self.request.user,
+                    notification_type='warranty_expiry',
+                    asset=asset,
+                    created_at__gte=today
+                ).exists():
+                    Notification.objects.create(
+                        recipient=self.request.user,
+                        notification_type='warranty_expiry',
+                        title='Warranty Expiring Soon',
+                        message=f'Warranty for {asset.name} will expire on {asset.warranty_expiry}',
+                        asset=asset
+                    )
+        
+        return context
+
+class ITAssetListView(LoginRequiredMixin, NotificationMixin, ListView):
     model = ITAsset
     template_name = 'inventory/asset_list.html'
     context_object_name = 'assets'
@@ -1159,4 +1205,502 @@ class EmployeeDeleteView(LoginRequiredMixin, DeleteView):
 
     def delete(self, request, *args, **kwargs):
         messages.success(request, 'Employee deleted successfully.')
-        return super().delete(request, *args, **kwargs)  
+        return super().delete(request, *args, **kwargs)
+
+class NotificationListView(LoginRequiredMixin, ListView):
+    model = Notification
+    template_name = 'inventory/notification_list.html'
+    context_object_name = 'notifications'
+    paginate_by = 10
+
+    def get_queryset(self):
+        return Notification.objects.filter(recipient=self.request.user)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['unread_count'] = self.get_queryset().filter(is_read=False).count()
+        return context
+
+class NotificationMarkAsReadView(LoginRequiredMixin, View):
+    def post(self, request, pk):
+        notification = get_object_or_404(Notification, pk=pk, recipient=request.user)
+        notification.is_read = True
+        notification.save()
+        return JsonResponse({'status': 'success'})
+
+class WorkflowRequestCreateView(LoginRequiredMixin, CreateView):
+    model = WorkflowRequest
+    form_class = WorkflowRequestForm
+    template_name = 'inventory/workflow_request_form.html'
+    success_url = reverse_lazy('inventory:workflow_request_list')
+
+    def form_valid(self, form):
+        form.instance.requester = self.request.user
+        response = super().form_valid(form)
+        
+        # Create notification for IT department manager
+        it_manager = User.objects.filter(groups__name='IT_Manager').first()
+        if it_manager:
+            Notification.objects.create(
+                notification_type='new_device_request',
+                title=f'New {form.instance.get_request_type_display()}',
+                message=f'{self.request.user.get_full_name()} has submitted a new request: {form.instance.description}',
+                recipient=it_manager,
+                asset=form.instance.asset
+            )
+        
+        messages.success(self.request, 'Request submitted successfully.')
+        return response
+
+class WorkflowRequestListView(LoginRequiredMixin, ListView):
+    model = WorkflowRequest
+    template_name = 'inventory/workflow_request_list.html'
+    context_object_name = 'requests'
+    paginate_by = 10
+
+    def get_queryset(self):
+        if self.request.user.groups.filter(name='IT_Manager').exists():
+            return WorkflowRequest.objects.all()
+        return WorkflowRequest.objects.filter(requester=self.request.user)
+
+class WorkflowRequestDetailView(LoginRequiredMixin, DetailView):
+    model = WorkflowRequest
+    template_name = 'inventory/workflow_request_detail.html'
+    context_object_name = 'request'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        if self.request.user.groups.filter(name='IT_Manager').exists():
+            context['approval_form'] = WorkflowRequestApprovalForm(instance=self.object)
+        return context
+
+class WorkflowRequestApproveView(LoginRequiredMixin, UpdateView):
+    model = WorkflowRequest
+    form_class = WorkflowRequestApprovalForm
+    template_name = 'inventory/workflow_request_approve.html'
+
+    def get_queryset(self):
+        return WorkflowRequest.objects.filter(status='pending')
+
+    def form_valid(self, form):
+        if not self.request.user.groups.filter(name='IT_Manager').exists():
+            messages.error(self.request, 'You do not have permission to approve requests.')
+            return redirect('inventory:workflow_request_list')
+
+        form.instance.approved_by = self.request.user
+        form.instance.approval_date = timezone.now()
+        response = super().form_valid(form)
+
+        # Create notification for requester
+        Notification.objects.create(
+            notification_type='request_approved' if form.instance.status == 'approved' else 'request_rejected',
+            title=f'Request {form.instance.get_status_display()}',
+            message=f'Your request has been {form.instance.get_status_display().lower()}.',
+            recipient=form.instance.requester,
+            asset=form.instance.asset
+        )
+
+        messages.success(self.request, f'Request {form.instance.get_status_display().lower()}.')
+        return response
+
+    def get_success_url(self):
+        return reverse_lazy('inventory:workflow_request_detail', kwargs={'pk': self.object.pk})
+
+@login_required
+def update_language(request):
+    if request.method == 'POST':
+        form = UserProfileForm(request.POST, instance=request.user.userprofile)
+        if form.is_valid():
+            form.save()
+            messages.success(request, _('Language preference updated successfully.'))
+            return redirect('inventory:landing')
+    else:
+        form = UserProfileForm(instance=request.user.userprofile)
+    
+    return render(request, 'inventory/language_form.html', {'form': form})
+
+@login_required
+def create_device_request(request):
+    """Create a new device request."""
+    if request.method == 'POST':
+        form = WorkflowRequestForm(request.POST)
+        if form.is_valid():
+            workflow_request = form.save(commit=False)
+            workflow_request.requester = request.user
+            workflow_request.request_type = 'new_device'
+            workflow_request.save()
+            
+            # Create notification for IT manager
+            it_manager = User.objects.filter(groups__name='IT_Manager').first()
+            if it_manager:
+                Notification.objects.create(
+                    notification_type='new_device_request',
+                    title='New Device Request',
+                    message=f'{request.user.get_full_name()} has requested a new device: {workflow_request.description}',
+                    recipient=it_manager
+                )
+            
+            messages.success(request, 'Device request submitted successfully.')
+            return redirect('inventory:workflow_request_detail', pk=workflow_request.pk)
+    else:
+        form = WorkflowRequestForm()
+    
+    return render(request, 'inventory/workflow_request_form.html', {
+        'form': form,
+        'title': 'Request New Device'
+    })
+
+@login_required
+def create_maintenance_request(request, asset_id):
+    """Create a maintenance request for a specific asset."""
+    asset = get_object_or_404(ITAsset, pk=asset_id)
+    
+    if request.method == 'POST':
+        form = WorkflowRequestForm(request.POST)
+        if form.is_valid():
+            workflow_request = form.save(commit=False)
+            workflow_request.requester = request.user
+            workflow_request.request_type = 'maintenance'
+            workflow_request.asset = asset
+            workflow_request.save()
+            
+            # Create notification for IT manager
+            it_manager = User.objects.filter(groups__name='IT_Manager').first()
+            if it_manager:
+                Notification.objects.create(
+                    notification_type='maintenance_request',
+                    title='Maintenance Request',
+                    message=f'{request.user.get_full_name()} has requested maintenance for {asset.name}: {workflow_request.description}',
+                    recipient=it_manager,
+                    asset=asset
+                )
+            
+            messages.success(request, 'Maintenance request submitted successfully.')
+            return redirect('inventory:workflow_request_detail', pk=workflow_request.pk)
+    else:
+        form = WorkflowRequestForm()
+    
+    return render(request, 'inventory/workflow_request_form.html', {
+        'form': form,
+        'title': f'Request Maintenance for {asset.name}',
+        'asset': asset
+    })
+
+@login_required
+def report_damaged_device(request, asset_id):
+    """Report a damaged device."""
+    asset = get_object_or_404(ITAsset, pk=asset_id)
+    
+    if request.method == 'POST':
+        form = WorkflowRequestForm(request.POST)
+        if form.is_valid():
+            workflow_request = form.save(commit=False)
+            workflow_request.requester = request.user
+            workflow_request.request_type = 'damage_report'
+            workflow_request.asset = asset
+            workflow_request.save()
+            
+            # Create notification for IT manager
+            it_manager = User.objects.filter(groups__name='IT_Manager').first()
+            if it_manager:
+                Notification.objects.create(
+                    notification_type='damaged_device',
+                    title='Damaged Device Report',
+                    message=f'{request.user.get_full_name()} has reported damage to {asset.name}: {workflow_request.description}',
+                    recipient=it_manager,
+                    asset=asset
+                )
+            
+            messages.success(request, 'Damage report submitted successfully.')
+            return redirect('inventory:workflow_request_detail', pk=workflow_request.pk)
+    else:
+        form = WorkflowRequestForm()
+    
+    return render(request, 'inventory/workflow_request_form.html', {
+        'form': form,
+        'title': f'Report Damage for {asset.name}',
+        'asset': asset
+    })
+
+@login_required
+def report_lost_device(request, asset_id):
+    """Report a lost device."""
+    asset = get_object_or_404(ITAsset, pk=asset_id)
+    
+    if request.method == 'POST':
+        form = WorkflowRequestForm(request.POST)
+        if form.is_valid():
+            workflow_request = form.save(commit=False)
+            workflow_request.requester = request.user
+            workflow_request.request_type = 'loss_report'
+            workflow_request.asset = asset
+            workflow_request.save()
+            
+            # Create notification for IT manager
+            it_manager = User.objects.filter(groups__name='IT_Manager').first()
+            if it_manager:
+                Notification.objects.create(
+                    notification_type='lost_device',
+                    title='Lost Device Report',
+                    message=f'{request.user.get_full_name()} has reported {asset.name} as lost: {workflow_request.description}',
+                    recipient=it_manager,
+                    asset=asset
+                )
+            
+            messages.success(request, 'Loss report submitted successfully.')
+            return redirect('inventory:workflow_request_detail', pk=workflow_request.pk)
+    else:
+        form = WorkflowRequestForm()
+    
+    return render(request, 'inventory/workflow_request_form.html', {
+        'form': form,
+        'title': f'Report Loss of {asset.name}',
+        'asset': asset
+    })
+
+class UserManagementView(LoginRequiredMixin, UserPassesTestMixin, ListView):
+    model = User
+    template_name = 'inventory/user_management.html'
+    context_object_name = 'users'
+    paginate_by = 12
+
+    def test_func(self):
+        return self.request.user.is_superuser or self.request.user.groups.filter(name='IT_Manager').exists()
+
+    def get_queryset(self):
+        queryset = User.objects.all()
+        
+        # Search
+        search_query = self.request.GET.get('search', '')
+        if search_query:
+            queryset = queryset.filter(
+                Q(username__icontains=search_query) |
+                Q(first_name__icontains=search_query) |
+                Q(last_name__icontains=search_query) |
+                Q(email__icontains=search_query)
+            )
+        
+        # Filter by group
+        group_id = self.request.GET.get('group')
+        if group_id:
+            queryset = queryset.filter(groups__id=group_id)
+        
+        # Filter by status
+        is_active = self.request.GET.get('is_active')
+        if is_active is not None:
+            queryset = queryset.filter(is_active=is_active == '1')
+        
+        return queryset.select_related('profile').prefetch_related('groups')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['groups'] = Group.objects.all()
+        return context
+
+class CreateUserView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
+    model = User
+    form_class = UserCreationForm
+    template_name = 'inventory/user_form.html'
+    success_url = reverse_lazy('inventory:user_management')
+
+    def test_func(self):
+        return self.request.user.is_superuser or self.request.user.groups.filter(name='IT_Manager').exists()
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['groups'] = Group.objects.all()
+        context['permissions'] = Permission.objects.all().order_by('content_type__app_label', 'name')
+        context['title'] = _('Create New User')
+        return context
+
+    def form_valid(self, form):
+        with transaction.atomic():
+            response = super().form_valid(form)
+            
+            # Create user profile
+            UserProfile.objects.create(
+                user=self.object,
+                language_preference='en'  # Default language
+            )
+            
+            # Add user to selected groups
+            group_ids = self.request.POST.getlist('groups')
+            if group_ids:
+                self.object.groups.set(group_ids)
+                
+                # Set permissions based on groups
+                for group in self.object.groups.all():
+                    # Add group permissions to user
+                    self.object.user_permissions.add(*group.permissions.all())
+            
+            # Add individual permissions if specified
+            permission_ids = self.request.POST.getlist('permissions')
+            if permission_ids:
+                from django.contrib.auth.models import Permission
+                permissions = Permission.objects.filter(id__in=permission_ids)
+                self.object.user_permissions.add(*permissions)
+            
+            messages.success(self.request, _('User created successfully with appropriate permissions.'))
+            return response
+
+class EditUserView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
+    model = User
+    template_name = 'inventory/user_form.html'
+    fields = ['username', 'first_name', 'last_name', 'email', 'is_active']
+    success_url = reverse_lazy('inventory:user_management')
+
+    def test_func(self):
+        return self.request.user.is_superuser or self.request.user.groups.filter(name='IT_Manager').exists()
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['groups'] = Group.objects.all()
+        context['permissions'] = Permission.objects.all().order_by('content_type__app_label', 'name')
+        context['title'] = _('Edit User')
+        return context
+
+    def form_valid(self, form):
+        with transaction.atomic():
+            response = super().form_valid(form)
+            
+            # Update user groups
+            group_ids = self.request.POST.getlist('groups')
+            self.object.groups.set(group_ids)
+            
+            # Update individual permissions
+            permission_ids = self.request.POST.getlist('permissions')
+            self.object.user_permissions.clear()  # Clear existing permissions
+            if permission_ids:
+                from django.contrib.auth.models import Permission
+                permissions = Permission.objects.filter(id__in=permission_ids)
+                self.object.user_permissions.add(*permissions)
+            
+            # Add group permissions
+            for group in self.object.groups.all():
+                self.object.user_permissions.add(*group.permissions.all())
+            
+            messages.success(self.request, _('User updated successfully with appropriate permissions.'))
+            return response
+
+@login_required
+@user_passes_test(lambda u: u.is_superuser or u.groups.filter(name='IT_Manager').exists())
+def activate_user(request, pk):
+    if request.method == 'POST':
+        user = get_object_or_404(User, pk=pk)
+        user.is_active = True
+        user.save()
+        messages.success(request, _('User activated successfully.'))
+    return redirect('inventory:user_management')
+
+@login_required
+@user_passes_test(lambda u: u.is_superuser or u.groups.filter(name='IT_Manager').exists())
+def deactivate_user(request, pk):
+    if request.method == 'POST':
+        user = get_object_or_404(User, pk=pk)
+        user.is_active = False
+        user.save()
+        messages.success(request, _('User deactivated successfully.'))
+    return redirect('inventory:user_management')
+
+@login_required
+@user_passes_test(lambda u: u.is_superuser or u.groups.filter(name='IT_Manager').exists())
+def delete_user(request, pk):
+    user = get_object_or_404(User, pk=pk)
+    if request.method == 'POST':
+        username = user.username
+        user.delete()
+        messages.success(request, _('User "%s" deleted successfully.') % username)
+        return redirect('inventory:user_management')
+    return render(request, 'inventory/user_confirm_delete.html', {'user': user})
+
+class AssetHistoryView(LoginRequiredMixin, ListView):
+    model = AssetHistory
+    template_name = 'inventory/asset_history.html'
+    context_object_name = 'history_entries'
+    paginate_by = 20
+
+    def get_queryset(self):
+        queryset = AssetHistory.objects.select_related(
+            'asset', 'asset__asset_type', 'employee', 'created_by'
+        ).order_by('-date')
+        
+        # Filter by asset if specified
+        asset_id = self.request.GET.get('asset')
+        if asset_id:
+            queryset = queryset.filter(asset_id=asset_id)
+        
+        # Filter by action type if specified
+        action = self.request.GET.get('action')
+        if action:
+            queryset = queryset.filter(action=action)
+        
+        # Filter by date range if specified
+        start_date = self.request.GET.get('start_date')
+        end_date = self.request.GET.get('end_date')
+        if start_date:
+            queryset = queryset.filter(date__gte=start_date)
+        if end_date:
+            queryset = queryset.filter(date__lte=end_date)
+        
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['assets'] = ITAsset.objects.all()
+        context['action_choices'] = AssetHistory.ACTION_CHOICES
+        return context
+
+# Department Views
+class DepartmentListView(LoginRequiredMixin, NotificationMixin, ListView):
+    model = Department
+    template_name = 'inventory/department_list.html'
+    context_object_name = 'departments'
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        search_query = self.request.GET.get('search', '')
+        if search_query:
+            queryset = queryset.filter(name__icontains=search_query)
+        return queryset
+
+class DepartmentCreateView(LoginRequiredMixin, NotificationMixin, CreateView):
+    model = Department
+    template_name = 'inventory/department_form.html'
+    fields = ['name', 'description']
+    success_url = reverse_lazy('inventory:department_list')
+
+    def form_valid(self, form):
+        messages.success(self.request, _('Department created successfully.'))
+        return super().form_valid(form)
+
+class DepartmentUpdateView(LoginRequiredMixin, NotificationMixin, UpdateView):
+    model = Department
+    template_name = 'inventory/department_form.html'
+    fields = ['name', 'description']
+    success_url = reverse_lazy('inventory:department_list')
+
+    def form_valid(self, form):
+        messages.success(self.request, _('Department updated successfully.'))
+        return super().form_valid(form)
+
+class DepartmentDeleteView(LoginRequiredMixin, NotificationMixin, DeleteView):
+    model = Department
+    template_name = 'inventory/department_confirm_delete.html'
+    success_url = reverse_lazy('inventory:department_list')
+
+    def delete(self, request, *args, **kwargs):
+        try:
+            response = super().delete(request, *args, **kwargs)
+            messages.success(request, _('Department deleted successfully.'))
+            return response
+        except ProtectedError:
+            messages.error(request, _('Cannot delete this department because it is associated with employees.'))
+            return redirect('inventory:department_list')
+
+class LandingPageView(TemplateView):
+    template_name = 'inventory/landing.html'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = _('IT Solutions Management - Professional IT Services')
+        return context  

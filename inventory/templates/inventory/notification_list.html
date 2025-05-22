@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Notifications{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-bell me-2"></i>
+                        Notifications
+                        {% if unread_count > 0 %}
+                        <span class="badge bg-danger ms-2">{{ unread_count }} unread</span>
+                        {% endif %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if notifications %}
+                    <div class="list-group">
+                        {% for notification in notifications %}
+                        <div class="list-group-item list-group-item-action {% if not notification.is_read %}list-group-item-primary{% endif %}"
+                             data-notification-id="{{ notification.pk }}">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">{{ notification.title }}</h6>
+                                <small>{{ notification.created_at|timesince }} ago</small>
+                            </div>
+                            <p class="mb-1">{{ notification.message }}</p>
+                            <small class="text-muted">{{ notification.get_notification_type_display }}</small>
+                            {% if not notification.is_read %}
+                            <button class="btn btn-sm btn-outline-primary float-end mark-as-read" 
+                                    data-notification-id="{{ notification.pk }}">
+                                Mark as read
+                            </button>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        No notifications found.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const markAsReadButtons = document.querySelectorAll('.mark-as-read');
+    
+    markAsReadButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const notificationId = this.dataset.notificationId;
+            const notificationItem = document.querySelector(`[data-notification-id="${notificationId}"]`);
+            
+            fetch(`/inventory/notifications/${notificationId}/mark-as-read/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                },
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    notificationItem.classList.remove('list-group-item-primary');
+                    this.remove();
+                    
+                    // Update unread count
+                    const unreadBadge = document.querySelector('.badge');
+                    if (unreadBadge) {
+                        const currentCount = parseInt(unreadBadge.textContent);
+                        if (currentCount > 1) {
+                            unreadBadge.textContent = `${currentCount - 1} unread`;
+                        } else {
+                            unreadBadge.remove();
+                        }
+                    }
+                }
+            });
+        });
+    });
+});
+</script>
+{% endblock %} 

@@ -1,5 +1,5 @@
 from django import forms
-from .models import Employee, ITAsset, Department, OwnerCompany
+from .models import Employee, ITAsset, Department, OwnerCompany, WorkflowRequest, UserProfile
 
 class EmployeeForm(forms.ModelForm):
     """Form for creating and updating Employee records."""
@@ -239,3 +239,54 @@ class ITAssetForm(forms.ModelForm):
     def clean(self):
         cleaned_data = super().clean()
         return cleaned_data 
+
+class WorkflowRequestForm(forms.ModelForm):
+    """Form for creating workflow requests."""
+    
+    class Meta:
+        model = WorkflowRequest
+        fields = ['request_type', 'description']
+        widgets = {
+            'request_type': forms.Select(attrs={
+                'class': 'form-select',
+                'placeholder': 'Select request type'
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 4,
+                'placeholder': 'Describe your request in detail'
+            }),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['request_type'].empty_label = "Select Request Type"
+
+class WorkflowRequestApprovalForm(forms.ModelForm):
+    """Form for approving/rejecting workflow requests."""
+    
+    class Meta:
+        model = WorkflowRequest
+        fields = ['status']
+        widgets = {
+            'status': forms.Select(attrs={
+                'class': 'form-select',
+                'placeholder': 'Select status'
+            }),
+        }
+
+class UserProfileForm(forms.ModelForm):
+    """Form for updating user profile information."""
+    class Meta:
+        model = UserProfile
+        fields = ['language']
+        widgets = {
+            'language': forms.Select(
+                choices=[
+                    ('en', 'English'),
+                    ('ar', 'العربية'),
+                    ('de', 'Deutsch'),
+                ],
+                attrs={'class': 'form-select'}
+            )
+        } 

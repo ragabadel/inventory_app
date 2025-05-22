@@ -1,0 +1,413 @@
+{% extends 'inventory/base.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{% trans "IT Solutions Management - Professional IT Services" %}{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Hero Section */
+    .hero-section {
+        background: linear-gradient(135deg, #1a237e 0%, #0d47a1 100%);
+        color: white;
+        padding: 100px 0;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .hero-section::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url('{% static "images/pattern.svg" %}') repeat;
+        opacity: 0.1;
+    }
+
+    .hero-content {
+        position: relative;
+        z-index: 1;
+    }
+
+    /* Services Section */
+    .service-card {
+        border: none;
+        border-radius: 10px;
+        transition: transform 0.3s ease;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .service-card:hover {
+        transform: translateY(-5px);
+    }
+
+    .service-icon {
+        width: 60px;
+        height: 60px;
+        background: #f8f9fa;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 20px;
+    }
+
+    /* Testimonials Section */
+    .testimonial-card {
+        background: #fff;
+        border-radius: 10px;
+        padding: 30px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .testimonial-avatar {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+
+    /* Pricing Section */
+    .pricing-card {
+        border: none;
+        border-radius: 15px;
+        transition: transform 0.3s ease;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .pricing-card:hover {
+        transform: translateY(-5px);
+    }
+
+    .pricing-header {
+        background: #f8f9fa;
+        border-radius: 15px 15px 0 0;
+        padding: 30px;
+    }
+
+    .pricing-features {
+        padding: 30px;
+    }
+
+    .feature-item {
+        margin-bottom: 15px;
+    }
+
+    .feature-item i {
+        color: #28a745;
+        margin-right: 10px;
+    }
+
+    /* Industries Section */
+    .industry-card {
+        background: #fff;
+        border-radius: 10px;
+        padding: 20px;
+        text-align: center;
+        transition: transform 0.3s ease;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .industry-card:hover {
+        transform: translateY(-5px);
+    }
+
+    .industry-icon {
+        font-size: 2.5rem;
+        margin-bottom: 15px;
+        color: #1a237e;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero-section">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-6 hero-content">
+                <h1 class="display-4 fw-bold mb-4">{% trans "Transform Your Business with Professional IT Solutions" %}</h1>
+                <p class="lead mb-4">{% trans "Expert IT infrastructure management, cybersecurity, and cloud solutions to drive your business forward." %}</p>
+                <div class="d-flex gap-3">
+                    <a href="#contact" class="btn btn-light btn-lg">{% trans "Get Started" %}</a>
+                    <a href="#services" class="btn btn-outline-light btn-lg">{% trans "Learn More" %}</a>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <img src="{% static 'images/hero-illustration.svg' %}" alt="IT Solutions" class="img-fluid">
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Services Section -->
+<section id="services" class="py-5">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h2 class="display-5 fw-bold">{% trans "Our Services" %}</h2>
+            <p class="lead text-muted">{% trans "Comprehensive IT solutions tailored to your business needs" %}</p>
+        </div>
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="card service-card h-100">
+                    <div class="card-body text-center p-4">
+                        <div class="service-icon mx-auto">
+                            <i class="fas fa-network-wired fa-2x text-primary"></i>
+                        </div>
+                        <h3 class="h5 mb-3">{% trans "IT Infrastructure Management" %}</h3>
+                        <p class="text-muted">{% trans "End-to-end management of your IT infrastructure, ensuring optimal performance and reliability." %}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card service-card h-100">
+                    <div class="card-body text-center p-4">
+                        <div class="service-icon mx-auto">
+                            <i class="fas fa-shield-alt fa-2x text-primary"></i>
+                        </div>
+                        <h3 class="h5 mb-3">{% trans "Cybersecurity Solutions" %}</h3>
+                        <p class="text-muted">{% trans "Advanced security measures to protect your business from evolving cyber threats." %}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card service-card h-100">
+                    <div class="card-body text-center p-4">
+                        <div class="service-icon mx-auto">
+                            <i class="fas fa-cloud fa-2x text-primary"></i>
+                        </div>
+                        <h3 class="h5 mb-3">{% trans "Cloud Migration" %}</h3>
+                        <p class="text-muted">{% trans "Seamless transition to cloud infrastructure with minimal disruption to your operations." %}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Pricing Section -->
+<section id="pricing" class="py-5 bg-light">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h2 class="display-5 fw-bold">{% trans "Pricing Plans" %}</h2>
+            <p class="lead text-muted">{% trans "Choose the perfect plan for your business" %}</p>
+        </div>
+        <div class="row g-4">
+            <!-- Essential IT Plan -->
+            <div class="col-md-4">
+                <div class="card pricing-card h-100">
+                    <div class="pricing-header text-center">
+                        <h3 class="h4 mb-3">{% trans "Essential IT" %}</h3>
+                        <div class="display-4 fw-bold mb-3">$499<span class="fs-6 fw-normal">/month</span></div>
+                        <p class="text-muted">{% trans "Perfect for small businesses" %}</p>
+                    </div>
+                    <div class="pricing-features">
+                        <ul class="list-unstyled">
+                            <li class="feature-item">
+                                <i class="fas fa-check"></i>{% trans "Basic IT Support" %}
+                            </li>
+                            <li class="feature-item">
+                                <i class="fas fa-check"></i>{% trans "Network Monitoring" %}
+                            </li>
+                            <li class="feature-item">
+                                <i class="fas fa-check"></i>{% trans "Security Updates" %}
+                            </li>
+                            <li class="feature-item">
+                                <i class="fas fa-check"></i>{% trans "Email Support" %}
+                            </li>
+                        </ul>
+                        <a href="#contact" class="btn btn-outline-primary w-100">{% trans "Get Started" %}</a>
+                    </div>
+                </div>
+            </div>
+            <!-- Smart Tech Plan -->
+            <div class="col-md-4">
+                <div class="card pricing-card h-100 border-primary">
+                    <div class="pricing-header text-center bg-primary text-white">
+                        <h3 class="h4 mb-3">{% trans "Smart Tech" %}</h3>
+                        <div class="display-4 fw-bold mb-3">$999<span class="fs-6 fw-normal">/month</span></div>
+                        <p>{% trans "Ideal for growing businesses" %}</p>
+                    </div>
+                    <div class="pricing-features">
+                        <ul class="list-unstyled">
+                            <li class="feature-item">
+                                <i class="fas fa-check"></i>{% trans "Everything in Essential IT" %}
+                            </li>
+                            <li class="feature-item">
+                                <i class="fas fa-check"></i>{% trans "24/7 Priority Support" %}
+                            </li>
+                            <li class="feature-item">
+                                <i class="fas fa-check"></i>{% trans "Cloud Backup" %}
+                            </li>
+                            <li class="feature-item">
+                                <i class="fas fa-check"></i>{% trans "Security Monitoring" %}
+                            </li>
+                            <li class="feature-item">
+                                <i class="fas fa-check"></i>{% trans "Monthly Reports" %}
+                            </li>
+                        </ul>
+                        <a href="#contact" class="btn btn-primary w-100">{% trans "Get Started" %}</a>
+                    </div>
+                </div>
+            </div>
+            <!-- Ultimate Solutions Plan -->
+            <div class="col-md-4">
+                <div class="card pricing-card h-100">
+                    <div class="pricing-header text-center">
+                        <h3 class="h4 mb-3">{% trans "Ultimate Solutions" %}</h3>
+                        <div class="display-4 fw-bold mb-3">$1999<span class="fs-6 fw-normal">/month</span></div>
+                        <p class="text-muted">{% trans "For enterprise-level needs" %}</p>
+                    </div>
+                    <div class="pricing-features">
+                        <ul class="list-unstyled">
+                            <li class="feature-item">
+                                <i class="fas fa-check"></i>{% trans "Everything in Smart Tech" %}
+                            </li>
+                            <li class="feature-item">
+                                <i class="fas fa-check"></i>{% trans "Dedicated IT Manager" %}
+                            </li>
+                            <li class="feature-item">
+                                <i class="fas fa-check"></i>{% trans "Advanced Security" %}
+                            </li>
+                            <li class="feature-item">
+                                <i class="fas fa-check"></i>{% trans "Custom Solutions" %}
+                            </li>
+                            <li class="feature-item">
+                                <i class="fas fa-check"></i>{% trans "Strategic Planning" %}
+                            </li>
+                        </ul>
+                        <a href="#contact" class="btn btn-outline-primary w-100">{% trans "Get Started" %}</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Industries Section -->
+<section id="industries" class="py-5">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h2 class="display-5 fw-bold">{% trans "Industries We Serve" %}</h2>
+            <p class="lead text-muted">{% trans "Specialized solutions for various sectors" %}</p>
+        </div>
+        <div class="row g-4">
+            <div class="col-md-3">
+                <div class="industry-card">
+                    <i class="fas fa-building industry-icon"></i>
+                    <h3 class="h5">{% trans "Finance" %}</h3>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="industry-card">
+                    <i class="fas fa-hospital industry-icon"></i>
+                    <h3 class="h5">{% trans "Healthcare" %}</h3>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="industry-card">
+                    <i class="fas fa-shopping-cart industry-icon"></i>
+                    <h3 class="h5">{% trans "Retail" %}</h3>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="industry-card">
+                    <i class="fas fa-industry industry-icon"></i>
+                    <h3 class="h5">{% trans "Manufacturing" %}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Testimonials Section -->
+<section id="testimonials" class="py-5 bg-light">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h2 class="display-5 fw-bold">{% trans "Client Testimonials" %}</h2>
+            <p class="lead text-muted">{% trans "What our clients say about us" %}</p>
+        </div>
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="testimonial-card">
+                    <div class="d-flex align-items-center mb-4">
+                        <img src="{% static 'images/testimonial-1.jpg' %}" alt="Client" class="testimonial-avatar me-3">
+                        <div>
+                            <h4 class="h6 mb-1">{% trans "John Smith" %}</h4>
+                            <p class="text-muted mb-0">{% trans "CEO, TechCorp" %}</p>
+                        </div>
+                    </div>
+                    <p class="mb-0">{% trans "Their IT solutions have transformed our business operations. The team is professional and always available when we need them." %}</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="testimonial-card">
+                    <div class="d-flex align-items-center mb-4">
+                        <img src="{% static 'images/testimonial-2.jpg' %}" alt="Client" class="testimonial-avatar me-3">
+                        <div>
+                            <h4 class="h6 mb-1">{% trans "Sarah Johnson" %}</h4>
+                            <p class="text-muted mb-0">{% trans "CTO, InnovateTech" %}</p>
+                        </div>
+                    </div>
+                    <p class="mb-0">{% trans "The cybersecurity solutions they implemented have significantly improved our data protection. Highly recommended!" %}</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="testimonial-card">
+                    <div class="d-flex align-items-center mb-4">
+                        <img src="{% static 'images/testimonial-3.jpg' %}" alt="Client" class="testimonial-avatar me-3">
+                        <div>
+                            <h4 class="h6 mb-1">{% trans "Michael Brown" %}</h4>
+                            <p class="text-muted mb-0">{% trans "Operations Director, Global Solutions" %}</p>
+                        </div>
+                    </div>
+                    <p class="mb-0">{% trans "Their cloud migration service was seamless. The team handled everything professionally and with minimal disruption." %}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Contact Section -->
+<section id="contact" class="py-5">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="text-center mb-5">
+                    <h2 class="display-5 fw-bold">{% trans "Get in Touch" %}</h2>
+                    <p class="lead text-muted">{% trans "Ready to transform your IT infrastructure? Contact us today." %}</p>
+                </div>
+                <div class="card">
+                    <div class="card-body p-4">
+                        <form>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label for="name" class="form-label">{% trans "Name" %}</label>
+                                    <input type="text" class="form-control" id="name" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="email" class="form-label">{% trans "Email" %}</label>
+                                    <input type="email" class="form-control" id="email" required>
+                                </div>
+                                <div class="col-12">
+                                    <label for="company" class="form-label">{% trans "Company" %}</label>
+                                    <input type="text" class="form-control" id="company" required>
+                                </div>
+                                <div class="col-12">
+                                    <label for="message" class="form-label">{% trans "Message" %}</label>
+                                    <textarea class="form-control" id="message" rows="4" required></textarea>
+                                </div>
+                                <div class="col-12 text-center">
+                                    <button type="submit" class="btn btn-primary btn-lg">{% trans "Send Message" %}</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %} 
