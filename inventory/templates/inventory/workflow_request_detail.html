@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Request Details{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-clipboard-list me-2"></i>
+                        Request Details
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <dl class="row">
+                                <dt class="col-sm-4">Request Type</dt>
+                                <dd class="col-sm-8">{{ request.get_request_type_display }}</dd>
+
+                                <dt class="col-sm-4">Status</dt>
+                                <dd class="col-sm-8">
+                                    <span class="badge {% if request.status == 'pending' %}bg-warning{% elif request.status == 'approved' %}bg-success{% else %}bg-danger{% endif %}">
+                                        {{ request.get_status_display }}
+                                    </span>
+                                </dd>
+
+                                <dt class="col-sm-4">Requester</dt>
+                                <dd class="col-sm-8">{{ request.requester.get_full_name }}</dd>
+
+                                <dt class="col-sm-4">Created</dt>
+                                <dd class="col-sm-8">{{ request.created_at|date:"Y-m-d H:i" }}</dd>
+
+                                {% if request.approved_by %}
+                                <dt class="col-sm-4">Approved By</dt>
+                                <dd class="col-sm-8">{{ request.approved_by.get_full_name }}</dd>
+
+                                <dt class="col-sm-4">Approval Date</dt>
+                                <dd class="col-sm-8">{{ request.approval_date|date:"Y-m-d H:i" }}</dd>
+                                {% endif %}
+                            </dl>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Description</h6>
+                            <p class="border rounded p-3 bg-light">{{ request.description }}</p>
+                        </div>
+                    </div>
+
+                    {% if approval_form %}
+                    <div class="mt-4">
+                        <h6>Approval</h6>
+                        <form method="post" action="{% url 'inventory:workflow_request_approve' request.pk %}" class="needs-validation" novalidate>
+                            {% csrf_token %}
+                            <div class="row">
+                                <div class="col-md-6">
+                                    {{ approval_form.status }}
+                                </div>
+                                <div class="col-md-6">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-check me-2"></i>Submit Decision
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    {% endif %}
+
+                    <div class="mt-4">
+                        <a href="{% url 'inventory:workflow_request_list' %}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>Back to List
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

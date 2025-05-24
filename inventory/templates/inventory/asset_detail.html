@@ -1,7 +1,8 @@
 {% extends 'inventory/base.html' %}
 {% load static %}
+{% load i18n %}
 
-{% block title %}Asset Details{% endblock %}
+{% block title %}{% trans "Asset Details" %}{% endblock %}
 
 {% block extra_css %}
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -10,20 +11,67 @@
         border: none;
         box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075);
         margin-bottom: 1.5rem;
+        border-radius: 0.5rem;
     }
     .card-header {
         background-color: #2c3e50;
         color: white;
         border-bottom: none;
         padding: 1rem;
+        border-radius: 0.5rem 0.5rem 0 0;
     }
     .card-header h5 { margin: 0; font-weight: 500; }
-    .card-body { background-color: #f8f9fa; }
+    .card-body { 
+        background-color: #f8f9fa;
+        padding: 1.5rem;
+    }
     .section-title { color: #2c3e50; font-weight: 600; margin-bottom: 1rem; }
     .info-label { font-weight: 500; color: #34495e; }
     .info-value { color: #2c3e50; }
     .icon { width: 1.5em; text-align: center; }
-    .btn-action { margin-right: 0.5rem; }
+    .btn-action { 
+        margin-right: 0.5rem;
+        border-radius: 0.25rem;
+        padding: 0.5rem 1rem;
+    }
+    .status-badge {
+        padding: 0.5rem 1rem;
+        border-radius: 0.25rem;
+        font-weight: 500;
+    }
+    .status-available { background-color: #28a745; color: white; }
+    .status-assigned { background-color: #17a2b8; color: white; }
+    .status-maintenance { background-color: #ffc107; color: black; }
+    .status-retired { background-color: #dc3545; color: white; }
+    .action-buttons {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-top: 1rem;
+    }
+    .action-buttons .btn {
+        flex: 1;
+        min-width: 200px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .action-buttons .btn i {
+        margin-right: 0.5rem;
+    }
+    .warranty-warning {
+        background-color: #fff3cd;
+        border: 1px solid #ffeeba;
+        color: #856404;
+        padding: 0.75rem;
+        border-radius: 0.25rem;
+        margin-bottom: 1rem;
+    }
+    .warranty-expired {
+        background-color: #f8d7da;
+        border: 1px solid #f5c6cb;
+        color: #721c24;
+    }
 </style>
 {% endblock %}
 
@@ -31,26 +79,103 @@
 <div class="container-fluid">
     <div class="row">
         <div class="col-12 d-flex justify-content-between align-items-center mt-4 mb-3">
-            <h1 class="h2"><i class="fas fa-desktop me-2"></i>Asset Details</h1>
+            <h1 class="h2">
+                <i class="fas fa-desktop me-2"></i>{% trans "Asset Details" %}
+                <small class="text-muted">#{{ object.id }}</small>
+            </h1>
             <div>
-                <a href="{% url 'inventory:asset_update' object.pk %}" class="btn btn-primary btn-action"><i class="fas fa-edit"></i> Edit</a>
-                <a href="{% url 'inventory:asset_delete' object.pk %}" class="btn btn-danger btn-action"><i class="fas fa-trash"></i> Delete</a>
-                <a href="{% url 'inventory:asset_list' %}" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Back to List</a>
+                <a href="{% url 'inventory:asset_list' %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>{% trans "Back to List" %}
+                </a>
             </div>
         </div>
+
+        <!-- Status Banner -->
+        {% if object.warranty_expiry %}
+            {% with days_until_expiry=object.warranty_expiry|timeuntil %}
+                {% if days_until_expiry|stringformat:"s"|slice:":2"|add:"0" <= 30 %}
+                    <div class="col-12">
+                        <div class="warranty-warning {% if days_until_expiry|stringformat:"s"|slice:":2"|add:"0" <= 0 %}warranty-expired{% endif %}">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            {% if days_until_expiry|stringformat:"s"|slice:":2"|add:"0" <= 0 %}
+                                {% trans "Warranty has expired!" %}
+                            {% else %}
+                                {% trans "Warranty expires in" %} {{ days_until_expiry }}
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endif %}
+            {% endwith %}
+        {% endif %}
+
         <div class="col-12 col-lg-10 mx-auto">
             <!-- Basic Information -->
             <div class="card">
-                <div class="card-header"><h5><i class="fas fa-info-circle icon"></i> Basic Information</h5></div>
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5><i class="fas fa-info-circle icon"></i> {% trans "Basic Information" %}</h5>
+                    <span class="status-badge status-{{ object.status }}">
+                        {{ object.get_status_display }}
+                    </span>
+                </div>
                 <div class="card-body row">
-                    <div class="col-md-6 mb-2"><span class="info-label">Asset Name:</span> <span class="info-value">{{ object.name }}</span></div>
-                    <div class="col-md-6 mb-2"><span class="info-label">Asset Type:</span> <span class="info-value">{{ object.asset_type.display_name }}</span></div>
-                    <div class="col-md-6 mb-2"><span class="info-label">Serial Number:</span> <span class="info-value">{{ object.serial_number }}</span></div>
-                    <div class="col-md-6 mb-2"><span class="info-label">Model:</span> <span class="info-value">{{ object.model }}</span></div>
-                    <div class="col-md-6 mb-2"><span class="info-label">Manufacturer:</span> <span class="info-value">{{ object.manufacturer }}</span></div>
-                    <div class="col-md-6 mb-2"><span class="info-label">Owner:</span> <span class="info-value">{{ object.owner.name }}</span></div>
-                    <div class="col-md-6 mb-2"><span class="info-label">Status:</span> <span class="info-value">{{ object.get_status_display }}</span></div>
-                    <div class="col-md-6 mb-2"><span class="info-label">Assigned To:</span> <span class="info-value">{{ object.assigned_to }}</span></div>
+                    <div class="col-md-6 mb-3">
+                        <div class="info-label">{% trans "Asset Name" %}</div>
+                        <div class="info-value">{{ object.name }}</div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="info-label">{% trans "Asset Type" %}</div>
+                        <div class="info-value">{{ object.asset_type.display_name }}</div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="info-label">{% trans "Serial Number" %}</div>
+                        <div class="info-value">{{ object.serial_number }}</div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="info-label">{% trans "Model" %}</div>
+                        <div class="info-value">{{ object.model }}</div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="info-label">{% trans "Manufacturer" %}</div>
+                        <div class="info-value">{{ object.manufacturer }}</div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="info-label">{% trans "Owner" %}</div>
+                        <div class="info-value">{{ object.owner.name }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-tools icon"></i> {% trans "Actions" %}</h5>
+                </div>
+                <div class="card-body">
+                    <div class="action-buttons">
+                        {% if perms.inventory.change_itasset %}
+                        <a href="{% url 'inventory:asset_update' object.pk %}" class="btn btn-primary">
+                            <i class="fas fa-edit"></i>{% trans "Edit Asset" %}
+                        </a>
+                        {% endif %}
+                        
+                        {% if perms.inventory.delete_itasset %}
+                        <a href="{% url 'inventory:asset_delete' object.pk %}" class="btn btn-danger">
+                            <i class="fas fa-trash"></i>{% trans "Delete Asset" %}
+                        </a>
+                        {% endif %}
+                        
+                        <a href="{% url 'inventory:create_maintenance_request' object.pk %}" class="btn btn-warning">
+                            <i class="fas fa-tools"></i>{% trans "Request Maintenance" %}
+                        </a>
+                        
+                        <a href="{% url 'inventory:report_damaged_device' object.pk %}" class="btn btn-danger">
+                            <i class="fas fa-exclamation-triangle"></i>{% trans "Report Damage" %}
+                        </a>
+                        
+                        <a href="{% url 'inventory:report_lost_device' object.pk %}" class="btn btn-danger">
+                            <i class="fas fa-search"></i>{% trans "Report Lost" %}
+                        </a>
+                    </div>
                 </div>
             </div>
 

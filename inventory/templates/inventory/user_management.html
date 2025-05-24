@@ -1,0 +1,252 @@
+{% extends 'inventory/base.html' %}
+{% load i18n %}
+
+{% block title %}{% trans "User Management" %}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .user-card {
+        border: none;
+        box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075);
+        margin-bottom: 1.5rem;
+        border-radius: 0.5rem;
+    }
+    .user-card .card-header {
+        background-color: #2c3e50;
+        color: white;
+        border-bottom: none;
+        padding: 1rem;
+        border-radius: 0.5rem 0.5rem 0 0;
+    }
+    .user-card .card-body {
+        padding: 1.5rem;
+    }
+    .user-avatar {
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        background-color: #e9ecef;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        color: #6c757d;
+        margin-bottom: 1rem;
+    }
+    .user-info {
+        margin-bottom: 1rem;
+    }
+    .user-info .label {
+        font-weight: 500;
+        color: #6c757d;
+    }
+    .user-info .value {
+        color: #2c3e50;
+    }
+    .permission-badge {
+        display: inline-block;
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.25rem;
+        font-size: 0.875rem;
+        margin-right: 0.5rem;
+        margin-bottom: 0.5rem;
+        background-color: #e9ecef;
+        color: #495057;
+    }
+    .permission-badge.active {
+        background-color: #28a745;
+        color: white;
+    }
+    .action-buttons {
+        display: flex;
+        gap: 0.5rem;
+        margin-top: 1rem;
+    }
+    .action-buttons .btn {
+        flex: 1;
+    }
+    .search-box {
+        margin-bottom: 1.5rem;
+    }
+    .filter-section {
+        background-color: #f8f9fa;
+        padding: 1rem;
+        border-radius: 0.5rem;
+        margin-bottom: 1.5rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12 d-flex justify-content-between align-items-center mt-4 mb-3">
+            <h1 class="h2">
+                <i class="fas fa-users-cog me-2"></i>{% trans "User Management" %}
+            </h1>
+            <div>
+                <a href="{% url 'inventory:create_user' %}" class="btn btn-primary">
+                    <i class="fas fa-user-plus me-2"></i>{% trans "Add New User" %}
+                </a>
+            </div>
+        </div>
+
+        <!-- Search and Filter Section -->
+        <div class="col-12">
+            <div class="filter-section">
+                <form method="get" class="row g-3">
+                    <div class="col-md-4">
+                        <div class="input-group">
+                            <input type="text" name="search" class="form-control" placeholder="{% trans 'Search users...' %}" value="{{ request.GET.search }}">
+                            <button class="btn btn-outline-secondary" type="submit">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <select name="group" class="form-select">
+                            <option value="">{% trans "All Groups" %}</option>
+                            {% for group in groups %}
+                            <option value="{{ group.id }}" {% if request.GET.group == group.id|stringformat:"i" %}selected{% endif %}>
+                                {{ group.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <select name="is_active" class="form-select">
+                            <option value="">{% trans "All Status" %}</option>
+                            <option value="1" {% if request.GET.is_active == '1' %}selected{% endif %}>{% trans "Active" %}</option>
+                            <option value="0" {% if request.GET.is_active == '0' %}selected{% endif %}>{% trans "Inactive" %}</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="fas fa-filter me-2"></i>{% trans "Filter" %}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Users List -->
+        <div class="col-12">
+            <div class="row">
+                {% for user in users %}
+                <div class="col-md-6 col-lg-4">
+                    <div class="user-card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">{{ user.get_full_name|default:user.username }}</h5>
+                            <span class="badge {% if user.is_active %}bg-success{% else %}bg-danger{% endif %}">
+                                {% if user.is_active %}{% trans "Active" %}{% else %}{% trans "Inactive" %}{% endif %}
+                            </span>
+                        </div>
+                        <div class="card-body">
+                            <div class="user-avatar">
+                                <i class="fas fa-user"></i>
+                            </div>
+                            <div class="user-info">
+                                <div class="mb-2">
+                                    <span class="label">{% trans "Username" %}:</span>
+                                    <span class="value">{{ user.username }}</span>
+                                </div>
+                                <div class="mb-2">
+                                    <span class="label">{% trans "Email" %}:</span>
+                                    <span class="value">{{ user.email }}</span>
+                                </div>
+                                <div class="mb-2">
+                                    <span class="label">{% trans "Groups" %}:</span>
+                                    <div class="mt-1">
+                                        {% for group in user.groups.all %}
+                                        <span class="permission-badge active">{{ group.name }}</span>
+                                        {% empty %}
+                                        <span class="text-muted">{% trans "No groups assigned" %}</span>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="action-buttons">
+                                <a href="{% url 'inventory:edit_user' user.id %}" class="btn btn-primary">
+                                    <i class="fas fa-edit me-2"></i>{% trans "Edit" %}
+                                </a>
+                                {% if user.is_active %}
+                                <form method="post" action="{% url 'inventory:deactivate_user' user.id %}" class="d-inline">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-warning">
+                                        <i class="fas fa-user-slash me-2"></i>{% trans "Deactivate" %}
+                                    </button>
+                                </form>
+                                {% else %}
+                                <form method="post" action="{% url 'inventory:activate_user' user.id %}" class="d-inline">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-success">
+                                        <i class="fas fa-user-check me-2"></i>{% trans "Activate" %}
+                                    </button>
+                                </form>
+                                {% endif %}
+                                <a href="{% url 'inventory:delete_user' user.id %}" class="btn btn-danger">
+                                    <i class="fas fa-trash me-2"></i>{% trans "Delete" %}
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="col-12">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>{% trans "No users found." %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Pagination -->
+        {% if is_paginated %}
+        <div class="col-12">
+            <nav aria-label="Page navigation" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.group %}&group={{ request.GET.group }}{% endif %}{% if request.GET.is_active %}&is_active={{ request.GET.is_active }}{% endif %}">
+                            <i class="fas fa-angle-double-left"></i>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.group %}&group={{ request.GET.group }}{% endif %}{% if request.GET.is_active %}&is_active={{ request.GET.is_active }}{% endif %}">
+                            <i class="fas fa-angle-left"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+
+                    {% for num in page_obj.paginator.page_range %}
+                        {% if page_obj.number == num %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ num }}</span>
+                        </li>
+                        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ num }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.group %}&group={{ request.GET.group }}{% endif %}{% if request.GET.is_active %}&is_active={{ request.GET.is_active }}{% endif %}">{{ num }}</a>
+                        </li>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.group %}&group={{ request.GET.group }}{% endif %}{% if request.GET.is_active %}&is_active={{ request.GET.is_active }}{% endif %}">
+                            <i class="fas fa-angle-right"></i>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.group %}&group={{ request.GET.group }}{% endif %}{% if request.GET.is_active %}&is_active={{ request.GET.is_active }}{% endif %}">
+                            <i class="fas fa-angle-double-right"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %} 

@@ -10,8 +10,13 @@ SECRET_KEY = 'django-insecure-your-secret-key-here'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
-
+# Allow specific IPs or all IPs in your network
+ALLOWED_HOSTS = [
+    'localhost',
+    '127.0.0.1',
+    '192.168.1.7:8000', # Replace with your network subnet
+        # Or use this to allow all hosts (not recommended for production)
+]
 # Application definition
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -114,4 +119,4 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # Login URL
 LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = 'inventory:dashboard'
-LOGOUT_REDIRECT_URL = 'login' 
+LOGOUT_REDIRECT_URL = 'login'

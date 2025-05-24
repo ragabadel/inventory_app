@@ -1,0 +1,28 @@
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'inventory:asset_list' %}">
+                            <i class="fas fa-laptop me-2"></i>Assets
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'inventory:workflow_request_list' %}">
+                            <i class="fas fa-clipboard-list me-2"></i>Requests
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link position-relative" href="{% url 'inventory:notification_list' %}">
+                            <i class="fas fa-bell me-2"></i>Notifications
+                            {% with unread_count=request.user.notifications.filter.count %}
+                            {% if unread_count > 0 %}
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                {{ unread_count }}
+                            </span>
+                            {% endif %}
+                            {% endwith %}
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'inventory:update_language' %}">
+                            <i class="fas fa-language"></i>
+                            <span>{% trans "Language" %}</span>
+                        </a>
+                    </li> 
