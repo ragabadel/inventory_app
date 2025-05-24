@@ -166,4 +166,105 @@ body {
     .table-responsive {
         margin-bottom: 1rem;
     }
+}
+
+/* Notification Dropdown Styles */
+.notification-dropdown {
+    width: 350px;
+    padding: 0;
+}
+
+.notification-item {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #eee;
+    transition: background-color 0.2s;
+}
+
+.notification-item:hover {
+    background-color: #f8f9fa;
+}
+
+.notification-item.unread {
+    background-color: #f0f7ff;
+}
+
+.notification-item.unread:hover {
+    background-color: #e6f2ff;
+}
+
+.notification-title {
+    font-weight: 500;
+    margin-bottom: 0.25rem;
+}
+
+.notification-message {
+    margin-bottom: 0.25rem;
+    line-height: 1.4;
+}
+
+.notification-time {
+    font-size: 0.75rem;
+}
+
+.notification-status .badge {
+    width: 8px;
+    height: 8px;
+    padding: 0;
+}
+
+.dropdown-header {
+    padding: 0.75rem 1rem;
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.notification-list {
+    scrollbar-width: thin;
+    scrollbar-color: #dee2e6 #f8f9fa;
+}
+
+.notification-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.notification-list::-webkit-scrollbar-track {
+    background: #f8f9fa;
+}
+
+.notification-list::-webkit-scrollbar-thumb {
+    background-color: #dee2e6;
+    border-radius: 3px;
+}
+
+/* Language Switcher Styles */
+.nav-item.dropdown .dropdown-menu {
+    min-width: 160px;
+}
+
+.nav-item.dropdown .dropdown-item {
+    padding: 0.5rem 1rem;
+}
+
+.nav-item.dropdown .dropdown-item.active {
+    background-color: #e9ecef;
+    color: #212529;
+}
+
+.nav-item.dropdown .dropdown-item:hover {
+    background-color: #f8f9fa;
+}
+
+.nav-item.dropdown .dropdown-item i {
+    width: 20px;
+    text-align: center;
+}
+
+/* RTL Support for Language Switcher */
+[lang="ar"] .nav-item.dropdown .dropdown-menu {
+    text-align: right;
+}
+
+[lang="ar"] .nav-item.dropdown .dropdown-item i {
+    margin-left: 0.5rem;
+    margin-right: 0;
 } 
