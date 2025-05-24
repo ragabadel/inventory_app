@@ -26,3 +26,129 @@
                             <span>{% trans "Language" %}</span>
                         </a>
                     </li> 
+
+                <ul class="navbar-nav me-auto">
+                    {% if user.is_authenticated %}
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.path == '/inventory/' %}active{% endif %}" 
+                           href="{% url 'inventory:dashboard' %}">
+                            <i class="fas fa-tachometer-alt me-1"></i>{% trans "Dashboard" %}
+                        </a>
+                    </li>
+                    {% endif %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'inventory:asset_list' %}">
+                            <i class="fas fa-desktop me-1"></i>{% trans "Assets" %}
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'inventory:employee_list' %}">
+                            <i class="fas fa-users me-1"></i>{% trans "Employees" %}
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'inventory:landing_page' %}">
+                            <i class="fas fa-globe me-1"></i>{% trans "Company Landing" %}
+                        </a>
+                    </li>
+                </ul>
+                
+                <ul class="navbar-nav">
+                    <!-- Notifications Dropdown -->
+                    <li class="nav-item dropdown me-3">
+                        <a class="nav-link position-relative" href="#" id="notificationsDropdown" role="button" 
+                           data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-bell"></i>
+                            {% if unread_notifications_count > 0 %}
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                {{ unread_notifications_count }}
+                            </span>
+                            {% endif %}
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-end notification-dropdown" aria-labelledby="notificationsDropdown">
+                            <div class="dropdown-header d-flex justify-content-between align-items-center">
+                                <h6 class="mb-0">{% trans "Notifications" %}</h6>
+                                {% if unread_notifications_count > 0 %}
+                                <a href="{% url 'inventory:notification_list' %}" class="text-decoration-none small">
+                                    {% trans "View All" %}
+                                </a>
+                                {% endif %}
+                            </div>
+                            <div class="dropdown-divider"></div>
+                            <div class="notification-list" style="max-height: 300px; overflow-y: auto;">
+                                {% if notifications %}
+                                    {% for notification in notifications %}
+                                    <a class="dropdown-item notification-item {% if not notification.is_read %}unread{% endif %}" 
+                                       href="{% if notification.asset %}{% url 'inventory:asset_detail' notification.asset.id %}{% else %}{% url 'inventory:notification_list' %}{% endif %}">
+                                        <div class="d-flex align-items-center">
+                                            <div class="notification-icon me-3">
+                                                {% if notification.notification_type == 'warranty_expiry' %}
+                                                    <i class="fas fa-exclamation-triangle text-warning"></i>
+                                                {% elif notification.notification_type == 'new_device_request' %}
+                                                    <i class="fas fa-laptop text-primary"></i>
+                                                {% elif notification.notification_type == 'maintenance_request' %}
+                                                    <i class="fas fa-tools text-info"></i>
+                                                {% elif notification.notification_type == 'damaged_device' %}
+                                                    <i class="fas fa-exclamation-circle text-danger"></i>
+                                                {% elif notification.notification_type == 'lost_device' %}
+                                                    <i class="fas fa-search text-danger"></i>
+                                                {% else %}
+                                                    <i class="fas fa-bell text-secondary"></i>
+                                                {% endif %}
+                                            </div>
+                                            <div class="notification-content flex-grow-1">
+                                                <div class="notification-title">{{ notification.title }}</div>
+                                                <div class="notification-message small text-muted">{{ notification.message }}</div>
+                                                <div class="notification-time small text-muted">
+                                                    {{ notification.created_at|timesince }} {% trans "ago" %}
+                                                </div>
+                                            </div>
+                                            {% if not notification.is_read %}
+                                            <div class="notification-status">
+                                                <span class="badge bg-primary rounded-pill"></span>
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                    </a>
+                                    {% endfor %}
+                                {% else %}
+                                    <div class="dropdown-item text-center text-muted py-3">
+                                        <i class="fas fa-bell-slash mb-2"></i>
+                                        <p class="mb-0">{% trans "No notifications" %}</p>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </li>
+
+                    <!-- Language Switcher -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="languageDropdown" role="button" 
+                           data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-language"></i>
+                            <span class="ms-1">{{ LANGUAGE_CODE|upper }}</span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="languageDropdown">
+                            <li>
+                                <form action="{% url 'set_language' %}" method="post" class="d-inline">
+                                    {% csrf_token %}
+                                    <input name="next" type="hidden" value="{{ request.path }}">
+                                    <input name="language" type="hidden" value="en">
+                                    <button type="submit" class="dropdown-item {% if LANGUAGE_CODE == 'en' %}active{% endif %}">
+                                        <i class="fas fa-flag-usa me-2"></i>English
+                                    </button>
+                                </form>
+                            </li>
+                            <li>
+                                <form action="{% url 'set_language' %}" method="post" class="d-inline">
+                                    {% csrf_token %}
+                                    <input name="next" type="hidden" value="{{ request.path }}">
+                                    <input name="language" type="hidden" value="ar">
+                                    <button type="submit" class="dropdown-item {% if LANGUAGE_CODE == 'ar' %}active{% endif %}">
+                                        <i class="fas fa-flag me-2"></i>العربية
+                                    </button>
+                                </form>
+                            </li>
+                        </ul>
+                    </li>
+                </ul> 

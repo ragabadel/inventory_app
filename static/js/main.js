@@ -104,7 +104,67 @@ function handlePrint() {
     });
 }
 
-// Initialize all handlers when the DOM is loaded
+// Function to handle language switching
+function handleLanguageSwitch() {
+    const languageForms = document.querySelectorAll('form[action*="set_language"]');
+    languageForms.forEach(form => {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            fetch(this.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    window.location.reload();
+                }
+            });
+        });
+    });
+}
+
+// Function to handle notifications
+function handleNotifications() {
+    const notificationItems = document.querySelectorAll('.notification-item');
+    notificationItems.forEach(item => {
+        item.addEventListener('click', function(e) {
+            if (!this.classList.contains('unread')) return;
+            
+            const notificationId = this.dataset.notificationId;
+            if (!notificationId) return;
+
+            fetch(`/inventory/notifications/${notificationId}/mark-as-read/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    this.classList.remove('unread');
+                    const unreadBadge = document.querySelector('#notificationsDropdown .badge');
+                    if (unreadBadge) {
+                        const currentCount = parseInt(unreadBadge.textContent);
+                        if (currentCount > 1) {
+                            unreadBadge.textContent = currentCount - 1;
+                        } else {
+                            unreadBadge.remove();
+                        }
+                    }
+                }
+            });
+        });
+    });
+}
+
+// Initialize all handlers when the document is ready
 document.addEventListener('DOMContentLoaded', function() {
     handleRTL();
     handleFormValidation();
@@ -115,4 +175,6 @@ document.addEventListener('DOMContentLoaded', function() {
     handleSelect2();
     handleFileInputs();
     handlePrint();
+    handleLanguageSwitch();
+    handleNotifications();
 }); 
