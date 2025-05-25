@@ -2,6 +2,8 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
 from django.core.validators import RegexValidator
+from django.utils.translation import gettext_lazy as _
+from django.conf import settings
 
 class Department(models.Model):
     DEPARTMENT_CHOICES = [
@@ -72,7 +74,7 @@ class Employee(models.Model):
     email = models.EmailField(unique=True)
     phone_number = models.CharField(max_length=20, null=True, blank=True)
     department = models.ForeignKey(Department, on_delete=models.PROTECT, related_name='employees')
-    position = models.CharField(max_length=100)
+    position = models.ForeignKey(Position, on_delete=models.PROTECT, related_name='employees')
     hire_date = models.DateField()
     company = models.ForeignKey(OwnerCompany, on_delete=models.PROTECT, related_name='employees')
     is_active = models.BooleanField(default=True)
@@ -183,7 +185,7 @@ class AssetHistory(models.Model):
         ('retired', 'Retired'),
     ]
 
-    asset = models.ForeignKey(ITAsset, on_delete=models.CASCADE, related_name='history')
+    asset = models.ForeignKey(ITAsset, on_delete=models.CASCADE, related_name='asset_history')
     action = models.CharField(max_length=20, choices=ACTION_CHOICES)
     employee = models.ForeignKey(Employee, on_delete=models.SET_NULL, null=True, blank=True)
     date = models.DateTimeField(auto_now_add=True)
@@ -197,3 +199,26 @@ class AssetHistory(models.Model):
 
     def __str__(self):
         return f"{self.asset.name} - {self.get_action_display()} ({self.date.strftime('%Y-%m-%d')})"
+
+class DeviceHistory(models.Model):
+    EVENT_TYPES = [
+        ('assignment', _('Assignment')),
+        ('maintenance', _('Maintenance')),
+        ('status_change', _('Status Change')),
+        ('other', _('Other')),
+    ]
+
+    device = models.ForeignKey('ITAsset', on_delete=models.CASCADE, related_name='device_history')
+    event_type = models.CharField(max_length=20, choices=EVENT_TYPES)
+    title = models.CharField(max_length=255)
+    description = models.TextField()
+    timestamp = models.DateTimeField(auto_now_add=True)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
+
+    class Meta:
+        ordering = ['-timestamp']
+        verbose_name = _('Device History')
+        verbose_name_plural = _('Device Histories')
+
+    def __str__(self):
+        return f"{self.device.name} - {self.get_event_type_display()} - {self.timestamp}"

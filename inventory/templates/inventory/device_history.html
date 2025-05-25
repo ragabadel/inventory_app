@@ -1,0 +1,202 @@
+{% extends 'inventory/base.html' %}
+{% load i18n %}
+
+{% block title %}{% trans "Device History" %} - {{ device.name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0">{% trans "Device History" %}</h1>
+            <p class="text-muted">{% trans "View detailed history and information about this device" %}</p>
+        </div>
+        <div>
+            <a href="{% url 'inventory:itasset_list' %}" class="btn btn-outline-primary">
+                <i class="fas fa-arrow-left me-2"></i>{% trans "Back to Devices" %}
+            </a>
+        </div>
+    </div>
+
+    <!-- Device Details Card -->
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title mb-4">{% trans "Device Information" %}</h5>
+                    
+                    <div class="mb-3">
+                        <small class="text-muted d-block">{% trans "Asset Tag" %}</small>
+                        <span class="badge bg-primary">{{ device.asset_tag }}</span>
+                    </div>
+
+                    <div class="mb-3">
+                        <small class="text-muted d-block">{% trans "Serial Number" %}</small>
+                        <strong>{{ device.serial_number }}</strong>
+                    </div>
+
+                    <div class="mb-3">
+                        <small class="text-muted d-block">{% trans "Type" %}</small>
+                        <span>{{ device.asset_type.display_name }}</span>
+                    </div>
+
+                    <div class="mb-3">
+                        <small class="text-muted d-block">{% trans "Status" %}</small>
+                        <span class="badge {% if device.status == 'active' %}bg-success{% elif device.status == 'maintenance' %}bg-warning{% else %}bg-danger{% endif %}">
+                            {{ device.get_status_display }}
+                        </span>
+                    </div>
+
+                    <div class="mb-3">
+                        <small class="text-muted d-block">{% trans "Owner Company" %}</small>
+                        <span>{{ device.owner_company.name }}</span>
+                    </div>
+
+                    <div class="mb-3">
+                        <small class="text-muted d-block">{% trans "Current User" %}</small>
+                        {% if device.assigned_to %}
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-user-circle me-2 text-primary"></i>
+                                <span>{{ device.assigned_to.get_full_name }}</span>
+                            </div>
+                        {% else %}
+                            <span class="text-muted">{% trans "Not Assigned" %}</span>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <small class="text-muted d-block">{% trans "Purchase Date" %}</small>
+                        <span>{{ device.purchase_date|date:"Y-m-d" }}</span>
+                    </div>
+
+                    <div class="mb-3">
+                        <small class="text-muted d-block">{% trans "Warranty Until" %}</small>
+                        <span {% if device.warranty_end and device.warranty_end|date:"Y-m-d" < now|date:"Y-m-d" %}class="text-danger"{% endif %}>
+                            {{ device.warranty_end|date:"Y-m-d" }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Specifications Card -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title mb-4">{% trans "Specifications" %}</h5>
+                    {% if device.specifications %}
+                        {% for key, value in device.specifications.items %}
+                        <div class="mb-3">
+                            <small class="text-muted d-block">{{ key }}</small>
+                            <strong>{{ value }}</strong>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-muted mb-0">{% trans "No specifications available" %}</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- History Timeline -->
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title mb-4">{% trans "Device History" %}</h5>
+                    
+                    <div class="timeline">
+                        {% for event in device_history %}
+                        <div class="timeline-item">
+                            <div class="timeline-marker {% if event.event_type == 'assignment' %}bg-primary{% elif event.event_type == 'maintenance' %}bg-warning{% elif event.event_type == 'status_change' %}bg-info{% else %}bg-secondary{% endif %}">
+                                {% if event.event_type == 'assignment' %}
+                                    <i class="fas fa-user-plus"></i>
+                                {% elif event.event_type == 'maintenance' %}
+                                    <i class="fas fa-tools"></i>
+                                {% elif event.event_type == 'status_change' %}
+                                    <i class="fas fa-exchange-alt"></i>
+                                {% else %}
+                                    <i class="fas fa-info"></i>
+                                {% endif %}
+                            </div>
+                            <div class="timeline-content">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <strong>{{ event.title }}</strong>
+                                    <small class="text-muted">{{ event.timestamp|date:"Y-m-d H:i" }}</small>
+                                </div>
+                                <p class="mb-0">{{ event.description }}</p>
+                                {% if event.user %}
+                                <small class="text-muted">
+                                    <i class="fas fa-user me-1"></i>{{ event.user.get_full_name }}
+                                </small>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-history fa-3x text-muted mb-3"></i>
+                            <p class="text-muted mb-0">{% trans "No history records found for this device." %}</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .timeline {
+        position: relative;
+        padding: 0;
+        list-style: none;
+    }
+
+    .timeline-item {
+        position: relative;
+        padding-left: 3rem;
+        padding-bottom: 2rem;
+    }
+
+    .timeline-item:last-child {
+        padding-bottom: 0;
+    }
+
+    .timeline-marker {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 2rem;
+        height: 2rem;
+        border-radius: 50%;
+        text-align: center;
+        line-height: 2rem;
+        color: white;
+    }
+
+    .timeline-marker i {
+        line-height: 2rem;
+    }
+
+    .timeline-content {
+        position: relative;
+        padding: 1rem;
+        border: 1px solid #e9ecef;
+        border-radius: 0.25rem;
+        margin-left: 1rem;
+    }
+
+    .timeline-content::before {
+        content: '';
+        position: absolute;
+        left: -0.5rem;
+        top: 0.75rem;
+        width: 0.5rem;
+        height: 0.5rem;
+        border: 1px solid #e9ecef;
+        border-right: 0;
+        border-bottom: 0;
+        background-color: white;
+        transform: rotate(-45deg);
+    }
+</style>
+{% endblock %} 

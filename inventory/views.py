@@ -19,6 +19,8 @@ from django.template.loader import render_to_string
 from xhtml2pdf import pisa
 from django.conf import settings
 import os
+from django.db import models
+from django.utils import timezone
 
 @login_required
 def home(request):
@@ -50,6 +52,16 @@ def home(request):
             'count': count
         })
 
+    # Get department distribution
+    departments = Department.objects.all()
+    department_distribution = []
+    for department in departments:
+        count = Employee.objects.filter(department=department).count()
+        department_distribution.append({
+            'name': department.name,
+            'count': count
+        })
+
     # Get recent assets
     recent_assets = ITAsset.objects.select_related('asset_type', 'owner', 'assigned_to').order_by('-id')[:5]
 
@@ -76,6 +88,7 @@ def home(request):
         'retired_assets': retired_assets,
         'asset_type_distribution': asset_type_distribution,
         'owner_company_distribution': owner_company_distribution,
+        'department_distribution': department_distribution,
         'recent_assets': recent_assets,
         'expiring_warranty_assets': expiring_warranty_assets,
         'asset_history': asset_history,
@@ -1159,4 +1172,133 @@ class EmployeeDeleteView(LoginRequiredMixin, DeleteView):
 
     def delete(self, request, *args, **kwargs):
         messages.success(request, 'Employee deleted successfully.')
-        return super().delete(request, *args, **kwargs)  
+        return super().delete(request, *args, **kwargs)
+
+@login_required
+def owner_company_list(request):
+    companies = OwnerCompany.objects.all()
+    return render(request, 'inventory/owner_company_list.html', {
+        'companies': companies,
+        'title': 'Owner Companies'
+    })
+
+@login_required
+def owner_company_detail(request, pk):
+    company = get_object_or_404(OwnerCompany, pk=pk)
+    return render(request, 'inventory/owner_company_detail.html', {
+        'company': company,
+        'title': f'Company: {company.name}'
+    })
+
+@login_required
+def asset_type_list(request):
+    asset_types = AssetType.objects.all()
+    return render(request, 'inventory/asset_type_list.html', {
+        'asset_types': asset_types,
+        'title': 'Asset Types'
+    })
+
+@login_required
+def asset_type_detail(request, pk):
+    asset_type = get_object_or_404(AssetType, pk=pk)
+    return render(request, 'inventory/asset_type_detail.html', {
+        'asset_type': asset_type,
+        'title': f'Asset Type: {asset_type.display_name}'
+    })
+
+# Department Views
+@login_required
+def department_list(request):
+    departments = Department.objects.all()
+    return render(request, 'inventory/department_list.html', {
+        'departments': departments,
+        'title': 'Departments'
+    })
+
+@login_required
+def department_detail(request, pk):
+    department = get_object_or_404(Department, pk=pk)
+    return render(request, 'inventory/department_detail.html', {
+        'department': department,
+        'title': f'Department: {department.name}'
+    })
+
+@login_required
+def department_create(request):
+    if request.method == 'POST':
+        name = request.POST.get('name')
+        if name:
+            department = Department.objects.create(name=name)
+            messages.success(request, f'Department "{department.name}" created successfully.')
+            return redirect('inventory:department_list')
+    return render(request, 'inventory/department_form.html', {
+        'title': 'Create Department'
+    })
+
+@login_required
+def department_update(request, pk):
+    department = get_object_or_404(Department, pk=pk)
+    if request.method == 'POST':
+        name = request.POST.get('name')
+        if name:
+            department.name = name
+            department.save()
+            messages.success(request, f'Department "{department.name}" updated successfully.')
+            return redirect('inventory:department_list')
+    return render(request, 'inventory/department_form.html', {
+        'department': department,
+        'title': f'Update Department: {department.name}'
+    })
+
+@login_required
+def department_delete(request, pk):
+    department = get_object_or_404(Department, pk=pk)
+    if request.method == 'POST':
+        try:
+            name = department.name
+            department.delete()
+            messages.success(request, f'Department "{name}" deleted successfully.')
+            return redirect('inventory:department_list')
+        except models.ProtectedError as e:
+            employees = department.employees.all()
+            positions = department.positions.all()
+            messages.error(request, 'Cannot delete this department because it has associated employees and positions.')
+            return render(request, 'inventory/department_confirm_delete.html', {
+                'department': department,
+                'title': f'Delete Department: {department.name}',
+                'employees': employees,
+                'positions': positions,
+                'error': True
+            })
+    return render(request, 'inventory/department_confirm_delete.html', {
+        'department': department,
+        'title': f'Delete Department: {department.name}',
+        'employees': department.employees.all(),
+        'positions': department.positions.all()
+    })
+
+@login_required
+def device_history(request, pk):
+    device = get_object_or_404(ITAsset, pk=pk)
+    device_history = device.device_history.all()
+    
+    context = {
+        'title': f'{device.name} - History',
+        'device': device,
+        'device_history': device_history,
+        'now': timezone.now(),
+    }
+    return render(request, 'inventory/device_history.html', context)
+
+@login_required
+def asset_history(request, pk):
+    asset = get_object_or_404(ITAsset, pk=pk)
+    asset_history = asset.asset_history.all()
+    
+    context = {
+        'title': f'{asset.name} - History',
+        'asset': asset,
+        'asset_history': asset_history,
+        'now': timezone.now(),
+    }
+    return render(request, 'inventory/asset_history.html', context)  

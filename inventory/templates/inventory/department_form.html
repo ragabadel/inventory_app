@@ -10,15 +10,15 @@
         <div>
             <h1 class="h3 mb-0">{{ title }}</h1>
             <p class="text-muted">
-                {% if company %}
-                    {% trans "Update company information" %}
+                {% if department %}
+                    {% trans "Update department information" %}
                 {% else %}
-                    {% trans "Create a new company" %}
+                    {% trans "Create a new department" %}
                 {% endif %}
             </p>
         </div>
         <div>
-            <a href="{% url 'inventory:owner_company_list' %}" class="btn btn-outline-secondary">
+            <a href="{% url 'inventory:department_list' %}" class="btn btn-outline-secondary">
                 <i class="fas fa-arrow-left me-2"></i>{% trans "Back to List" %}
             </a>
         </div>
@@ -31,18 +31,6 @@
                 {% csrf_token %}
                 
                 <div class="row g-3">
-                    <!-- Code Field -->
-                    <div class="col-md-6">
-                        <label for="code" class="form-label">{% trans "Code" %}</label>
-                        <input type="text" 
-                               class="form-control" 
-                               id="code" 
-                               name="code" 
-                               value="{{ company.code|default:'' }}"
-                               required>
-                        <div class="form-text">{% trans "A unique identifier for the company" %}</div>
-                    </div>
-
                     <!-- Name Field -->
                     <div class="col-md-6">
                         <label for="name" class="form-label">{% trans "Name" %}</label>
@@ -50,9 +38,9 @@
                                class="form-control" 
                                id="name" 
                                name="name" 
-                               value="{{ company.name|default:'' }}"
+                               value="{{ department.name|default:'' }}"
                                required>
-                        <div class="form-text">{% trans "The full name of the company" %}</div>
+                        <div class="form-text">{% trans "The name of the department" %}</div>
                     </div>
                 </div>
 
@@ -60,13 +48,13 @@
                 <div class="mt-4">
                     <button type="submit" class="btn btn-primary">
                         <i class="fas fa-save me-2"></i>
-                        {% if company %}
-                            {% trans "Update Company" %}
+                        {% if department %}
+                            {% trans "Update Department" %}
                         {% else %}
-                            {% trans "Create Company" %}
+                            {% trans "Create Department" %}
                         {% endif %}
                     </button>
-                    <a href="{% url 'inventory:owner_company_list' %}" class="btn btn-outline-secondary">
+                    <a href="{% url 'inventory:department_list' %}" class="btn btn-outline-secondary">
                         {% trans "Cancel" %}
                     </a>
                 </div>

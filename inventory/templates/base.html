@@ -10,12 +10,69 @@
     <!-- Font Awesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     
+    <style>
+        :root {
+            --bs-dark: #212529;
+        }
+        
+        .navbar {
+            background-color: var(--bs-dark) !important;
+        }
+        
+        .navbar-brand {
+            color: #fff !important;
+        }
+        
+        .nav-link {
+            color: rgba(255, 255, 255, 0.85) !important;
+        }
+        
+        .nav-link:hover {
+            color: #fff !important;
+        }
+        
+        .dropdown-menu {
+            border-radius: 0.25rem;
+            border: 1px solid rgba(0, 0, 0, 0.15);
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+        }
+        
+        .dropdown-item {
+            color: #212529;
+            padding: 0.5rem 1rem;
+        }
+        
+        .dropdown-item:hover {
+            background-color: #f8f9fa;
+            color: #16181b;
+        }
+        
+        .dropdown-item i {
+            width: 1.5rem;
+            color: #6c757d;
+        }
+        
+        .dropdown-divider {
+            margin: 0.5rem 0;
+            border-top: 1px solid #e9ecef;
+        }
+        
+        .btn-primary {
+            background-color: #0d6efd;
+            border-color: #0d6efd;
+        }
+        
+        .btn-primary:hover {
+            background-color: #0b5ed7;
+            border-color: #0a58ca;
+        }
+    </style>
     {% block extra_css %}{% endblock %}
 </head>
 <body>
     <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <div class="container">
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container-fluid">
             <a class="navbar-brand" href="{% url 'inventory:home' %}">
                 <i class="fas fa-laptop me-2"></i>IT Asset Management
             </a>
@@ -33,6 +90,36 @@
                         <a class="nav-link" href="{% url 'inventory:employee_list' %}">
                             <i class="fas fa-users me-1"></i>Employees
                         </a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="adminDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-user-circle me-1"></i>admin
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="adminDropdown">
+                            <li>
+                                <a class="dropdown-item" href="{% url 'inventory:owner_company_list' %}">
+                                    <i class="fas fa-building"></i>Owner Companies
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{% url 'inventory:asset_type_list' %}">
+                                    <i class="fas fa-tags"></i>Asset Types
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{% url 'inventory:department_list' %}">
+                                    <i class="fas fa-sitemap"></i>Departments
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item" href="{% url 'logout' %}">
+                                    <i class="fas fa-sign-out-alt"></i>Logout
+                                </a>
+                            </li>
+                        </ul>
                     </li>
                 </ul>
             </div>

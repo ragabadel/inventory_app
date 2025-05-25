@@ -28,6 +28,7 @@ urlpatterns = [
     path('assets/upload/', views.asset_upload, name='asset_upload'),
     path('assets/download-template/', views.download_asset_template, name='download_asset_template'),
     path('assets/download-data/', views.download_asset_data, name='download_asset_data'),
+    path('assets/<int:pk>/history/', views.asset_history, name='asset_history'),
     
     # Asset Type URLs
     path('asset-types/', views.AssetTypeListView.as_view(), name='asset_type_list'),
@@ -40,4 +41,21 @@ urlpatterns = [
     path('owner-companies/create/', views.OwnerCompanyCreateView.as_view(), name='owner_company_create'),
     path('owner-companies/<int:pk>/update/', views.OwnerCompanyUpdateView.as_view(), name='owner_company_update'),
     path('owner-companies/<int:pk>/delete/', views.OwnerCompanyDeleteView.as_view(), name='owner_company_delete'),
+    
+    # Owner Companies
+    path('companies/', views.owner_company_list, name='owner_company_list'),
+    path('companies/<int:pk>/', views.owner_company_detail, name='owner_company_detail'),
+    
+    # Asset Types
+    path('asset-types/', views.asset_type_list, name='asset_type_list'),
+    path('asset-types/<int:pk>/', views.asset_type_detail, name='asset_type_detail'),
+
+    # Department URLs
+    path('departments/', views.department_list, name='department_list'),
+    path('departments/<int:pk>/', views.department_detail, name='department_detail'),
+    path('departments/create/', views.department_create, name='department_create'),
+    path('departments/<int:pk>/update/', views.department_update, name='department_update'),
+    path('departments/<int:pk>/delete/', views.department_delete, name='department_delete'),
+
+    path('devices/<int:pk>/history/', views.device_history, name='device_history'),
 ]
