@@ -1,0 +1,167 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}{% trans "Notifications" %}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col">
+            <h2>{% trans "Notifications" %}</h2>
+        </div>
+        <div class="col-auto">
+            {% if notifications %}
+            <button id="markAllRead" class="btn btn-outline-primary">
+                {% trans "Mark All as Read" %}
+            </button>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if notifications %}
+        <div class="list-group">
+            {% for notification in notifications %}
+                <div class="list-group-item list-group-item-action {% if notification.status == 'unread' %}list-group-item-light{% endif %}">
+                    <div class="d-flex w-100 justify-content-between align-items-center">
+                        <h5 class="mb-1">
+                            <a href="{% url 'inventory:notification_detail' notification.pk %}" class="text-decoration-none">
+                                {{ notification.title }}
+                            </a>
+                        </h5>
+                        <div class="btn-group">
+                            {% if notification.status == 'unread' %}
+                                <button class="btn btn-sm btn-outline-primary mark-read" data-id="{{ notification.pk }}">
+                                    {% trans "Mark as Read" %}
+                                </button>
+                            {% endif %}
+                            <button class="btn btn-sm btn-outline-secondary archive" data-id="{{ notification.pk }}">
+                                {% trans "Archive" %}
+                            </button>
+                        </div>
+                    </div>
+                    <p class="mb-1">{{ notification.message }}</p>
+                    <small class="text-muted">
+                        {{ notification.created_at|timesince }} {% trans "ago" %}
+                        {% if notification.status == 'read' %}
+                            • {% trans "Read" %}
+                        {% endif %}
+                    </small>
+                </div>
+            {% endfor %}
+        </div>
+
+        {% if is_paginated %}
+        <nav aria-label="{% trans 'Notification pagination' %}" class="mt-4">
+            <ul class="pagination justify-content-center">
+                {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}">{% trans "Previous" %}</a>
+                    </li>
+                {% endif %}
+
+                {% for num in page_obj.paginator.page_range %}
+                    {% if page_obj.number == num %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ num }}</span>
+                        </li>
+                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+
+                {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}">{% trans "Next" %}</a>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    {% else %}
+        <div class="alert alert-info">
+            {% trans "No notifications to display." %}
+        </div>
+    {% endif %}
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Mark single notification as read
+    document.querySelectorAll('.mark-read').forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            const id = this.dataset.id;
+            fetch(`/inventory/notifications/${id}/mark-read/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken'),
+                },
+            }).then(response => {
+                if (response.ok) {
+                    this.closest('.list-group-item').classList.remove('list-group-item-light');
+                    this.remove();
+                }
+            });
+        });
+    });
+
+    // Mark all as read
+    document.getElementById('markAllRead')?.addEventListener('click', function() {
+        fetch('/inventory/notifications/mark-all-read/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+            },
+        }).then(response => {
+            if (response.ok) {
+                document.querySelectorAll('.list-group-item-light').forEach(item => {
+                    item.classList.remove('list-group-item-light');
+                });
+                document.querySelectorAll('.mark-read').forEach(button => {
+                    button.remove();
+                });
+            }
+        });
+    });
+
+    // Archive notification
+    document.querySelectorAll('.archive').forEach(button => {
+        button.addEventListener('click', function() {
+            const id = this.dataset.id;
+            fetch(`/inventory/notifications/${id}/archive/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken'),
+                },
+            }).then(response => {
+                if (response.ok) {
+                    this.closest('.list-group-item').remove();
+                }
+            });
+        });
+    });
+
+    // CSRF token helper function
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+});
+</script>
+{% endblock %} 

@@ -46,7 +46,9 @@ class EmployeeForm(forms.ModelForm):
             }),
             'phone_number': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Enter phone number'
+                'placeholder': 'Enter phone number (e.g., +201234567890)',
+                'pattern': '^\+?1?\d{9,15}$',
+                'title': 'Phone number must be in international format (e.g., +201234567890)'
             }),
             'department': forms.Select(attrs={'class': 'form-select'}),
             'position': forms.TextInput(attrs={
@@ -123,6 +125,15 @@ class EmployeeForm(forms.ModelForm):
         if not company:
             raise forms.ValidationError('Please select a company.')
         return company
+
+    def clean_phone_number(self):
+        phone_number = self.cleaned_data.get('phone_number')
+        if phone_number:
+            # Remove any whitespace
+            phone_number = phone_number.strip()
+            if not phone_number.startswith('+'):
+                phone_number = '+' + phone_number
+        return phone_number or None  # Return None if empty string
 
 class ITAssetForm(forms.ModelForm):
     """Form for creating and updating ITAsset records."""

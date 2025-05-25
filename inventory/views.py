@@ -7,9 +7,9 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db.models import Q
-from .models import Employee, ITAsset, Department, Position, AssetType, OwnerCompany, AssetHistory
-from .forms import EmployeeForm, ITAssetForm
-from django.http import HttpResponse
+from .models import Employee, ITAsset, Department, Position, AssetType, OwnerCompany, AssetHistory, Notification
+from .forms import EmployeeForm, ITAssetForm, DepartmentForm
+from django.http import HttpResponse, JsonResponse
 import openpyxl
 from openpyxl import Workbook
 from datetime import datetime, timedelta
@@ -19,6 +19,9 @@ from django.template.loader import render_to_string
 from xhtml2pdf import pisa
 from django.conf import settings
 import os
+from django.utils import timezone
+from .services import NotificationService
+from django.views.decorators.http import require_POST
 
 @login_required
 def home(request):
@@ -342,56 +345,20 @@ class ITAssetUpdateView(LoginRequiredMixin, UpdateView):
     success_url = reverse_lazy('inventory:asset_list')
 
     def form_valid(self, form):
-        old_asset = self.get_object()
-        old_status = old_asset.status
-        old_assigned_to = old_asset.assigned_to
+        response = super().form_valid(form)
+        asset = self.object
         
-        asset = form.save()
-        
-        # Check if status changed
-        if old_status != asset.status:
-            action = asset.status
-            notes = f'Asset status changed from {old_status} to {asset.status}'
-            
-            # If status changed to maintenance
-            if asset.status == 'maintenance':
-                notes = f'Asset sent for maintenance'
-            
-            # If status changed to retired
-            elif asset.status == 'retired':
-                notes = f'Asset retired from inventory'
-            
-            AssetHistory.objects.create(
-                asset=asset,
-                action=action,
-                employee=asset.assigned_to,
-                notes=notes,
-                created_by=self.request.user
-            )
-        
-        # Check if assigned employee changed
-        if old_assigned_to != asset.assigned_to:
-            if asset.assigned_to:
-                # New assignment
-                AssetHistory.objects.create(
-                    asset=asset,
-                    action='assigned',
-                    employee=asset.assigned_to,
-                    notes=f'Asset assigned to {asset.assigned_to.get_full_name()}',
-                    created_by=self.request.user
-                )
-            else:
-                # Returned to inventory
-                AssetHistory.objects.create(
-                    asset=asset,
-                    action='returned',
-                    employee=old_assigned_to,
-                    notes=f'Asset returned from {old_assigned_to.get_full_name()}',
-                    created_by=self.request.user
-                )
+        # Check if status changed to 'available' from 'maintenance'
+        if (
+            'status' in form.changed_data and
+            form.cleaned_data['status'] == 'available' and
+            form.initial['status'] == 'maintenance'
+        ):
+            # Create maintenance completion notification
+            NotificationService.check_maintenance_completion(asset)
         
         messages.success(self.request, 'IT Asset updated successfully.')
-        return super().form_valid(form)
+        return response
 
 class ITAssetDeleteView(LoginRequiredMixin, DeleteView):
     model = ITAsset
@@ -1159,4 +1126,121 @@ class EmployeeDeleteView(LoginRequiredMixin, DeleteView):
 
     def delete(self, request, *args, **kwargs):
         messages.success(request, 'Employee deleted successfully.')
-        return super().delete(request, *args, **kwargs)  
+        return super().delete(request, *args, **kwargs)
+
+class DepartmentListView(LoginRequiredMixin, ListView):
+    model = Department
+    template_name = 'inventory/department_list.html'
+    context_object_name = 'departments'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = 'Departments'
+        return context
+
+class DepartmentCreateView(LoginRequiredMixin, CreateView):
+    model = Department
+    form_class = DepartmentForm
+    template_name = 'inventory/department_form.html'
+    success_url = reverse_lazy('inventory:department_list')
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = 'Add Department'
+        context['action'] = 'Add'
+        return context
+    
+    def form_valid(self, form):
+        messages.success(self.request, 'Department created successfully.')
+        return super().form_valid(form)
+
+class DepartmentUpdateView(LoginRequiredMixin, UpdateView):
+    model = Department
+    form_class = DepartmentForm
+    template_name = 'inventory/department_form.html'
+    success_url = reverse_lazy('inventory:department_list')
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = 'Edit Department'
+        context['action'] = 'Update'
+        return context
+    
+    def form_valid(self, form):
+        messages.success(self.request, 'Department updated successfully.')
+        return super().form_valid(form)
+
+class DepartmentDeleteView(LoginRequiredMixin, DeleteView):
+    model = Department
+    template_name = 'inventory/department_confirm_delete.html'
+    success_url = reverse_lazy('inventory:department_list')
+    
+    def delete(self, request, *args, **kwargs):
+        messages.success(request, 'Department deleted successfully.')
+        return super().delete(request, *args, **kwargs)
+
+class NotificationListView(LoginRequiredMixin, ListView):
+    model = Notification
+    template_name = 'inventory/notification_list.html'
+    context_object_name = 'notifications'
+    paginate_by = 10
+
+    def get_queryset(self):
+        return Notification.objects.filter(
+            recipient=self.request.user
+        ).exclude(
+            status='archived'
+        ).select_related('asset', 'recipient')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['unread_count'] = self.get_queryset().filter(status='unread').count()
+        return context
+
+class NotificationDetailView(LoginRequiredMixin, DetailView):
+    model = Notification
+    template_name = 'inventory/notification_detail.html'
+    context_object_name = 'notification'
+
+    def get_queryset(self):
+        return Notification.objects.filter(recipient=self.request.user)
+
+    def get(self, request, *args, **kwargs):
+        response = super().get(request, *args, **kwargs)
+        # Mark notification as read when viewed
+        self.object.mark_as_read()
+        return response
+
+@require_POST
+@login_required
+def mark_notification_as_read(request, pk):
+    notification = get_object_or_404(Notification, pk=pk, recipient=request.user)
+    notification.mark_as_read()
+    return JsonResponse({'status': 'success'})
+
+@require_POST
+@login_required
+def mark_all_notifications_as_read(request):
+    Notification.objects.filter(
+        recipient=request.user,
+        status='unread'
+    ).update(
+        status='read',
+        read_at=timezone.now()
+    )
+    return JsonResponse({'status': 'success'})
+
+@require_POST
+@login_required
+def archive_notification(request, pk):
+    notification = get_object_or_404(Notification, pk=pk, recipient=request.user)
+    notification.archive()
+    return JsonResponse({'status': 'success'})
+
+@login_required
+def get_unread_notifications_count(request):
+    count = Notification.objects.filter(
+        recipient=request.user,
+        status='unread'
+    ).count()
+    return JsonResponse({'count': count})  

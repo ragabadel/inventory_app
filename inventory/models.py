@@ -70,7 +70,17 @@ class Employee(models.Model):
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)
     email = models.EmailField(unique=True)
-    phone_number = models.CharField(max_length=20, null=True, blank=True)
+    phone_regex = RegexValidator(
+        regex=r'^\+?1?\d{9,15}$',
+        message="Phone number must be entered in the format: '+999999999'. Up to 15 digits allowed."
+    )
+    phone_number = models.CharField(
+        max_length=17,
+        validators=[phone_regex],
+        blank=True,
+        default='',
+        help_text="Enter phone number in the format: '+999999999'"
+    )
     department = models.ForeignKey(Department, on_delete=models.PROTECT, related_name='employees')
     position = models.CharField(max_length=100)
     hire_date = models.DateField()
@@ -197,3 +207,89 @@ class AssetHistory(models.Model):
 
     def __str__(self):
         return f"{self.asset.name} - {self.get_action_display()} ({self.date.strftime('%Y-%m-%d')})"
+
+class Notification(models.Model):
+    NOTIFICATION_TYPES = [
+        ('asset_return', 'Asset Return'),
+        ('maintenance_request', 'Maintenance Request'),
+        ('warranty_expired', 'Warranty Expired'),
+        ('warranty_expiring', 'Warranty Expiring Soon'),
+        ('serial_number_update', 'Serial Number Update'),
+        ('maintenance_complete', 'Maintenance Complete'),
+    ]
+
+    STATUS_CHOICES = [
+        ('unread', 'Unread'),
+        ('read', 'Read'),
+        ('archived', 'Archived'),
+    ]
+
+    title = models.CharField(max_length=255)
+    message = models.TextField()
+    notification_type = models.CharField(max_length=50, choices=NOTIFICATION_TYPES)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='unread')
+    created_at = models.DateTimeField(auto_now_add=True)
+    read_at = models.DateTimeField(null=True, blank=True)
+    is_email_sent = models.BooleanField(default=False)
+    
+    # Relations
+    asset = models.ForeignKey('ITAsset', on_delete=models.CASCADE, related_name='notifications')
+    recipient = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications')
+
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['notification_type', 'status', 'created_at']),
+            models.Index(fields=['asset', 'notification_type']),
+        ]
+
+    def __str__(self):
+        return f"{self.get_notification_type_display()} - {self.asset}"
+
+    def mark_as_read(self):
+        if self.status == 'unread':
+            self.status = 'read'
+            self.read_at = timezone.now()
+            self.save()
+
+    def archive(self):
+        self.status = 'archived'
+        self.save()
+
+    @classmethod
+    def create_asset_notification(cls, asset, notification_type, recipient, message=None):
+        """Helper method to create notifications for asset-related events."""
+        title_map = {
+            'asset_return': f'Asset Return: {asset.serial_number}',
+            'maintenance_request': f'Maintenance Request: {asset.serial_number}',
+            'warranty_expired': f'Warranty Expired: {asset.serial_number}',
+            'warranty_expiring': f'Warranty Expiring Soon: {asset.serial_number}',
+            'serial_number_update': f'Serial Number Updated: {asset.serial_number}',
+            'maintenance_complete': f'Maintenance Complete: {asset.serial_number}',
+        }
+
+        message_map = {
+            'asset_return': f'Asset {asset.serial_number} has been returned by {asset.assigned_to}',
+            'maintenance_request': f'Maintenance requested for asset {asset.serial_number}',
+            'warranty_expired': f'Warranty has expired for asset {asset.serial_number}',
+            'warranty_expiring': f'Warranty will expire soon for asset {asset.serial_number}',
+            'serial_number_update': f'Serial number has been updated for asset {asset.serial_number}',
+            'maintenance_complete': f'Maintenance has been completed for asset {asset.serial_number}',
+        }
+
+        return cls.objects.create(
+            title=title_map.get(notification_type, 'Asset Notification'),
+            message=message or message_map.get(notification_type, ''),
+            notification_type=notification_type,
+            asset=asset,
+            recipient=recipient
+        )
+
+    @property
+    def is_recent(self):
+        """Return True if notification is less than 24 hours old."""
+        if self.created_at:
+            now = timezone.now()
+            time_diff = now - self.created_at
+            return time_diff.days < 1
+        return False
