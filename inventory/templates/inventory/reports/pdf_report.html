@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+{% load static %}
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Inventory Report</title>
+    <style>
+        @page {
+            size: a4 portrait;
+            margin: 2.5cm 1.5cm;
+        }
+        
+        .page-header {
+            position: running(header);
+            text-align: center;
+            font-size: 9pt;
+            color: #666;
+        }
+        
+        .page-footer {
+            position: running(footer);
+            text-align: center;
+            font-size: 9pt;
+            color: #666;
+        }
+        
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            color: #333;
+            line-height: 1.5;
+            font-size: 10pt;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 2cm;
+        }
+        
+        .header h1 {
+            color: #2d3748;
+            font-size: 24pt;
+            margin-bottom: 0.5cm;
+        }
+        
+        .header p {
+            color: #718096;
+            font-size: 11pt;
+        }
+        
+        .section {
+            margin-bottom: 1.5cm;
+        }
+        
+        .section h2 {
+            color: #2d3748;
+            font-size: 14pt;
+            border-bottom: 1pt solid #e2e8f0;
+            padding-bottom: 0.3cm;
+            margin-bottom: 0.5cm;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1cm;
+            margin-bottom: 1cm;
+        }
+        
+        .stat-card {
+            background: #f7fafc;
+            padding: 0.5cm;
+            border-radius: 4pt;
+        }
+        
+        .stat-card h3 {
+            color: #4a5568;
+            font-size: 11pt;
+            margin: 0 0 0.2cm 0;
+        }
+        
+        .stat-card .value {
+            color: #2d3748;
+            font-size: 16pt;
+            font-weight: bold;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 1cm;
+        }
+        
+        th, td {
+            padding: 0.3cm;
+            text-align: left;
+            border-bottom: 1pt solid #e2e8f0;
+        }
+        
+        th {
+            background: #f7fafc;
+            font-weight: 600;
+            color: #4a5568;
+        }
+        
+        tr:nth-child(even) {
+            background: #f7fafc;
+        }
+    </style>
+</head>
+<body>
+    <div class="page-header">Inventory Management System Report</div>
+    <div class="page-footer">Page <pdf:pagenumber> of <pdf:pagecount></div>
+    
+    <div class="header">
+        <h1>Inventory Report</h1>
+        <p>Generated on {% now "F j, Y" %}</p>
+    </div>
+
+    <div class="section">
+        <h2>Asset Overview</h2>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3>Total Assets</h3>
+                <div class="value">{{ total_assets }}</div>
+            </div>
+            <div class="stat-card">
+                <h3>Available Assets</h3>
+                <div class="value">{{ available_assets }}</div>
+            </div>
+            <div class="stat-card">
+                <h3>Assigned Assets</h3>
+                <div class="value">{{ assigned_assets }}</div>
+            </div>
+            <div class="stat-card">
+                <h3>In Maintenance</h3>
+                <div class="value">{{ maintenance_assets }}</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Department Asset Distribution</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Department</th>
+                    <th>Asset Count</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for dept in departments %}
+                <tr>
+                    <td>{{ dept.name }}</td>
+                    <td>{{ dept.asset_count }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>Recent Activity</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Asset</th>
+                    <th>Action</th>
+                    <th>Assigned To</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for activity in recent_activities %}
+                <tr>
+                    <td>{{ activity.date|date:"M j, Y" }}</td>
+                    <td>{{ activity.asset.name }}</td>
+                    <td>{{ activity.get_action_display }}</td>
+                    <td>{{ activity.employee.get_full_name|default:"-" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</body>
+</html> 

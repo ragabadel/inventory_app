@@ -1,0 +1,434 @@
+{% extends 'inventory/base.html' %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}IT Asset Management Solutions | Enterprise ITAM{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Hero Section */
+    .hero-section {
+        background: linear-gradient(135deg, #1a365d 0%, #2a4365 100%);
+        color: white;
+        padding: 6rem 0;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .hero-content {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 2rem;
+        position: relative;
+        z-index: 2;
+    }
+
+    .hero-title {
+        font-size: 3.5rem;
+        font-weight: 700;
+        line-height: 1.2;
+        margin-bottom: 1.5rem;
+    }
+
+    .hero-subtitle {
+        font-size: 1.5rem;
+        line-height: 1.5;
+        margin-bottom: 2rem;
+        opacity: 0.9;
+    }
+
+    .cta-button {
+        display: inline-block;
+        background: #48bb78;
+        color: white;
+        padding: 1rem 2rem;
+        border-radius: 0.5rem;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.3s ease;
+    }
+
+    .cta-button:hover {
+        background: #38a169;
+        transform: translateY(-2px);
+    }
+
+    /* Services Section */
+    .services-section {
+        padding: 6rem 0;
+        background: #f7fafc;
+    }
+
+    .section-title {
+        text-align: center;
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 3rem;
+        color: #2d3748;
+    }
+
+    .services-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 2rem;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 2rem;
+    }
+
+    .service-card {
+        background: white;
+        padding: 2rem;
+        border-radius: 0.5rem;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+    }
+
+    .service-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    }
+
+    .service-icon {
+        font-size: 2rem;
+        color: #4299e1;
+        margin-bottom: 1rem;
+    }
+
+    .service-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        color: #2d3748;
+    }
+
+    /* Benefits Section */
+    .benefits-section {
+        padding: 6rem 0;
+        background: white;
+    }
+
+    .benefits-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 2rem;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 2rem;
+    }
+
+    .benefit-card {
+        text-align: center;
+        padding: 2rem;
+    }
+
+    .benefit-icon {
+        font-size: 2.5rem;
+        color: #4299e1;
+        margin-bottom: 1rem;
+    }
+
+    /* Industries Section */
+    .industries-section {
+        padding: 6rem 0;
+        background: #f7fafc;
+    }
+
+    .industries-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 2rem;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 2rem;
+    }
+
+    .industry-card {
+        text-align: center;
+        padding: 2rem;
+        background: white;
+        border-radius: 0.5rem;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Testimonials Section */
+    .testimonials-section {
+        padding: 6rem 0;
+        background: white;
+    }
+
+    .testimonials-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 2rem;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 2rem;
+    }
+
+    .testimonial-card {
+        background: #f7fafc;
+        padding: 2rem;
+        border-radius: 0.5rem;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .testimonial-text {
+        font-style: italic;
+        margin-bottom: 1rem;
+    }
+
+    .testimonial-author {
+        font-weight: 600;
+        color: #2d3748;
+    }
+
+    /* Pricing Section */
+    .pricing-section {
+        padding: 6rem 0;
+        background: #f7fafc;
+    }
+
+    .pricing-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 2rem;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 2rem;
+    }
+
+    .pricing-card {
+        background: white;
+        padding: 2rem;
+        border-radius: 0.5rem;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        text-align: center;
+    }
+
+    .pricing-card.popular {
+        transform: scale(1.05);
+        border: 2px solid #4299e1;
+    }
+
+    .plan-name {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #2d3748;
+        margin-bottom: 1rem;
+    }
+
+    .plan-price {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: #2d3748;
+        margin-bottom: 2rem;
+    }
+
+    .plan-features {
+        list-style: none;
+        padding: 0;
+        margin: 0 0 2rem 0;
+    }
+
+    .plan-features li {
+        padding: 0.5rem 0;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    .plan-features li:last-child {
+        border-bottom: none;
+    }
+
+    @media (max-width: 768px) {
+        .hero-title {
+            font-size: 2.5rem;
+        }
+
+        .hero-subtitle {
+            font-size: 1.25rem;
+        }
+
+        .section-title {
+            font-size: 2rem;
+        }
+
+        .pricing-card.popular {
+            transform: none;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero-section">
+    <div class="hero-content">
+        <h1 class="hero-title">Take Control of Your IT Assets with Enterprise-Grade Precision</h1>
+        <p class="hero-subtitle">Streamline operations, ensure compliance, and maximize ROI with our comprehensive IT Asset Management solution.</p>
+        <a href="{% url 'inventory:contact' %}" class="cta-button">Schedule a Free Demo</a>
+    </div>
+</section>
+
+<!-- Services Section -->
+<section class="services-section">
+    <h2 class="section-title">Comprehensive IT Asset Management</h2>
+    <div class="services-grid">
+        <div class="service-card">
+            <i class="fas fa-sync service-icon"></i>
+            <h3 class="service-title">Asset Lifecycle Management</h3>
+            <p>Track every IT asset from procurement to retirement. Maintain complete visibility and control over your technology investments.</p>
+        </div>
+        <div class="service-card">
+            <i class="fas fa-users service-icon"></i>
+            <h3 class="service-title">Employee Asset Assignment</h3>
+            <p>Streamline equipment distribution and maintain clear accountability with our employee assignment system.</p>
+        </div>
+        <div class="service-card">
+            <i class="fas fa-chart-line service-icon"></i>
+            <h3 class="service-title">Real-time Inventory Tracking</h3>
+            <p>Access up-to-the-minute insights about your IT assets, their location, and status across your organization.</p>
+        </div>
+        <div class="service-card">
+            <i class="fas fa-clipboard-check service-icon"></i>
+            <h3 class="service-title">Compliance & Auditing</h3>
+            <p>Simplify compliance with automated asset audits and comprehensive reporting capabilities.</p>
+        </div>
+        <div class="service-card">
+            <i class="fas fa-tools service-icon"></i>
+            <h3 class="service-title">Maintenance Management</h3>
+            <p>Stay ahead of maintenance needs and warranty expirations with automated alerts and scheduling.</p>
+        </div>
+        <div class="service-card">
+            <i class="fas fa-tachometer-alt service-icon"></i>
+            <h3 class="service-title">Performance Optimization</h3>
+            <p>Maximize the value of your IT investments with data-driven insights and optimization recommendations.</p>
+        </div>
+    </div>
+</section>
+
+<!-- Benefits Section -->
+<section class="benefits-section">
+    <h2 class="section-title">Why IT Asset Management Matters</h2>
+    <div class="benefits-grid">
+        <div class="benefit-card">
+            <i class="fas fa-dollar-sign benefit-icon"></i>
+            <h3>Reduce IT Waste</h3>
+            <p>Eliminate redundant purchases and identify underutilized assets to optimize spending.</p>
+        </div>
+        <div class="benefit-card">
+            <i class="fas fa-shield-alt benefit-icon"></i>
+            <h3>Enhanced Security</h3>
+            <p>Maintain complete visibility of your IT estate to reduce security risks and ensure compliance.</p>
+        </div>
+        <div class="benefit-card">
+            <i class="fas fa-file-alt benefit-icon"></i>
+            <h3>Simplified Audits</h3>
+            <p>Generate comprehensive reports instantly for audits and compliance requirements.</p>
+        </div>
+        <div class="benefit-card">
+            <i class="fas fa-chart-pie benefit-icon"></i>
+            <h3>Maximize ROI</h3>
+            <p>Optimize asset utilization and make data-driven decisions about IT investments.</p>
+        </div>
+    </div>
+</section>
+
+<!-- Industries Section -->
+<section class="industries-section">
+    <h2 class="section-title">Industries We Serve</h2>
+    <div class="industries-grid">
+        <div class="industry-card">
+            <i class="fas fa-university mb-3"></i>
+            <h3>Finance</h3>
+        </div>
+        <div class="industry-card">
+            <i class="fas fa-hospital mb-3"></i>
+            <h3>Healthcare</h3>
+        </div>
+        <div class="industry-card">
+            <i class="fas fa-graduation-cap mb-3"></i>
+            <h3>Education</h3>
+        </div>
+        <div class="industry-card">
+            <i class="fas fa-building mb-3"></i>
+            <h3>Government</h3>
+        </div>
+        <div class="industry-card">
+            <i class="fas fa-truck mb-3"></i>
+            <h3>Logistics</h3>
+        </div>
+        <div class="industry-card">
+            <i class="fas fa-industry mb-3"></i>
+            <h3>Manufacturing</h3>
+        </div>
+    </div>
+</section>
+
+<!-- Testimonials Section -->
+<section class="testimonials-section">
+    <h2 class="section-title">What Our Clients Say</h2>
+    <div class="testimonials-grid">
+        <div class="testimonial-card">
+            <p class="testimonial-text">"The visibility and control we've gained over our IT assets has transformed our operations. We've reduced asset losses by 85% and simplified our audit process significantly."</p>
+            <p class="testimonial-author">Sarah Chen, CIO - Global Financial Services</p>
+        </div>
+        <div class="testimonial-card">
+            <p class="testimonial-text">"Implementation was smooth, and the ROI was evident within months. We've optimized our IT spending and improved compliance across all departments."</p>
+            <p class="testimonial-author">Michael Rodriguez, IT Director - Healthcare Solutions</p>
+        </div>
+        <div class="testimonial-card">
+            <p class="testimonial-text">"The automated tracking and reporting features have saved our team countless hours. It's an indispensable tool for modern IT management."</p>
+            <p class="testimonial-author">David Smith, Head of IT - Education Tech</p>
+        </div>
+    </div>
+</section>
+
+<!-- Pricing Section -->
+<section class="pricing-section">
+    <h2 class="section-title">Pricing Plans</h2>
+    <div class="pricing-grid">
+        <div class="pricing-card">
+            <h3 class="plan-name">Track</h3>
+            <p class="plan-price">$499<span class="text-sm">/month</span></p>
+            <ul class="plan-features">
+                <li>Up to 500 assets</li>
+                <li>10 user licenses</li>
+                <li>Basic reporting dashboard</li>
+                <li>Email support</li>
+                <li>Asset lifecycle tracking</li>
+            </ul>
+            <a href="{% url 'inventory:contact' %}" class="cta-button">Start Free Trial</a>
+        </div>
+        <div class="pricing-card popular">
+            <h3 class="plan-name">Control</h3>
+            <p class="plan-price">$999<span class="text-sm">/month</span></p>
+            <ul class="plan-features">
+                <li>Up to 2000 assets</li>
+                <li>25 user licenses</li>
+                <li>Advanced reporting & analytics</li>
+                <li>Priority support</li>
+                <li>HR system integration</li>
+                <li>Automated audits</li>
+                <li>Custom alerts</li>
+            </ul>
+            <a href="{% url 'inventory:contact' %}" class="cta-button">Start Free Trial</a>
+        </div>
+        <div class="pricing-card">
+            <h3 class="plan-name">Govern</h3>
+            <p class="plan-price">Contact Sales</p>
+            <ul class="plan-features">
+                <li>Unlimited assets</li>
+                <li>Unlimited users</li>
+                <li>Enterprise reporting</li>
+                <li>24/7 premium support</li>
+                <li>Full API access</li>
+                <li>Custom integrations</li>
+                <li>Dedicated account manager</li>
+                <li>Compliance tools</li>
+            </ul>
+            <a href="{% url 'inventory:contact' %}" class="cta-button">Contact Sales</a>
+        </div>
+    </div>
+</section>
+{% endblock %} 

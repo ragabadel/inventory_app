@@ -1,26 +1,37 @@
 # inventory/views.py
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
-from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
+from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView, TemplateView
 from django.urls import reverse_lazy
-from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
-from django.db.models import Q
-from .models import Employee, ITAsset, Department, Position, AssetType, OwnerCompany, AssetHistory
+from django.db.models import Q, Count
+from django.contrib.contenttypes.models import ContentType
+from .models import Employee, ITAsset, Department, Position, AssetType, OwnerCompany, AssetHistory, Notification, NotificationCategory
 from .forms import EmployeeForm, ITAssetForm
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse, FileResponse
 import openpyxl
 from openpyxl import Workbook
 from datetime import datetime, timedelta
 from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.datavalidation import DataValidation
-from django.template.loader import render_to_string
+from django.template.loader import render_to_string, get_template
 from xhtml2pdf import pisa
 from django.conf import settings
 import os
 from django.db import models
 from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
+from django.contrib.auth.models import User, Group, Permission
+from django.views.decorators.http import require_POST
+from django.db import connection
+from weasyprint import HTML, CSS
+from weasyprint.text.fonts import FontConfiguration
+import tempfile
+import json
+import io
+from io import BytesIO
 
 @login_required
 def home(request):
@@ -393,6 +404,42 @@ class ITAssetUpdateView(LoginRequiredMixin, UpdateView):
                     notes=f'Asset assigned to {asset.assigned_to.get_full_name()}',
                     created_by=self.request.user
                 )
+                # Create notification for device assignment
+                try:
+                    device_category = NotificationCategory.objects.get(name='Device Assignment')
+                    notification_data = {
+                        'title': f'New Device Assigned: {asset.name}',
+                        'message': f'You have been assigned a new device: {asset.name} (SN: {asset.serial_number})',
+                        'priority': 'medium',
+                        'employee_profile': asset.assigned_to,
+                        'content_type': ContentType.objects.get_for_model(asset),
+                        'object_id': asset.id,
+                        'category': device_category,
+                        'status': 'unread'
+                    }
+                    
+                    # Use raw SQL to insert the notification
+                    with connection.cursor() as cursor:
+                        cursor.execute("""
+                            INSERT INTO inventory_notification 
+                            (title, message, priority, status, created_at, employee_profile_id, content_type_id, object_id, category_id)
+                            VALUES 
+                            (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                        """, [
+                            notification_data['title'],
+                            notification_data['message'],
+                            notification_data['priority'],
+                            notification_data['status'],
+                            timezone.now(),
+                            notification_data['employee_profile'].id if notification_data['employee_profile'] else None,
+                            notification_data['content_type'].id,
+                            notification_data['object_id'],
+                            notification_data['category'].id
+                        ])
+                except NotificationCategory.DoesNotExist:
+                    messages.warning(self.request, 'Could not create notification: Device Assignment category not found')
+                except Exception as e:
+                    messages.error(self.request, f'Error creating notification: {str(e)}')
             else:
                 # Returned to inventory
                 AssetHistory.objects.create(
@@ -402,6 +449,22 @@ class ITAssetUpdateView(LoginRequiredMixin, UpdateView):
                     notes=f'Asset returned from {old_assigned_to.get_full_name()}',
                     created_by=self.request.user
                 )
+                # Create notification for device return
+                try:
+                    device_category = NotificationCategory.objects.get(name='Device Assignment')
+                    Notification.objects.create(
+                        title=f'Device Returned: {asset.name}',
+                        message=f'Device {asset.name} (SN: {asset.serial_number}) has been returned to inventory',
+                        priority='medium',
+                        employee_profile=old_assigned_to,
+                        content_type=ContentType.objects.get_for_model(asset),
+                        object_id=asset.id,
+                        category=device_category
+                    )
+                except NotificationCategory.DoesNotExist:
+                    messages.warning(self.request, 'Could not create notification: Device Assignment category not found')
+                except Exception as e:
+                    messages.error(self.request, f'Error creating notification: {str(e)}')
         
         messages.success(self.request, 'IT Asset updated successfully.')
         return super().form_valid(form)
@@ -1301,4 +1364,508 @@ def asset_history(request, pk):
         'asset_history': asset_history,
         'now': timezone.now(),
     }
-    return render(request, 'inventory/asset_history.html', context)  
+    return render(request, 'inventory/asset_history.html', context)
+
+class NotificationListView(LoginRequiredMixin, ListView):
+    model = Notification
+    template_name = 'inventory/notification_list.html'
+    context_object_name = 'notifications'
+    paginate_by = 15
+
+    def get_queryset(self):
+        queryset = Notification.objects.select_related(
+            'category', 'employee_profile', 'content_type'
+        )
+
+        # Check if user has an employee profile
+        if hasattr(self.request.user, 'employee_profile') and self.request.user.employee_profile:
+            queryset = queryset.filter(
+                Q(employee_profile=self.request.user.employee_profile) |
+                Q(employee_profile__isnull=True)
+            )
+        else:
+            # If user doesn't have an employee profile, only show notifications without a specific employee
+            queryset = queryset.filter(employee_profile__isnull=True)
+
+        # Filter by status
+        status = self.request.GET.get('status')
+        if status in ['unread', 'read', 'archived']:
+            queryset = queryset.filter(status=status)
+        elif not status:  # Default view excludes archived
+            queryset = queryset.exclude(status='archived')
+
+        # Filter by priority
+        priority = self.request.GET.get('priority')
+        if priority in ['low', 'medium', 'high', 'urgent']:
+            queryset = queryset.filter(priority=priority)
+
+        # Filter by category
+        category = self.request.GET.get('category')
+        if category:
+            queryset = queryset.filter(category_id=category)
+
+        # Filter by date range
+        date_range = self.request.GET.get('date_range')
+        if date_range:
+            today = timezone.now().date()
+            if date_range == 'today':
+                queryset = queryset.filter(created_at__date=today)
+            elif date_range == 'week':
+                queryset = queryset.filter(created_at__date__gte=today - timezone.timedelta(days=7))
+            elif date_range == 'month':
+                queryset = queryset.filter(created_at__date__gte=today - timezone.timedelta(days=30))
+
+        # Search
+        search_query = self.request.GET.get('q')
+        if search_query:
+            queryset = queryset.filter(
+                Q(title__icontains=search_query) |
+                Q(message__icontains=search_query)
+            )
+
+        return queryset.order_by('-created_at')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        # Get notification statistics
+        notifications = self.get_queryset()
+        context['total_count'] = notifications.count()
+        context['unread_count'] = notifications.filter(status='unread').count()
+        context['archived_count'] = notifications.filter(status='archived').count()
+        
+        # Get counts by priority
+        priority_counts = notifications.values('priority').annotate(
+            count=Count('id')
+        ).order_by('priority')
+        context['priority_counts'] = {
+            item['priority']: item['count'] for item in priority_counts
+        }
+        
+        # Get counts by category
+        category_counts = notifications.values(
+            'category__name', 'category__icon', 'category__color'
+        ).annotate(
+            count=Count('id')
+        ).order_by('category__name')
+        context['category_counts'] = category_counts
+        
+        # Add filter values to context
+        context['current_status'] = self.request.GET.get('status', '')
+        context['current_priority'] = self.request.GET.get('priority', '')
+        context['current_category'] = self.request.GET.get('category', '')
+        context['current_date_range'] = self.request.GET.get('date_range', '')
+        context['search_query'] = self.request.GET.get('q', '')
+        
+        # Add categories for filter dropdown
+        context['categories'] = NotificationCategory.objects.all()
+        
+        return context
+
+class NotificationDetailView(LoginRequiredMixin, DetailView):
+    model = Notification
+    template_name = 'inventory/notification_detail.html'
+    context_object_name = 'notification'
+
+    def get_queryset(self):
+        queryset = Notification.objects.all()
+        
+        # Check if user has an employee profile
+        if hasattr(self.request.user, 'employee_profile') and self.request.user.employee_profile:
+            queryset = queryset.filter(
+                Q(employee_profile=self.request.user.employee_profile) |
+                Q(employee_profile__isnull=True)
+            )
+        else:
+            # If user doesn't have an employee profile, only show notifications without a specific employee
+            queryset = queryset.filter(employee_profile__isnull=True)
+        
+        return queryset
+
+    def get(self, request, *args, **kwargs):
+        response = super().get(request, *args, **kwargs)
+        # Mark as read when viewed
+        self.object.mark_as_read()
+        return response
+
+@login_required
+@require_POST
+def mark_notification_read(request, pk):
+    # Build the filter based on user's employee profile
+    if hasattr(request.user, 'employee_profile') and request.user.employee_profile:
+        notification_filter = Q(
+            Q(employee_profile=request.user.employee_profile) |
+            Q(employee_profile__isnull=True)
+        )
+    else:
+        notification_filter = Q(employee_profile__isnull=True)
+    
+    notification = get_object_or_404(
+        Notification,
+        notification_filter,
+        pk=pk
+    )
+    notification.mark_as_read()
+    
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({'status': 'success'})
+    
+    messages.success(request, _('Notification marked as read.'))
+    return redirect('inventory:notification_list')
+
+@login_required
+@require_POST
+def mark_notification_unread(request, pk):
+    # Build the filter based on user's employee profile
+    if hasattr(request.user, 'employee_profile') and request.user.employee_profile:
+        notification_filter = Q(
+            Q(employee_profile=request.user.employee_profile) |
+            Q(employee_profile__isnull=True)
+        )
+    else:
+        notification_filter = Q(employee_profile__isnull=True)
+    
+    notification = get_object_or_404(
+        Notification,
+        notification_filter,
+        pk=pk
+    )
+    notification.mark_as_unread()
+    
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({'status': 'success'})
+    
+    messages.success(request, _('Notification marked as unread.'))
+    return redirect('inventory:notification_list')
+
+@login_required
+@require_POST
+def archive_notification(request, pk):
+    # Build the filter based on user's employee profile
+    if hasattr(request.user, 'employee_profile') and request.user.employee_profile:
+        notification_filter = Q(
+            Q(employee_profile=request.user.employee_profile) |
+            Q(employee_profile__isnull=True)
+        )
+    else:
+        notification_filter = Q(employee_profile__isnull=True)
+    
+    notification = get_object_or_404(
+        Notification,
+        notification_filter,
+        pk=pk
+    )
+    notification.archive()
+    
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({'status': 'success'})
+    
+    messages.success(request, _('Notification archived.'))
+    return redirect('inventory:notification_list')
+
+@login_required
+@require_POST
+def unarchive_notification(request, pk):
+    # Build the filter based on user's employee profile
+    if hasattr(request.user, 'employee_profile') and request.user.employee_profile:
+        notification_filter = Q(
+            Q(employee_profile=request.user.employee_profile) |
+            Q(employee_profile__isnull=True)
+        )
+    else:
+        notification_filter = Q(employee_profile__isnull=True)
+    
+    notification = get_object_or_404(
+        Notification,
+        notification_filter,
+        pk=pk
+    )
+    notification.unarchive()
+    
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({'status': 'success'})
+    
+    messages.success(request, _('Notification unarchived.'))
+    return redirect('inventory:notification_list')
+
+@login_required
+@require_POST
+def mark_all_read(request):
+    # Build the filter based on user's employee profile
+    if hasattr(request.user, 'employee_profile') and request.user.employee_profile:
+        notification_filter = Q(
+            Q(employee_profile=request.user.employee_profile) |
+            Q(employee_profile__isnull=True)
+        )
+    else:
+        notification_filter = Q(employee_profile__isnull=True)
+    
+    Notification.objects.filter(
+        notification_filter,
+        status='unread'
+    ).update(
+        status='read',
+        read_at=timezone.now()
+    )
+    
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({'status': 'success'})
+    
+    messages.success(request, _('All notifications marked as read.'))
+    return redirect('inventory:notification_list')
+
+@login_required
+def get_notifications_ajax(request):
+    """AJAX endpoint for real-time notification updates"""
+    # Build the filter based on user's employee profile
+    if hasattr(request.user, 'employee_profile') and request.user.employee_profile:
+        notification_filter = Q(
+            Q(employee_profile=request.user.employee_profile) |
+            Q(employee_profile__isnull=True)
+        )
+    else:
+        notification_filter = Q(employee_profile__isnull=True)
+    
+    notifications = Notification.objects.filter(
+        notification_filter,
+        status='unread'
+    ).select_related('category').order_by('-created_at')[:5]
+    
+    context = {
+        'notifications': notifications,
+        'unread_notifications_count': notifications.count()
+    }
+    
+    html = render_to_string(
+        'inventory/includes/notification_dropdown.html',
+        context,
+        request=request
+    )
+    
+    return JsonResponse({
+        'html': html,
+        'unread_count': context['unread_notifications_count']
+    })
+
+class UserPermissionsView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
+    template_name = 'inventory/user_permissions.html'
+    
+    def test_func(self):
+        return self.request.user.is_superuser or self.request.user.groups.filter(name='Admin').exists()
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['users'] = User.objects.select_related('employee_profile').prefetch_related('groups').all()
+        context['groups'] = Group.objects.all()
+        context['available_permissions'] = Permission.objects.select_related('content_type').all()
+        return context
+
+    def post(self, request, *args, **kwargs):
+        user_id = request.POST.get('user_id')
+        action = request.POST.get('action')
+        
+        if not user_id or not action:
+            messages.error(request, _('Invalid request parameters'))
+            return redirect('inventory:user_permissions')
+            
+        try:
+            user = User.objects.get(id=user_id)
+            
+            if action == 'update_groups':
+                group_ids = request.POST.getlist('groups')
+                user.groups.set(Group.objects.filter(id__in=group_ids))
+                messages.success(request, _(f'Groups updated for {user.username}'))
+                
+            elif action == 'update_permissions':
+                permission_ids = request.POST.getlist('permissions')
+                user.user_permissions.set(Permission.objects.filter(id__in=permission_ids))
+                messages.success(request, _(f'Permissions updated for {user.username}'))
+                
+            elif action == 'toggle_active':
+                user.is_active = not user.is_active
+                user.save()
+                status = 'activated' if user.is_active else 'deactivated'
+                messages.success(request, _(f'User {user.username} has been {status}'))
+                
+            elif action == 'toggle_staff':
+                if request.user.is_superuser:  # Only superusers can change staff status
+                    user.is_staff = not user.is_staff
+                    user.save()
+                    status = 'granted' if user.is_staff else 'revoked'
+                    messages.success(request, _(f'Staff status {status} for {user.username}'))
+                else:
+                    messages.error(request, _('You do not have permission to change staff status'))
+                    
+        except User.DoesNotExist:
+            messages.error(request, _('User not found'))
+        except Exception as e:
+            messages.error(request, str(e))
+            
+        return redirect('inventory:user_permissions')
+
+@login_required
+def global_asset_history(request):
+    """View for displaying all asset history across the system."""
+    # Get filter parameters
+    search_query = request.GET.get('search', '')
+    action_filter = request.GET.get('action', '')
+    date_from = request.GET.get('date_from', '')
+    date_to = request.GET.get('date_to', '')
+
+    # Base queryset
+    history_queryset = AssetHistory.objects.select_related(
+        'asset', 'asset__asset_type', 'employee', 'created_by'
+    ).order_by('-date')
+
+    # Apply filters
+    if search_query:
+        history_queryset = history_queryset.filter(
+            Q(asset__name__icontains=search_query) |
+            Q(asset__serial_number__icontains=search_query) |
+            Q(employee__first_name__icontains=search_query) |
+            Q(employee__last_name__icontains=search_query) |
+            Q(notes__icontains=search_query)
+        )
+
+    if action_filter:
+        history_queryset = history_queryset.filter(action=action_filter)
+
+    if date_from:
+        history_queryset = history_queryset.filter(date__gte=date_from)
+
+    if date_to:
+        history_queryset = history_queryset.filter(date__lt=date_to)
+
+    # Paginate results
+    paginator = Paginator(history_queryset, 25)
+    page = request.GET.get('page')
+    history_entries = paginator.get_page(page)
+
+    context = {
+        'title': _('Asset History'),
+        'history_entries': history_entries,
+        'action_choices': AssetHistory.ACTION_CHOICES,
+        'selected_action': action_filter,
+        'search_query': search_query,
+        'date_from': date_from,
+        'date_to': date_to,
+    }
+
+    return render(request, 'inventory/global_asset_history.html', context)
+
+@login_required
+def generate_report_pdf(request):
+    """Generate a PDF report based on the specified parameters."""
+    # Get report parameters
+    report_type = request.GET.get('type', 'full')
+    date_from = request.GET.get('date_from')
+    date_to = request.GET.get('date_to')
+    
+    # Get the report data
+    context = get_reports_data(request, date_from, date_to)
+    
+    # Render the HTML template
+    template = get_template('inventory/reports/pdf_report.html')
+    html = template.render(context)
+    
+    # Create a file-like buffer to receive PDF data
+    buffer = BytesIO()
+    
+    # Convert HTML to PDF
+    pisa_status = pisa.CreatePDF(html, dest=buffer)
+    
+    # If error creating PDF, return error response
+    if pisa_status.err:
+        return HttpResponse('Error generating PDF', status=500)
+    
+    # Get the value of the BytesIO buffer and write it to the response
+    pdf = buffer.getvalue()
+    buffer.close()
+    
+    # Create the HTTP response
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="inventory_report_{report_type}.pdf"'
+    response.write(pdf)
+    
+    return response
+
+def get_reports_data(request, date_from=None, date_to=None):
+    """Get all the data needed for reports."""
+    # Asset statistics
+    total_assets = ITAsset.objects.count()
+    available_assets = ITAsset.objects.filter(status='available').count()
+    assigned_assets = ITAsset.objects.filter(status='assigned').count()
+    maintenance_assets = ITAsset.objects.filter(status='maintenance').count()
+    
+    # Department statistics
+    departments = Department.objects.annotate(
+        asset_count=Count('employees__itasset', distinct=True)
+    )
+    
+    # Recent activity
+    recent_activities = AssetHistory.objects.select_related(
+        'asset', 'employee'
+    ).order_by('-date')[:10]
+    
+    return {
+        'total_assets': total_assets,
+        'available_assets': available_assets,
+        'assigned_assets': assigned_assets,
+        'maintenance_assets': maintenance_assets,
+        'departments': departments,
+        'recent_activities': recent_activities,
+        'date_from': date_from,
+        'date_to': date_to,
+    }
+
+@login_required
+def reports_dashboard(request):
+    """View for displaying comprehensive system reports and analytics."""
+    # Get filter parameters
+    report_type = request.GET.get('type', 'full')
+    date_from = request.GET.get('date_from')
+    date_to = request.GET.get('date_to')
+    
+    try:
+        if date_from:
+            date_from = datetime.strptime(date_from, '%Y-%m-%d')
+        if date_to:
+            date_to = datetime.strptime(date_to, '%Y-%m-%d')
+            # Include the entire day
+            date_to = date_to + timedelta(days=1)
+    except ValueError:
+        messages.error(request, _('Invalid date format'))
+        return redirect('inventory:reports_dashboard')
+
+    # Get report data
+    context = get_reports_data(request, date_from, date_to)
+    
+    # Add filter values to context
+    context.update({
+        'report_type': report_type,
+        'date_from': date_from.strftime('%Y-%m-%d') if date_from else '',
+        'date_to': (date_to - timedelta(days=1)).strftime('%Y-%m-%d') if date_to else '',
+        'report_types': [
+            ('full', _('Full Report')),
+            ('warranty', _('Warranty Report')),
+            ('assignments', _('Assignments Report')),
+        ]
+    })
+    
+    return render(request, 'inventory/reports_dashboard.html', context)
+
+class LandingPageView(TemplateView):
+    template_name = 'inventory/landing_page.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = 'IT Asset Management Solutions'
+        return context
+
+class ContactView(TemplateView):
+    template_name = 'inventory/contact.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = 'Contact Us'
+        return context  

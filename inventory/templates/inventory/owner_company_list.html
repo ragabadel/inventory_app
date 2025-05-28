@@ -12,9 +12,9 @@
             <p class="text-muted">{% trans "Manage owner companies and their assets" %}</p>
         </div>
         <div>
-            <a href="{% url 'inventory:owner_company_create' %}" class="btn btn-primary">
-                <i class="fas fa-plus me-2"></i>{% trans "Add Company" %}
-            </a>
+        <a href="{% url 'inventory:owner_company_create' %}" class="btn btn-primary">
+            <i class="fas fa-plus me-2"></i>{% trans "Add Company" %}
+        </a>
         </div>
     </div>
 
@@ -60,12 +60,12 @@
                             <td>
                                 <div class="btn-group">
                                     <a href="{% url 'inventory:owner_company_update' company.pk %}" 
-                                       class="btn btn-sm btn-outline-primary" 
+                                       class="btn btn-sm btn-outline-primary"
                                        title="{% trans 'Edit' %}">
                                         <i class="fas fa-edit"></i>
                                     </a>
                                     <a href="{% url 'inventory:owner_company_delete' company.pk %}" 
-                                       class="btn btn-sm btn-outline-danger" 
+                                       class="btn btn-sm btn-outline-danger"
                                        title="{% trans 'Delete' %}">
                                         <i class="fas fa-trash"></i>
                                     </a>

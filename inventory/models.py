@@ -4,6 +4,9 @@ from django.utils import timezone
 from django.core.validators import RegexValidator
 from django.utils.translation import gettext_lazy as _
 from django.conf import settings
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
+from django.urls import reverse
 
 class Department(models.Model):
     DEPARTMENT_CHOICES = [
@@ -74,7 +77,13 @@ class Employee(models.Model):
     email = models.EmailField(unique=True)
     phone_number = models.CharField(max_length=20, null=True, blank=True)
     department = models.ForeignKey(Department, on_delete=models.PROTECT, related_name='employees')
-    position = models.ForeignKey(Position, on_delete=models.PROTECT, related_name='employees')
+    position = models.ForeignKey(
+        Position,
+        on_delete=models.PROTECT,
+        related_name='employees',
+        db_column='position_id',  # Explicitly set the column name
+        to_field='id'  # Explicitly set the referenced field
+    )
     hire_date = models.DateField()
     company = models.ForeignKey(OwnerCompany, on_delete=models.PROTECT, related_name='employees')
     is_active = models.BooleanField(default=True)
@@ -222,3 +231,133 @@ class DeviceHistory(models.Model):
 
     def __str__(self):
         return f"{self.device.name} - {self.get_event_type_display()} - {self.timestamp}"
+
+class NotificationCategory(models.Model):
+    name = models.CharField(_('Name'), max_length=100)
+    icon = models.CharField(_('Icon Class'), max_length=50, help_text=_('FontAwesome icon class (e.g., fa-bell)'))
+    color = models.CharField(_('Color'), max_length=20, help_text=_('Bootstrap color class (e.g., primary, danger)'))
+    description = models.TextField(_('Description'), blank=True)
+
+    class Meta:
+        verbose_name = _('Notification Category')
+        verbose_name_plural = _('Notification Categories')
+        ordering = ['name']
+
+    def __str__(self):
+        return self.name
+
+class Notification(models.Model):
+    STATUS_CHOICES = [
+        ('unread', _('Unread')),
+        ('read', _('Read')),
+        ('archived', _('Archived')),
+    ]
+    
+    PRIORITY_CHOICES = [
+        ('low', _('Low')),
+        ('medium', _('Medium')),
+        ('high', _('High')),
+        ('urgent', _('Urgent')),
+    ]
+    
+    title = models.CharField(_('Title'), max_length=255)
+    message = models.TextField(_('Message'))
+    status = models.CharField(_('Status'), max_length=10, choices=STATUS_CHOICES, default='unread')
+    priority = models.CharField(_('Priority'), max_length=10, choices=PRIORITY_CHOICES, default='medium')
+    
+    # Content type for generic relations
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    object_id = models.PositiveIntegerField()
+    content_object = GenericForeignKey('content_type', 'object_id')
+    
+    # Category
+    category = models.ForeignKey(NotificationCategory, on_delete=models.CASCADE, verbose_name=_('Category'))
+    
+    # Target employee (optional)
+    employee_profile = models.ForeignKey(
+        Employee,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='notifications',
+        verbose_name=_('Employee')
+    )
+    
+    # Optional action URL
+    action_url = models.URLField(_('Action URL'), blank=True, null=True)
+    
+    # Timestamps
+    created_at = models.DateTimeField(_('Created At'), auto_now_add=True)
+    read_at = models.DateTimeField(_('Read At'), null=True, blank=True)
+    archived_at = models.DateTimeField(_('Archived At'), null=True, blank=True)
+    expires_at = models.DateTimeField(_('Expires At'), null=True, blank=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = _('Notification')
+        verbose_name_plural = _('Notifications')
+        indexes = [
+            models.Index(fields=['status', 'created_at']),
+            models.Index(fields=['employee_profile', 'status']),
+            models.Index(fields=['content_type', 'object_id']),
+        ]
+
+    def __str__(self):
+        return self.title
+
+    def mark_as_read(self):
+        if self.status == 'unread':
+            self.status = 'read'
+            self.read_at = timezone.now()
+            self.save()
+
+    def mark_as_unread(self):
+        if self.status == 'read':
+            self.status = 'unread'
+            self.read_at = None
+            self.save()
+
+    def archive(self):
+        self.status = 'archived'
+        self.archived_at = timezone.now()
+        self.save()
+
+    def unarchive(self):
+        self.status = 'read'
+        self.archived_at = None
+        self.save()
+
+    def is_expired(self):
+        return self.expires_at and timezone.now() > self.expires_at
+
+    def get_absolute_url(self):
+        if self.action_url:
+            return self.action_url
+        return reverse('inventory:notification_detail', kwargs={'pk': self.pk})
+
+    @property
+    def age(self):
+        return timezone.now() - self.created_at
+
+    @classmethod
+    def create_notification(cls, title, message, employee=None, category=None, priority='medium', 
+                          related_object=None, action_url=None, expires_at=None):
+        """
+        Helper method to create notifications with proper defaults and handling.
+        """
+        notification = cls(
+            title=title,
+            message=message,
+            employee_profile=employee,
+            category=category,
+            priority=priority,
+            action_url=action_url,
+            expires_at=expires_at
+        )
+
+        if related_object:
+            notification.content_type = ContentType.objects.get_for_model(related_object)
+            notification.object_id = related_object.id
+
+        notification.save()
+        return notification

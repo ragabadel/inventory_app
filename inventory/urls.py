@@ -5,6 +5,8 @@ app_name = 'inventory'
 
 urlpatterns = [
     path('', views.home, name='home'),
+    path('landing/', views.LandingPageView.as_view(), name='landing'),
+    path('contact/', views.ContactView.as_view(), name='contact'),
     
     # Employee URLs
     path('employees/', views.EmployeeListView.as_view(), name='employee_list'),
@@ -57,5 +59,26 @@ urlpatterns = [
     path('departments/<int:pk>/update/', views.department_update, name='department_update'),
     path('departments/<int:pk>/delete/', views.department_delete, name='department_delete'),
 
+    # Notification URLs
+    path('notifications/', views.NotificationListView.as_view(), name='notification_list'),
+    path('notifications/<int:pk>/', views.NotificationDetailView.as_view(), name='notification_detail'),
+    path('notifications/<int:pk>/mark-read/', views.mark_notification_read, name='mark_notification_read'),
+    path('notifications/<int:pk>/mark-unread/', views.mark_notification_unread, name='mark_notification_unread'),
+    path('notifications/<int:pk>/archive/', views.archive_notification, name='archive_notification'),
+    path('notifications/<int:pk>/unarchive/', views.unarchive_notification, name='unarchive_notification'),
+    path('notifications/mark-all-read/', views.mark_all_read, name='mark_all_read'),
+    path('notifications/ajax/', views.get_notifications_ajax, name='get_notifications_ajax'),
+
+    # Device History URLs
     path('devices/<int:pk>/history/', views.device_history, name='device_history'),
+
+    # User Permissions Management
+    path('users/permissions/', views.UserPermissionsView.as_view(), name='user_permissions'),
+
+    # Global Asset History
+    path('asset-history/', views.global_asset_history, name='global_asset_history'),
+
+    # Reports Dashboard
+    path('reports/', views.reports_dashboard, name='reports_dashboard'),
+    path('reports/pdf/', views.generate_report_pdf, name='generate_report_pdf'),
 ]

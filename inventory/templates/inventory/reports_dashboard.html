@@ -1,0 +1,496 @@
+{% extends 'inventory/base.html' %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}{% trans "Reports Dashboard" %}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .reports-container {
+        padding: 1.5rem;
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    .filters-card {
+        background: white;
+        border-radius: 0.5rem;
+        box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+        margin-bottom: 2rem;
+        padding: 1.5rem;
+    }
+
+    .filters-card .form-group {
+        margin-bottom: 1rem;
+    }
+
+    .filters-card label {
+        font-weight: 500;
+        color: #4a5568;
+        display: block;
+        margin-bottom: 0.5rem;
+    }
+
+    .filters-card .form-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+        align-items: end;
+    }
+
+    .filters-card .form-control {
+        width: 100%;
+        padding: 0.5rem;
+        border: 1px solid #e2e8f0;
+        border-radius: 0.375rem;
+        color: #4a5568;
+    }
+
+    .filters-card .btn-primary {
+        background: linear-gradient(45deg, #4e73df, #224abe);
+        border: none;
+        color: white;
+        padding: 0.625rem 1.25rem;
+        border-radius: 0.375rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s;
+        width: 100%;
+    }
+
+    .filters-card .btn-primary:hover {
+        background: linear-gradient(45deg, #224abe, #1a3891);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .stat-card {
+        background: white;
+        border-radius: 0.5rem;
+        box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+        padding: 1.5rem;
+        display: flex;
+        align-items: center;
+        transition: transform 0.3s;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-2px);
+    }
+
+    .stat-card .icon {
+        width: 3.5rem;
+        height: 3.5rem;
+        border-radius: 0.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 1rem;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+
+    .stat-card .icon i {
+        font-size: 1.75rem;
+        color: white;
+    }
+
+    .stat-card .content h3 {
+        margin: 0;
+        font-size: 0.875rem;
+        color: #858796;
+        font-weight: 500;
+    }
+
+    .stat-card .content .value {
+        font-size: 1.75rem;
+        font-weight: 600;
+        color: #2d3748;
+        margin: 0.25rem 0;
+    }
+
+    .chart-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .chart-card {
+        background: white;
+        border-radius: 0.5rem;
+        box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+        padding: 1.5rem;
+        height: 400px;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .chart-card h3 {
+        margin: 0 0 1.5rem 0;
+        color: #4a5568;
+        font-size: 1.1rem;
+        font-weight: 500;
+    }
+
+    .chart-container {
+        flex: 1;
+        position: relative;
+        min-height: 300px;
+    }
+
+    .activity-card {
+        background: white;
+        border-radius: 0.5rem;
+        box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+        padding: 1.5rem;
+    }
+
+    .activity-card h3 {
+        margin: 0 0 1.5rem 0;
+        color: #4a5568;
+        font-size: 1.1rem;
+        font-weight: 500;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .activity-card h3 a {
+        font-size: 0.875rem;
+        color: #4e73df;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: color 0.3s;
+    }
+
+    .activity-card h3 a:hover {
+        color: #224abe;
+    }
+
+    .activity-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .activity-table th {
+        background: #f8f9fc;
+        padding: 1rem;
+        text-align: left;
+        color: #4a5568;
+        font-weight: 500;
+        border-bottom: 2px solid #e2e8f0;
+    }
+
+    .activity-table td {
+        padding: 1rem;
+        border-bottom: 1px solid #e2e8f0;
+        color: #6b7280;
+    }
+
+    .activity-table tr:hover td {
+        background: #f8f9fc;
+    }
+
+    .activity-table tr:last-child td {
+        border-bottom: none;
+    }
+
+    .export-options {
+        margin-top: 2rem;
+        display: flex;
+        justify-content: flex-end;
+        gap: 1rem;
+    }
+
+    .export-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.75rem;
+        background: linear-gradient(45deg, #4e73df, #224abe);
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.5rem;
+        text-decoration: none;
+        font-weight: 500;
+        transition: all 0.3s;
+        border: none;
+        cursor: pointer;
+    }
+
+    .export-btn:hover {
+        background: linear-gradient(45deg, #224abe, #1a3891);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        color: white;
+    }
+
+    .export-btn i {
+        font-size: 1.25rem;
+    }
+
+    @media print {
+        .filters-card {
+            display: none;
+        }
+
+        .stat-card, .chart-card, .activity-card {
+            break-inside: avoid;
+            page-break-inside: avoid;
+            box-shadow: none;
+        }
+
+        .export-options {
+            display: none;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .reports-container {
+            padding: 1rem;
+        }
+
+        .chart-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .chart-card {
+            height: 350px;
+        }
+
+        .activity-table th,
+        .activity-table td {
+            padding: 0.75rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="reports-container">
+    <!-- Filters -->
+    <div class="filters-card">
+        <form method="get" id="report-filters">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="type">{% trans "Report Type" %}</label>
+                    <select name="type" id="type" class="form-control">
+                        {% for value, label in report_types %}
+                        <option value="{{ value }}" {% if report_type == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="date_from">{% trans "Date From" %}</label>
+                    <input type="date" name="date_from" id="date_from" class="form-control" value="{{ date_from }}">
+                </div>
+                <div class="form-group">
+                    <label for="date_to">{% trans "Date To" %}</label>
+                    <input type="date" name="date_to" id="date_to" class="form-control" value="{{ date_to }}">
+                </div>
+                <div class="form-group">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-filter"></i>
+                        {% trans "Apply Filters" %}
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Stats Grid -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="icon" style="background: linear-gradient(45deg, #4e73df, #224abe);">
+                <i class="fas fa-laptop"></i>
+            </div>
+            <div class="content">
+                <h3>{% trans "Total Assets" %}</h3>
+                <div class="value">{{ total_assets }}</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="icon" style="background: linear-gradient(45deg, #1cc88a, #13855c);">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="content">
+                <h3>{% trans "Available Assets" %}</h3>
+                <div class="value">{{ available_assets }}</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="icon" style="background: linear-gradient(45deg, #36b9cc, #258391);">
+                <i class="fas fa-user-check"></i>
+            </div>
+            <div class="content">
+                <h3>{% trans "Assigned Assets" %}</h3>
+                <div class="value">{{ assigned_assets }}</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="icon" style="background: linear-gradient(45deg, #f6c23e, #dda20a);">
+                <i class="fas fa-tools"></i>
+            </div>
+            <div class="content">
+                <h3>{% trans "In Maintenance" %}</h3>
+                <div class="value">{{ maintenance_assets }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Grid -->
+    <div class="chart-grid">
+        <div class="chart-card">
+            <h3>{% trans "Department Asset Distribution" %}</h3>
+            <div class="chart-container">
+                <canvas id="departmentChart"></canvas>
+            </div>
+        </div>
+        <div class="chart-card">
+            <h3>{% trans "Asset Status Distribution" %}</h3>
+            <div class="chart-container">
+                <canvas id="statusChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="activity-card">
+        <h3>
+            {% trans "Recent Activity" %}
+            <a href="{% url 'inventory:global_asset_history' %}">
+                {% trans "View All" %}
+                <i class="fas fa-arrow-right"></i>
+            </a>
+        </h3>
+        {% if recent_activities %}
+        <div class="table-responsive">
+            <table class="activity-table">
+                <thead>
+                    <tr>
+                        <th>{% trans "Date" %}</th>
+                        <th>{% trans "Asset" %}</th>
+                        <th>{% trans "Action" %}</th>
+                        <th>{% trans "Assigned To" %}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for activity in recent_activities %}
+                    <tr>
+                        <td>{{ activity.date|date:"M j, Y" }}</td>
+                        <td>{{ activity.asset.name }}</td>
+                        <td>{{ activity.get_action_display }}</td>
+                        <td>{{ activity.employee.get_full_name|default:"-" }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-muted text-center my-4">{% trans "No recent activity found." %}</p>
+        {% endif %}
+    </div>
+
+    <!-- Export Options -->
+    <div class="export-options">
+        <a href="{% url 'inventory:generate_report_pdf' %}?type={{ report_type }}&date_from={{ date_from }}&date_to={{ date_to }}" class="export-btn">
+            <i class="fas fa-file-pdf"></i>
+            {% trans "Export as PDF" %}
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Department Chart
+    const departmentCtx = document.getElementById('departmentChart').getContext('2d');
+    new Chart(departmentCtx, {
+        type: 'bar',
+        data: {
+         			labels: [{% for dept in departments %}'{{ dept.name }}'{% if not forloop.last %},{% endif %}{% endfor %}],           datasets: [{
+                label: '{% trans "Asset Count" %}',
+             				data: [{% for dept in departments %}{{ dept.asset_count }}{% if not forloop.last %},{% endif %}{% endfor %}],                backgroundColor: 'rgba(78, 115, 223, 0.8)',
+                borderColor: 'rgba(78, 115, 223, 1)',
+                borderWidth: 1,
+                borderRadius: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1
+                    },
+                    grid: {
+                        drawBorder: false,
+                        color: 'rgba(0, 0, 0, 0.05)'
+                    }
+                },
+                x: {
+                    grid: {
+                        display: false
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false
+                }
+            }
+        }
+    });
+
+    // Status Chart
+    const statusCtx = document.getElementById('statusChart').getContext('2d');
+    new Chart(statusCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Available', 'Assigned', 'Maintenance'],
+            datasets: [{
+                data: [{{ available_assets }}, {{ assigned_assets }}, {{ maintenance_assets }}],
+                backgroundColor: [
+                    'rgba(28, 200, 138, 0.8)',
+                    'rgba(54, 185, 204, 0.8)',
+                    'rgba(246, 194, 62, 0.8)'
+                ],
+                borderColor: [
+                    'rgba(28, 200, 138, 1)',
+                    'rgba(54, 185, 204, 1)',
+                    'rgba(246, 194, 62, 1)'
+                ],
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '65%',
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        padding: 20,
+                        usePointStyle: true,
+                        pointStyle: 'circle'
+                    }
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %} 
