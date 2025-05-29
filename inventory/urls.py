@@ -5,6 +5,8 @@ app_name = 'inventory'
 
 urlpatterns = [
     path('', views.home, name='home'),
+    path('landing/', views.LandingPageView.as_view(), name='landing'),
+    path('contact/', views.ContactView.as_view(), name='contact'),
     
     # Employee URLs
     path('employees/', views.EmployeeListView.as_view(), name='employee_list'),
@@ -28,6 +30,7 @@ urlpatterns = [
     path('assets/upload/', views.asset_upload, name='asset_upload'),
     path('assets/download-template/', views.download_asset_template, name='download_asset_template'),
     path('assets/download-data/', views.download_asset_data, name='download_asset_data'),
+    path('assets/<int:pk>/history/', views.asset_history, name='asset_history'),
     
     # Asset Type URLs
     path('asset-types/', views.AssetTypeListView.as_view(), name='asset_type_list'),
@@ -40,4 +43,42 @@ urlpatterns = [
     path('owner-companies/create/', views.OwnerCompanyCreateView.as_view(), name='owner_company_create'),
     path('owner-companies/<int:pk>/update/', views.OwnerCompanyUpdateView.as_view(), name='owner_company_update'),
     path('owner-companies/<int:pk>/delete/', views.OwnerCompanyDeleteView.as_view(), name='owner_company_delete'),
+    
+    # Owner Companies
+    path('companies/', views.owner_company_list, name='owner_company_list'),
+    path('companies/<int:pk>/', views.owner_company_detail, name='owner_company_detail'),
+    
+    # Asset Types
+    path('asset-types/', views.asset_type_list, name='asset_type_list'),
+    path('asset-types/<int:pk>/', views.asset_type_detail, name='asset_type_detail'),
+
+    # Department URLs
+    path('departments/', views.department_list, name='department_list'),
+    path('departments/<int:pk>/', views.department_detail, name='department_detail'),
+    path('departments/create/', views.department_create, name='department_create'),
+    path('departments/<int:pk>/update/', views.department_update, name='department_update'),
+    path('departments/<int:pk>/delete/', views.department_delete, name='department_delete'),
+
+    # Notification URLs
+    path('notifications/', views.NotificationListView.as_view(), name='notification_list'),
+    path('notifications/<int:pk>/', views.NotificationDetailView.as_view(), name='notification_detail'),
+    path('notifications/<int:pk>/mark-read/', views.mark_notification_read, name='mark_notification_read'),
+    path('notifications/<int:pk>/mark-unread/', views.mark_notification_unread, name='mark_notification_unread'),
+    path('notifications/<int:pk>/archive/', views.archive_notification, name='archive_notification'),
+    path('notifications/<int:pk>/unarchive/', views.unarchive_notification, name='unarchive_notification'),
+    path('notifications/mark-all-read/', views.mark_all_read, name='mark_all_read'),
+    path('notifications/ajax/', views.get_notifications_ajax, name='get_notifications_ajax'),
+
+    # Device History URLs
+    path('devices/<int:pk>/history/', views.device_history, name='device_history'),
+
+    # User Permissions Management
+    path('users/permissions/', views.UserPermissionsView.as_view(), name='user_permissions'),
+
+    # Global Asset History
+    path('asset-history/', views.global_asset_history, name='global_asset_history'),
+
+    # Reports Dashboard
+    path('reports/', views.reports_dashboard, name='reports_dashboard'),
+    path('reports/pdf/', views.generate_report_pdf, name='generate_report_pdf'),
 ]

@@ -1,0 +1,165 @@
+{% extends 'inventory/base.html' %}
+{% load i18n %}
+
+{% block title %}{{ notification.title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0">{% trans "Notification Details" %}</h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'inventory:notification_list' %}">{% trans "Notifications" %}</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">{{ notification.title|truncatechars:50 }}</li>
+                </ol>
+            </nav>
+        </div>
+        <div class="d-flex gap-2">
+            {% if notification.status != 'archived' %}
+                <form action="{% url 'inventory:archive_notification' notification.pk %}" method="post" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-outline-secondary">
+                        <i class="fas fa-archive me-2"></i>{% trans "Archive" %}
+                    </button>
+                </form>
+            {% else %}
+                <form action="{% url 'inventory:unarchive_notification' notification.pk %}" method="post" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-outline-secondary">
+                        <i class="fas fa-box-open me-2"></i>{% trans "Unarchive" %}
+                    </button>
+                </form>
+            {% endif %}
+            {% if notification.status == 'unread' %}
+                <form action="{% url 'inventory:mark_notification_read' notification.pk %}" method="post" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-outline-success">
+                        <i class="fas fa-check me-2"></i>{% trans "Mark as Read" %}
+                    </button>
+                </form>
+            {% elif notification.status == 'read' %}
+                <form action="{% url 'inventory:mark_notification_unread' notification.pk %}" method="post" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-outline-primary">
+                        <i class="fas fa-envelope me-2"></i>{% trans "Mark as Unread" %}
+                    </button>
+                </form>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <!-- Main Content -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <!-- Status Badges -->
+                    <div class="d-flex align-items-center gap-2 mb-4">
+                        <span class="badge bg-{{ notification.category.color }}">
+                            <i class="fas {{ notification.category.icon }} me-1"></i>
+                            {{ notification.category.name }}
+                        </span>
+                        <span class="badge {% if notification.priority == 'urgent' %}bg-danger{% elif notification.priority == 'high' %}bg-warning{% elif notification.priority == 'medium' %}bg-info{% else %}bg-success{% endif %}">
+                            {{ notification.get_priority_display }}
+                        </span>
+                        <span class="badge {% if notification.status == 'unread' %}bg-primary{% elif notification.status == 'archived' %}bg-secondary{% else %}bg-success{% endif %}">
+                            {{ notification.get_status_display }}
+                        </span>
+                    </div>
+
+                    <!-- Title & Content -->
+                    <h4 class="card-title mb-3">{{ notification.title }}</h4>
+                    <div class="card-text mb-4">{{ notification.message|linebreaks }}</div>
+
+                    <!-- Action Buttons -->
+                    {% if notification.action_url or notification.related_object %}
+                        <div class="d-flex gap-2">
+                            {% if notification.action_url %}
+                                <a href="{{ notification.action_url }}" class="btn btn-primary">
+                                    <i class="fas fa-external-link-alt me-2"></i>{% trans "View Details" %}
+                                </a>
+                            {% endif %}
+                            {% if notification.related_object %}
+                                <a href="{{ notification.related_object.get_absolute_url }}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-link me-2"></i>{% trans "Related Item" %}
+                                </a>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <!-- Metadata -->
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title mb-4">{% trans "Notification Details" %}</h5>
+                    
+                    <dl class="row mb-0">
+                        <dt class="col-sm-4">{% trans "Created" %}</dt>
+                        <dd class="col-sm-8">
+                            {{ notification.created_at|date:"F j, Y H:i" }}
+                            <br>
+                            <small class="text-muted">{{ notification.created_at|timesince }} {% trans "ago" %}</small>
+                        </dd>
+
+                        {% if notification.read_at %}
+                            <dt class="col-sm-4">{% trans "Read" %}</dt>
+                            <dd class="col-sm-8">
+                                {{ notification.read_at|date:"F j, Y H:i" }}
+                                <br>
+                                <small class="text-muted">{{ notification.read_at|timesince }} {% trans "ago" %}</small>
+                            </dd>
+                        {% endif %}
+
+                        {% if notification.archived_at %}
+                            <dt class="col-sm-4">{% trans "Archived" %}</dt>
+                            <dd class="col-sm-8">
+                                {{ notification.archived_at|date:"F j, Y H:i" }}
+                                <br>
+                                <small class="text-muted">{{ notification.archived_at|timesince }} {% trans "ago" %}</small>
+                            </dd>
+                        {% endif %}
+
+                        {% if notification.expires_at %}
+                            <dt class="col-sm-4">{% trans "Expires" %}</dt>
+                            <dd class="col-sm-8">
+                                {{ notification.expires_at|date:"F j, Y H:i" }}
+                                <br>
+                                <small class="text-muted">
+                                    {% if notification.is_expired %}
+                                        <span class="text-danger">{% trans "Expired" %}</span>
+                                    {% else %}
+                                        {% trans "Expires in" %} {{ notification.expires_at|timeuntil }}
+                                    {% endif %}
+                                </small>
+                            </dd>
+                        {% endif %}
+
+                        {% if notification.employee_profile %}
+                            <dt class="col-sm-4">{% trans "Recipient" %}</dt>
+                            <dd class="col-sm-8">
+                                <a href="{% url 'inventory:employee_detail' notification.employee_profile.pk %}">
+                                    {{ notification.employee_profile.get_full_name }}
+                                </a>
+                            </dd>
+                        {% endif %}
+
+                        {% if notification.is_email_sent %}
+                            <dt class="col-sm-4">{% trans "Email" %}</dt>
+                            <dd class="col-sm-8">
+                                <span class="text-success">
+                                    <i class="fas fa-check me-1"></i>{% trans "Sent" %}
+                                </span>
+                            </dd>
+                        {% endif %}
+                    </dl>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

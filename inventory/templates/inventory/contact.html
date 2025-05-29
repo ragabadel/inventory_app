@@ -1,0 +1,73 @@
+{% extends 'inventory/base.html' %}
+{% load i18n %}
+
+{% block title %}Contact Us - IT Asset Management{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-body p-5">
+                    <h1 class="text-center mb-4">Contact Us</h1>
+                    <p class="text-center mb-5">Get in touch with our team to learn more about our IT Asset Management solutions.</p>
+                    
+                    <form method="post" class="needs-validation" novalidate>
+                        {% csrf_token %}
+                        <div class="mb-4">
+                            <label for="name" class="form-label">Full Name</label>
+                            <input type="text" class="form-control" id="name" name="name" required>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label for="email" class="form-label">Email Address</label>
+                            <input type="email" class="form-control" id="email" name="email" required>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label for="company" class="form-label">Company Name</label>
+                            <input type="text" class="form-control" id="company" name="company" required>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label for="message" class="form-label">Message</label>
+                            <textarea class="form-control" id="message" name="message" rows="5" required></textarea>
+                        </div>
+                        
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary btn-lg">Send Message</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <div class="text-center mt-5">
+                <h3 class="h5 mb-3">Other Ways to Reach Us</h3>
+                <div class="row g-4">
+                    <div class="col-md-4">
+                        <div class="d-flex flex-column align-items-center">
+                            <i class="fas fa-envelope fa-2x mb-2 text-primary"></i>
+                            <h4 class="h6">Email</h4>
+                            <p class="mb-0">info@example.com</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="d-flex flex-column align-items-center">
+                            <i class="fas fa-phone fa-2x mb-2 text-primary"></i>
+                            <h4 class="h6">Phone</h4>
+                            <p class="mb-0">+1 (555) 123-4567</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="d-flex flex-column align-items-center">
+                            <i class="fas fa-map-marker-alt fa-2x mb-2 text-primary"></i>
+                            <h4 class="h6">Location</h4>
+                            <p class="mb-0">New York, NY</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

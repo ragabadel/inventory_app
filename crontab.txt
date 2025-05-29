@@ -1,0 +1,2 @@
+# Run warranty checks daily at 9:00 AM
+0 9 * * * cd /path/to/your/project && python manage.py check_warranty >> /var/log/warranty_checks.log 2>&1 

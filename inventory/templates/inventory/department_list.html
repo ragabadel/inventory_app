@@ -1,0 +1,88 @@
+{% extends 'inventory/base.html' %}
+{% load i18n %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0">{{ title }}</h1>
+            <p class="text-muted">{% trans "Manage departments and their employees" %}</p>
+        </div>
+        <div>
+            <a href="{% url 'inventory:department_create' %}" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>{% trans "Add Department" %}
+            </a>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th>{% trans "Name" %}</th>
+                            <th>{% trans "Total Employees" %}</th>
+                            <th>{% trans "Total Positions" %}</th>
+                            <th>{% trans "Created At" %}</th>
+                            <th>{% trans "Updated At" %}</th>
+                            <th>{% trans "Actions" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for department in departments %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'inventory:department_detail' department.pk %}" class="text-decoration-none">
+                                    {{ department.name }}
+                                </a>
+                            </td>
+                            <td>
+                                <span class="badge bg-primary">
+                                    {{ department.employees.count }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge bg-primary">
+                                    {{ department.positions.count }}
+                                </span>
+                            </td>
+                            <td>{{ department.created_at|date:"Y-m-d H:i" }}</td>
+                            <td>{{ department.updated_at|date:"Y-m-d H:i" }}</td>
+                            <td>
+                                <div class="btn-group">
+                                    <a href="{% url 'inventory:department_update' department.pk %}" 
+                                       class="btn btn-sm btn-outline-primary" 
+                                       title="{% trans 'Edit' %}">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a href="{% url 'inventory:department_delete' department.pk %}" 
+                                       class="btn btn-sm btn-outline-danger" 
+                                       title="{% trans 'Delete' %}">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center py-4">
+                                <div class="text-muted">
+                                    <i class="fas fa-sitemap fa-3x mb-3"></i>
+                                    <p class="mb-0">{% trans "No departments found." %}</p>
+                                    <small>{% trans "Click the Add Department button to create one." %}</small>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

@@ -1,4 +1,5 @@
 {% load static %}
+{% load i18n %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -85,38 +86,40 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link {% if 'asset' in request.path and 'type' not in request.path %}active{% endif %}" 
+                        <a class="nav-link {% if 'asset' in request.path %}active{% endif %}" 
                            href="{% url 'inventory:asset_list' %}">
                             <i class="fas fa-laptop me-1"></i>IT Assets
                         </a>
                     </li>
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle {% if 'asset-type' in request.path or 'owner-company' in request.path %}active{% endif %}" 
-                           href="#" 
-                           id="settingsDropdown" 
-                           role="button" 
-                           data-bs-toggle="dropdown" 
-                           aria-expanded="false">
-                            <i class="fas fa-cog me-1"></i>Settings
+                    <li class="nav-item">
+                        <a class="nav-link {% if 'landing' in request.path %}active{% endif %}" 
+                           href="{% url 'inventory:landing' %}">
+                            <i class="fas fa-home me-1"></i>Landing Page
                         </a>
-                        <ul class="dropdown-menu" aria-labelledby="settingsDropdown">
-                            <li>
-                                <a class="dropdown-item {% if 'asset-type' in request.path %}active{% endif %}" 
-                                   href="{% url 'inventory:asset_type_list' %}">
-                                    <i class="fas fa-tags me-2"></i>Asset Types
-                                </a>
-                            </li>
-                            <li>
-                                <a class="dropdown-item {% if 'owner-company' in request.path %}active{% endif %}" 
-                                   href="{% url 'inventory:owner_company_list' %}">
-                                    <i class="fas fa-building me-2"></i>Owner Companies
-                                </a>
-                            </li>
-                        </ul>
                     </li>
                 </ul>
                 {% if user.is_authenticated %}
                 <ul class="navbar-nav ms-auto">
+                    <!-- Notifications -->
+                    <li class="nav-item dropdown me-3">
+                        <a class="nav-link" href="#" id="notificationDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-bell position-relative">
+                                {% if unread_notifications_count > 0 %}
+                                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" id="unreadNotificationsBadge">
+                                        {{ unread_notifications_count }}
+                                        <span class="visually-hidden">{% trans "unread notifications" %}</span>
+                                    </span>
+                                {% endif %}
+                            </i>
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-end notification-dropdown" aria-labelledby="notificationDropdown">
+                            <!-- Notification content will be loaded here via AJAX -->
+                            <div class="p-4 text-center text-muted">
+                                <i class="fas fa-bell fa-2x mb-3"></i>
+                                <p class="mb-0">{% trans "Loading notifications..." %}</p>
+                            </div>
+                        </div>
+                    </li>
                     <!-- Language Selector -->
                     <li class="nav-item dropdown me-3">
                         <a class="nav-link dropdown-toggle" href="#" id="languageDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -169,6 +172,39 @@
                             {{ user.get_full_name|default:user.username }}
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                            <li>
+                                <a class="dropdown-item" href="{% url 'inventory:owner_company_list' %}">
+                                    <i class="fas fa-building me-2"></i>Owner Companies
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{% url 'inventory:asset_type_list' %}">
+                                    <i class="fas fa-tags me-2"></i>Asset Types
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{% url 'inventory:department_list' %}">
+                                    <i class="fas fa-sitemap me-2"></i>{% trans "Departments" %}
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{% url 'inventory:global_asset_history' %}">
+                                    <i class="fas fa-history me-2"></i>{% trans "Asset History" %}
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{% url 'inventory:reports_dashboard' %}">
+                                    <i class="fas fa-chart-bar me-2"></i>{% trans "Reports Dashboard" %}
+                                </a>
+                            </li>
+                            {% if request.user.is_superuser or request.user.groups.all|length > 0 %}
+                            <li>
+                                <a class="dropdown-item" href="{% url 'inventory:user_permissions' %}">
+                                    <i class="fas fa-user-shield me-2"></i>{% trans "User Permissions" %}
+                                </a>
+                            </li>
+                            {% endif %}
+                            <li><hr class="dropdown-divider"></li>
                             <li>
                                 <form method="post" action="{% url 'logout' %}" class="d-inline">
                                     {% csrf_token %}
@@ -253,5 +289,73 @@
     </script>
     
     {% block extra_js %}{% endblock %}
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize notification dropdown
+            const notificationDropdown = document.getElementById('notificationDropdown');
+            if (notificationDropdown) {
+                new bootstrap.Dropdown(notificationDropdown);
+            }
+
+            // Function to update notifications
+            function updateNotifications() {
+                fetch("{% url 'inventory:get_notifications_ajax' %}")
+                    .then(response => response.json())
+                    .then(data => {
+                        // Update dropdown content
+                        const dropdownContent = document.querySelector('.dropdown-menu.notification-dropdown');
+                        if (dropdownContent) {
+                            dropdownContent.innerHTML = data.html;
+                        }
+                        
+                        // Update badge
+                        const unreadBadge = document.getElementById('unreadNotificationsBadge');
+                        if (unreadBadge) {
+                            if (data.unread_count > 0) {
+                                unreadBadge.textContent = data.unread_count;
+                                unreadBadge.style.display = 'inline-block';
+                            } else {
+                                unreadBadge.style.display = 'none';
+                            }
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error updating notifications:', error);
+                    });
+            }
+
+            // Update notifications immediately and then every 30 seconds
+            updateNotifications();
+            setInterval(updateNotifications, 30000);
+
+            // Handle notification actions
+            document.addEventListener('click', function(e) {
+                const actionButton = e.target.closest('[data-notification-action]');
+                if (actionButton) {
+                    e.preventDefault();
+                    const form = actionButton.closest('form');
+                    if (form) {
+                        fetch(form.action, {
+                            method: 'POST',
+                            headers: {
+                                'X-CSRFToken': form.querySelector('[name=csrfmiddlewaretoken]').value,
+                                'X-Requested-With': 'XMLHttpRequest'
+                            }
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.status === 'success') {
+                                updateNotifications();
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error handling notification action:', error);
+                        });
+                    }
+                }
+            });
+        });
+    </script>
 </body>
 </html>

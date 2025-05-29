@@ -1,0 +1,95 @@
+{% extends 'inventory/base.html' %}
+{% load i18n %}
+
+{% block title %}{% trans "Delete Department" %}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <div class="text-center mb-4">
+                        <i class="fas fa-exclamation-triangle text-warning fa-3x mb-3"></i>
+                        <h4 class="mb-1">{% trans "Delete Department" %}</h4>
+                        <p class="text-muted">{% trans "Are you sure you want to delete this department?" %}</p>
+                    </div>
+
+                    {% if error %}
+                        <div class="alert alert-danger">
+                            <h5 class="alert-heading mb-2">
+                                <i class="fas fa-exclamation-circle me-2"></i>{% trans "Cannot Delete Department" %}
+                            </h5>
+                            <p class="mb-0">
+                                {% trans "This department cannot be deleted because it has associated employees and positions. Please reassign or remove them first." %}
+                            </p>
+                        </div>
+                    {% endif %}
+
+                    <div class="alert alert-warning">
+                        <h5 class="alert-heading mb-2">
+                            <i class="fas fa-sitemap me-2"></i>{{ department.name }}
+                        </h5>
+                        
+                        {% if employees %}
+                            <p class="mb-2">
+                                <strong>{% trans "Associated Employees" %} ({{ employees|length }}):</strong>
+                            </p>
+                            <ul class="list-unstyled mb-3">
+                                {% for employee in employees %}
+                                    <li>
+                                        <i class="fas fa-user me-2"></i>
+                                        <a href="{% url 'inventory:employee_detail' employee.pk %}" class="text-decoration-none">
+                                            {{ employee.get_full_name }}
+                                        </a>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+
+                        {% if positions %}
+                            <p class="mb-2">
+                                <strong>{% trans "Associated Positions" %} ({{ positions|length }}):</strong>
+                            </p>
+                            <ul class="list-unstyled mb-0">
+                                {% for position in positions %}
+                                    <li>
+                                        <i class="fas fa-briefcase me-2"></i>{{ position.name }}
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+
+                        {% if not employees and not positions %}
+                            <p class="mb-0">
+                                {% trans "This department has no associated employees or positions." %}
+                            </p>
+                        {% endif %}
+                    </div>
+
+                    <form method="post" class="mt-4">
+                        {% csrf_token %}
+                        <div class="d-grid gap-2">
+                            {% if not employees and not positions %}
+                                <button type="submit" class="btn btn-danger">
+                                    <i class="fas fa-trash me-2"></i>{% trans "Confirm Delete" %}
+                                </button>
+                            {% else %}
+                                <button type="button" class="btn btn-danger" disabled>
+                                    <i class="fas fa-trash me-2"></i>{% trans "Cannot Delete" %}
+                                </button>
+                                <small class="text-muted text-center">
+                                    {% trans "Please reassign or remove all associated employees and positions first." %}
+                                </small>
+                            {% endif %}
+                            <a href="{% url 'inventory:department_list' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times me-2"></i>{% trans "Cancel" %}
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

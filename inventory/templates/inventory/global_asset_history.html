@@ -1,0 +1,158 @@
+{% extends 'inventory/base.html' %}
+{% load i18n %}
+
+{% block title %}{% trans "Asset History" %}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0">{% trans "Asset History" %}</h1>
+            <p class="text-muted">{% trans "View and track all asset activities across the system" %}</p>
+        </div>
+    </div>
+
+    <!-- Filters Card -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <!-- Search -->
+                <div class="col-md-4">
+                    <label for="search" class="form-label">{% trans "Search" %}</label>
+                    <input type="text" class="form-control" id="search" name="search" value="{{ search_query }}" placeholder="{% trans 'Search assets, employees, or notes...' %}">
+                </div>
+
+                <!-- Action Filter -->
+                <div class="col-md-2">
+                    <label for="action" class="form-label">{% trans "Action" %}</label>
+                    <select class="form-select" id="action" name="action">
+                        <option value="">{% trans "All Actions" %}</option>
+                        {% for action_value, action_label in action_choices %}
+                            <option value="{{ action_value }}" {% if action_value == selected_action %}selected{% endif %}>
+                                {{ action_label }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Date Range -->
+                <div class="col-md-2">
+                    <label for="date_from" class="form-label">{% trans "Date From" %}</label>
+                    <input type="date" class="form-control" id="date_from" name="date_from" value="{{ date_from }}">
+                </div>
+
+                <div class="col-md-2">
+                    <label for="date_to" class="form-label">{% trans "Date To" %}</label>
+                    <input type="date" class="form-control" id="date_to" name="date_to" value="{{ date_to }}">
+                </div>
+
+                <!-- Filter Button -->
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-filter me-2"></i>{% trans "Apply Filters" %}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- History Table -->
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>{% trans "Date" %}</th>
+                            <th>{% trans "Asset" %}</th>
+                            <th>{% trans "Type" %}</th>
+                            <th>{% trans "Action" %}</th>
+                            <th>{% trans "Employee" %}</th>
+                            <th>{% trans "Notes" %}</th>
+                            <th>{% trans "Created By" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for entry in history_entries %}
+                        <tr>
+                            <td>{{ entry.date|date:"Y-m-d H:i" }}</td>
+                            <td>
+                                <a href="{% url 'inventory:asset_detail' entry.asset.pk %}" class="text-decoration-none">
+                                    {{ entry.asset.name }}
+                                </a>
+                            </td>
+                            <td>{{ entry.asset.asset_type.display_name }}</td>
+                            <td>
+                                <span class="badge {% if entry.action == 'received' %}bg-success{% elif entry.action == 'assigned' %}bg-primary{% elif entry.action == 'maintenance' %}bg-warning{% elif entry.action == 'returned' %}bg-info{% else %}bg-secondary{% endif %}">
+                                    {{ entry.get_action_display }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if entry.employee %}
+                                    <a href="{% url 'inventory:employee_detail' entry.employee.pk %}" class="text-decoration-none">
+                                        {{ entry.employee.get_full_name }}
+                                    </a>
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td>{{ entry.notes|truncatechars:50 }}</td>
+                            <td>
+                                {% if entry.created_by %}
+                                    {{ entry.created_by.get_full_name }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center py-4">
+                                <i class="fas fa-history fa-3x text-muted mb-3"></i>
+                                <p class="text-muted mb-0">{% trans "No history records found." %}</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            {% if history_entries.has_other_pages %}
+            <nav aria-label="{% trans 'History pagination' %}" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if history_entries.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ history_entries.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_action %}&action={{ selected_action }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}" aria-label="{% trans 'Previous' %}">
+                            <span aria-hidden="true">&laquo;</span>
+                        </a>
+                    </li>
+                    {% endif %}
+
+                    {% for num in history_entries.paginator.page_range %}
+                        {% if history_entries.number == num %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ num }}</span>
+                        </li>
+                        {% elif num > history_entries.number|add:'-3' and num < history_entries.number|add:'3' %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_action %}&action={{ selected_action }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}">{{ num }}</a>
+                        </li>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if history_entries.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ history_entries.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_action %}&action={{ selected_action }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}" aria-label="{% trans 'Next' %}">
+                            <span aria-hidden="true">&raquo;</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %} 
