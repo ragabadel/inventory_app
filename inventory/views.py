@@ -1802,6 +1802,12 @@ def get_reports_data(request, date_from=None, date_to=None):
         asset_count=Count('employees__itasset', distinct=True)
     )
     
+    # Device Model statistics
+    model_stats = ITAsset.objects.values('model', 'asset_type__display_name') \
+        .annotate(count=Count('id')) \
+        .filter(count__gt=0) \
+        .order_by('-count')
+    
     # Recent activity
     recent_activities = AssetHistory.objects.select_related(
         'asset', 'employee'
@@ -1813,6 +1819,7 @@ def get_reports_data(request, date_from=None, date_to=None):
         'assigned_assets': assigned_assets,
         'maintenance_assets': maintenance_assets,
         'departments': departments,
+        'model_stats': model_stats,
         'recent_activities': recent_activities,
         'date_from': date_from,
         'date_to': date_to,

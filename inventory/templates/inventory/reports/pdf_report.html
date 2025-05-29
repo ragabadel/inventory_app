@@ -159,6 +159,28 @@
     </div>
 
     <div class="section">
+        <h2>Device Models Distribution</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Model</th>
+                    <th>Asset Type</th>
+                    <th>Count</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for stat in model_stats %}
+                <tr>
+                    <td>{{ stat.model }}</td>
+                    <td>{{ stat.asset_type__display_name }}</td>
+                    <td>{{ stat.count }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="section">
         <h2>Recent Activity</h2>
         <table>
             <thead>

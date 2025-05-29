@@ -360,6 +360,12 @@
                 <canvas id="statusChart"></canvas>
             </div>
         </div>
+        <div class="chart-card">
+            <h3>{% trans "Device Models Distribution" %}</h3>
+            <div class="chart-container">
+                <canvas id="modelChart"></canvas>
+            </div>
+        </div>
     </div>
 
     <!-- Recent Activity -->
@@ -418,9 +424,11 @@ document.addEventListener('DOMContentLoaded', function() {
     new Chart(departmentCtx, {
         type: 'bar',
         data: {
-         			labels: [{% for dept in departments %}'{{ dept.name }}'{% if not forloop.last %},{% endif %}{% endfor %}],           datasets: [{
+            labels: [{% for dept in departments %}'{{ dept.name }}'{% if not forloop.last %},{% endif %}{% endfor %}],
+            datasets: [{
                 label: '{% trans "Asset Count" %}',
-             				data: [{% for dept in departments %}{{ dept.asset_count }}{% if not forloop.last %},{% endif %}{% endfor %}],                backgroundColor: 'rgba(78, 115, 223, 0.8)',
+                data: [{% for dept in departments %}{{ dept.asset_count }}{% if not forloop.last %},{% endif %}{% endfor %}],
+                backgroundColor: 'rgba(78, 115, 223, 0.8)',
                 borderColor: 'rgba(78, 115, 223, 1)',
                 borderWidth: 1,
                 borderRadius: 4
@@ -472,21 +480,62 @@ document.addEventListener('DOMContentLoaded', function() {
                     'rgba(54, 185, 204, 1)',
                     'rgba(246, 194, 62, 1)'
                 ],
-                borderWidth: 2
+                borderWidth: 1
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            cutout: '65%',
             plugins: {
                 legend: {
-                    position: 'bottom',
-                    labels: {
-                        padding: 20,
-                        usePointStyle: true,
-                        pointStyle: 'circle'
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+
+    // Model Chart
+    const modelCtx = document.getElementById('modelChart').getContext('2d');
+    new Chart(modelCtx, {
+        type: 'bar',
+        data: {
+            labels: [{% for stat in model_stats %}'{{ stat.model }} ({{ stat.asset_type__display_name }})'{% if not forloop.last %},{% endif %}{% endfor %}],
+            datasets: [{
+                label: '{% trans "Device Count" %}',
+                data: [{% for stat in model_stats %}{{ stat.count }}{% if not forloop.last %},{% endif %}{% endfor %}],
+                backgroundColor: 'rgba(54, 185, 204, 0.8)',
+                borderColor: 'rgba(54, 185, 204, 1)',
+                borderWidth: 1,
+                borderRadius: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1
+                    },
+                    grid: {
+                        drawBorder: false,
+                        color: 'rgba(0, 0, 0, 0.05)'
                     }
+                },
+                x: {
+                    grid: {
+                        display: false
+                    },
+                    ticks: {
+                        maxRotation: 45,
+                        minRotation: 45
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false
                 }
             }
         }
