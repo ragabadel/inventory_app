@@ -2,32 +2,35 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView, TemplateView
-from django.urls import reverse_lazy
+from django.urls import reverse_lazy, reverse
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db.models import Q, Count
 from django.contrib.contenttypes.models import ContentType
-from .models import Employee, ITAsset, Department, Position, AssetType, OwnerCompany, AssetHistory, Notification, NotificationCategory
-from .forms import EmployeeForm, ITAssetForm
-from django.http import HttpResponse, JsonResponse, FileResponse
-import openpyxl
-from openpyxl import Workbook
-from datetime import datetime, timedelta
-from openpyxl.utils import get_column_letter
-from openpyxl.worksheet.datavalidation import DataValidation
-from django.template.loader import render_to_string, get_template
-from xhtml2pdf import pisa
-from django.conf import settings
-import os
-from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
+from django.template.loader import render_to_string, get_template
+from django.http import HttpResponse, JsonResponse, FileResponse
+from django.conf import settings
+from django.db import models, connection
 from django.contrib.auth.models import User, Group, Permission
 from django.views.decorators.http import require_POST
-from django.db import connection
+
+from .models import (
+    Employee, ITAsset, Department, Position, AssetType, 
+    OwnerCompany, AssetHistory, Notification, NotificationCategory
+)
+from .forms import EmployeeForm, ITAssetForm
+
+import openpyxl
+from openpyxl import Workbook
+from openpyxl.utils import get_column_letter
+from openpyxl.worksheet.datavalidation import DataValidation
+from xhtml2pdf import pisa
 from weasyprint import HTML, CSS
 from weasyprint.text.fonts import FontConfiguration
+from datetime import datetime, timedelta
 import tempfile
 import json
 import io
@@ -252,15 +255,50 @@ def asset_assign(request):
                 created_by=request.user
             )
             
+            # Get or create Device Assignment category
+            device_category, _ = NotificationCategory.objects.get_or_create(
+                name='Device Assignment',
+                defaults={
+                    'icon': 'fa-laptop',
+                    'color': 'primary',
+                    'description': 'Notifications about device assignments and returns'
+                }
+            )
+            
+            # Create notification for the employee
+            Notification.objects.create(
+                title=f'New Device Assigned: {asset.name}',
+                message=(
+                    f'You have been assigned a new device:\n'
+                    f'Device: {asset.name}\n'
+                    f'Serial Number: {asset.serial_number}\n'
+                    f'Model: {asset.model}\n'
+                    f'Manufacturer: {asset.manufacturer}\n'
+                    f'Asset Type: {asset.asset_type.display_name}'
+                ),
+                category=device_category,
+                priority='medium',
+                employee_profile=employee,
+                content_type=ContentType.objects.get_for_model(asset),
+                object_id=asset.id,
+                action_url=reverse('inventory:asset_detail', kwargs={'pk': asset.id})
+            )
+            
+            # Update asset status and assignment
             asset.assigned_to = employee
             asset.status = 'assigned'
             asset.save()
             
             messages.success(request, f'Asset "{asset.name}" has been assigned to {employee.get_full_name()}.')
             return redirect('inventory:employee_detail', pk=employee.pk)
-        except (ITAsset.DoesNotExist, Employee.DoesNotExist):
-            messages.error(request, 'Invalid asset or employee selected.')
-            return redirect('inventory:employee_list')
+            
+        except ITAsset.DoesNotExist:
+            messages.error(request, 'Invalid asset selected.')
+        except Employee.DoesNotExist:
+            messages.error(request, 'Invalid employee selected.')
+        except Exception as e:
+            messages.error(request, f'Error assigning asset: {str(e)}')
+        return redirect('inventory:employee_list')
     
     # Get the employee from the query parameter
     employee_id = request.GET.get('employee')
@@ -349,14 +387,75 @@ class ITAssetCreateView(LoginRequiredMixin, CreateView):
 
     def form_valid(self, form):
         asset = form.save()
-        # Create history record for new asset
-        AssetHistory.objects.create(
-            asset=asset,
-            action='received',
-            notes=f'Asset received and added to inventory',
-            created_by=self.request.user
-        )
-        messages.success(self.request, 'IT Asset created successfully.')
+        
+        try:
+            # Create history record for new asset
+            AssetHistory.objects.create(
+                asset=asset,
+                action='received',
+                notes=f'Asset received and added to inventory',
+                created_by=self.request.user
+            )
+
+            # Create notifications if asset is assigned to an employee
+            if asset.assigned_to:
+                # Get or create Device Assignment category
+                device_category, _ = NotificationCategory.objects.get_or_create(
+                    name='Device Assignment',
+                    defaults={
+                        'icon': 'fa-laptop',
+                        'color': 'primary',
+                        'description': 'Notifications about device assignments and returns'
+                    }
+                )
+
+                # Create assignment notification
+                Notification.objects.create(
+                    title=f'New Device Assigned: {asset.name}',
+                    message=f'You have been assigned a new device:\nDevice: {asset.name}\nSerial Number: {asset.serial_number}\nModel: {asset.model}',
+                    category=device_category,
+                    priority='medium',
+                    employee_profile=asset.assigned_to,
+                    content_type=ContentType.objects.get_for_model(asset),
+                    object_id=asset.id,
+                    action_url=reverse('inventory:asset_detail', kwargs={'pk': asset.id})
+                )
+
+            # Check warranty and create notification if needed
+            if asset.warranty_expiry:
+                days_remaining = (asset.warranty_expiry - timezone.now().date()).days
+                if days_remaining <= 90:  # If warranty expires within 90 days
+                    warranty_category, _ = NotificationCategory.objects.get_or_create(
+                        name='Warranty',
+                        defaults={
+                            'icon': 'fa-shield-alt',
+                            'color': 'warning',
+                            'description': 'Notifications about warranty status'
+                        }
+                    )
+
+                    priority = 'high' if days_remaining <= 30 else 'medium'
+                    message = (
+                        f'Warranty Alert for {asset.name}\n'
+                        f'Serial Number: {asset.serial_number}\n'
+                        f'Days Remaining: {days_remaining}\n'
+                        f'Expiry Date: {asset.warranty_expiry}'
+                    )
+
+                    Notification.objects.create(
+                        title=f'Warranty Expiring Soon: {asset.name}',
+                        message=message,
+                        category=warranty_category,
+                        priority=priority,
+                        content_type=ContentType.objects.get_for_model(asset),
+                        object_id=asset.id,
+                        action_url=reverse('inventory:asset_detail', kwargs={'pk': asset.id})
+                    )
+
+            messages.success(self.request, 'IT Asset created successfully.')
+        except Exception as e:
+            messages.warning(self.request, f'Asset created but there was an error with notifications: {str(e)}')
+
         return super().form_valid(form)
 
 class ITAssetUpdateView(LoginRequiredMixin, UpdateView):
@@ -366,104 +465,404 @@ class ITAssetUpdateView(LoginRequiredMixin, UpdateView):
     success_url = reverse_lazy('inventory:asset_list')
 
     def form_valid(self, form):
+        # Store old values before saving
+        old_status = self.get_object().status
+        old_assigned_to = self.get_object().assigned_to
+        old_warranty_expiry = self.get_object().warranty_expiry
+        old_asset = self.get_object()
+        
         response = super().form_valid(form)
         asset = self.object
         
-        # Check if status changed
-        if old_status != asset.status:
-            action = asset.status
-            notes = f'Asset status changed from {old_status} to {asset.status}'
-            
-            # If status changed to maintenance
-            if asset.status == 'maintenance':
-                notes = f'Asset sent for maintenance'
-            
-            # If status changed to retired
-            elif asset.status == 'retired':
-                notes = f'Asset retired from inventory'
-            
-            AssetHistory.objects.create(
-                asset=asset,
-                action=action,
-                employee=asset.assigned_to,
-                notes=notes,
-                created_by=self.request.user
+        try:
+            # Get or create notification categories
+            device_category, _ = NotificationCategory.objects.get_or_create(
+                name='Device Assignment',
+                defaults={
+                    'icon': 'fa-laptop',
+                    'color': 'primary',
+                    'description': 'Notifications about device assignments and returns'
+                }
             )
-        
-        # Check if assigned employee changed
-        if old_assigned_to != asset.assigned_to:
-            if asset.assigned_to:
-                # New assignment
-                AssetHistory.objects.create(
-                    asset=asset,
-                    action='assigned',
-                    employee=asset.assigned_to,
-                    notes=f'Asset assigned to {asset.assigned_to.get_full_name()}',
-                    created_by=self.request.user
-                )
-                # Create notification for device assignment
-                try:
-                    device_category = NotificationCategory.objects.get(name='Device Assignment')
-                    notification_data = {
-                        'title': f'New Device Assigned: {asset.name}',
-                        'message': f'You have been assigned a new device: {asset.name} (SN: {asset.serial_number})',
-                        'priority': 'medium',
-                        'employee_profile': asset.assigned_to,
-                        'content_type': ContentType.objects.get_for_model(asset),
-                        'object_id': asset.id,
-                        'category': device_category,
-                        'status': 'unread'
-                    }
-                    
-                    # Use raw SQL to insert the notification
-                    with connection.cursor() as cursor:
-                        cursor.execute("""
-                            INSERT INTO inventory_notification 
-                            (title, message, priority, status, created_at, employee_profile_id, content_type_id, object_id, category_id)
-                            VALUES 
-                            (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-                        """, [
-                            notification_data['title'],
-                            notification_data['message'],
-                            notification_data['priority'],
-                            notification_data['status'],
-                            timezone.now(),
-                            notification_data['employee_profile'].id if notification_data['employee_profile'] else None,
-                            notification_data['content_type'].id,
-                            notification_data['object_id'],
-                            notification_data['category'].id
-                        ])
-                except NotificationCategory.DoesNotExist:
-                    messages.warning(self.request, 'Could not create notification: Device Assignment category not found')
-                except Exception as e:
-                    messages.error(self.request, f'Error creating notification: {str(e)}')
-            else:
-                # Returned to inventory
-                AssetHistory.objects.create(
-                    asset=asset,
-                    action='returned',
-                    employee=old_assigned_to,
-                    notes=f'Asset returned from {old_assigned_to.get_full_name()}',
-                    created_by=self.request.user
-                )
-                # Create notification for device return
-                try:
-                    device_category = NotificationCategory.objects.get(name='Device Assignment')
+            
+            maintenance_category, _ = NotificationCategory.objects.get_or_create(
+                name='Maintenance',
+                defaults={
+                    'icon': 'fa-tools',
+                    'color': 'warning',
+                    'description': 'Notifications about device maintenance and repairs'
+                }
+            )
+            
+            modification_category, _ = NotificationCategory.objects.get_or_create(
+                name='Device Modification',
+                defaults={
+                    'icon': 'fa-edit',
+                    'color': 'info',
+                    'description': 'Notifications about device modifications and updates'
+                }
+            )
+
+            system_category, _ = NotificationCategory.objects.get_or_create(
+                name='System',
+                defaults={
+                    'icon': 'fa-cog',
+                    'color': 'secondary',
+                    'description': 'System notifications and updates'
+                }
+            )
+
+            # Handle assignment changes
+            if old_assigned_to != asset.assigned_to:
+                # If device was unassigned from someone
+                if old_assigned_to and not asset.assigned_to:
+                    # Notify the previous owner
                     Notification.objects.create(
-                        title=f'Device Returned: {asset.name}',
-                        message=f'Device {asset.name} (SN: {asset.serial_number}) has been returned to inventory',
+                        title=f'Device Unassigned: {asset.name}',
+                        message=(
+                            f'A device has been unassigned from you:\n'
+                            f'Device: {asset.name}\n'
+                            f'Serial Number: {asset.serial_number}\n'
+                            f'Model: {asset.model}\n'
+                            f'Manufacturer: {asset.manufacturer}\n\n'
+                            f'Please ensure you have returned all accessories and peripherals.'
+                        ),
+                        category=device_category,
                         priority='medium',
                         employee_profile=old_assigned_to,
                         content_type=ContentType.objects.get_for_model(asset),
                         object_id=asset.id,
-                        category=device_category
+                        action_url=reverse('inventory:asset_detail', kwargs={'pk': asset.id})
                     )
-                except NotificationCategory.DoesNotExist:
-                    messages.warning(self.request, 'Could not create notification: Device Assignment category not found')
-                except Exception as e:
-                    messages.error(self.request, f'Error creating notification: {str(e)}')
+
+                    # Create system notification for unassignment
+                    Notification.objects.create(
+                        title=f'Device Unassigned: {asset.name}',
+                        message=(
+                            f'Device has been unassigned:\n'
+                            f'Device: {asset.name}\n'
+                            f'Serial Number: {asset.serial_number}\n'
+                            f'Previous Owner: {old_assigned_to.get_full_name()}\n'
+                            f'Action Required: Verify device return and condition.'
+                        ),
+                        category=device_category,
+                        priority='medium',
+                        content_type=ContentType.objects.get_for_model(asset),
+                        object_id=asset.id,
+                        action_url=reverse('inventory:asset_detail', kwargs={'pk': asset.id})
+                    )
+
+                # If device was assigned to someone new
+                elif asset.assigned_to:
+                    # Notify the new owner
+                    Notification.objects.create(
+                        title=f'New Device Assigned: {asset.name}',
+                        message=(
+                            f'A new device has been assigned to you:\n'
+                            f'Device: {asset.name}\n'
+                            f'Serial Number: {asset.serial_number}\n'
+                            f'Model: {asset.model}\n'
+                            f'Manufacturer: {asset.manufacturer}\n'
+                            f'Asset Type: {asset.asset_type.display_name}\n\n'
+                            f'Previous Owner: {old_assigned_to.get_full_name() if old_assigned_to else "None"}\n\n'
+                            f'Please verify the device and its accessories.\n'
+                            f'Contact IT support if you need any assistance setting up your device.'
+                        ),
+                        category=device_category,
+                        priority='high',
+                        employee_profile=asset.assigned_to,
+                        content_type=ContentType.objects.get_for_model(asset),
+                        object_id=asset.id,
+                        action_url=reverse('inventory:asset_detail', kwargs={'pk': asset.id})
+                    )
+
+                    # Create system notification for new assignment
+                    Notification.objects.create(
+                        title=f'Device Assigned: {asset.name}',
+                        message=(
+                            f'Device has been assigned:\n'
+                            f'Device: {asset.name}\n'
+                            f'Serial Number: {asset.serial_number}\n'
+                            f'Assigned To: {asset.assigned_to.get_full_name()}\n'
+                            f'Department: {asset.assigned_to.department}\n'
+                            f'Previous Owner: {old_assigned_to.get_full_name() if old_assigned_to else "None"}\n'
+                            f'Action Required: Schedule device setup and orientation if needed.'
+                        ),
+                        category=device_category,
+                        priority='medium',
+                        content_type=ContentType.objects.get_for_model(asset),
+                        object_id=asset.id,
+                        action_url=reverse('inventory:asset_detail', kwargs={'pk': asset.id})
+                    )
+
+                # Create history record for assignment change
+                if old_assigned_to:
+                    AssetHistory.objects.create(
+                        asset=asset,
+                        action='unassigned',
+                        employee=old_assigned_to,
+                        notes=f'Device unassigned from {old_assigned_to.get_full_name()}',
+                        created_by=self.request.user
+                    )
+                if asset.assigned_to:
+                    AssetHistory.objects.create(
+                        asset=asset,
+                        action='assigned',
+                        employee=asset.assigned_to,
+                        notes=f'Device assigned to {asset.assigned_to.get_full_name()}',
+                        created_by=self.request.user
+                    )
+
+            # Check for significant modifications
+            significant_fields = {
+                'name': 'Name',
+                'model': 'Model',
+                'manufacturer': 'Manufacturer',
+                'serial_number': 'Serial Number',
+                'mac_address_wifi': 'WiFi MAC Address',
+                'mac_address_ethernet': 'Ethernet MAC Address',
+                'ip_address': 'IP Address',
+                'processor': 'Processor',
+                'ram_size': 'RAM Size',
+                'hdd1_capacity': 'Primary HDD Capacity',
+                'hdd2_capacity': 'Secondary HDD Capacity',
+                'operating_system': 'Operating System',
+                'delivery_letter_code': 'Delivery Letter Code',
+                'purchase_date': 'Purchase Date',
+                'receipt_date': 'Receipt Date'
+            }
+            
+            changes = []
+            for field, display_name in significant_fields.items():
+                old_value = getattr(old_asset, field, None)
+                new_value = getattr(asset, field, None)
+                if old_value != new_value and (old_value or new_value):  # Check if either value exists
+                    changes.append(f"{display_name}: {old_value} → {new_value}")
+
+            # If significant changes were made, create modification notification
+            if changes:
+                # Notify the assigned employee
+                if asset.assigned_to:
+                    Notification.objects.create(
+                        title=f'Your Device Has Been Modified: {asset.name}',
+                        message=(
+                            f'Your assigned device has been modified:\n'
+                            f'Device: {asset.name}\n'
+                            f'Serial Number: {asset.serial_number}\n'
+                            f'Changes Made:\n' + '\n'.join(f'• {change}' for change in changes) + '\n\n'
+                            f'Please review these changes and report any issues to IT support.'
+                        ),
+                        category=modification_category,
+                        priority='medium',
+                        employee_profile=asset.assigned_to,
+                        content_type=ContentType.objects.get_for_model(asset),
+                        object_id=asset.id,
+                        action_url=reverse('inventory:asset_detail', kwargs={'pk': asset.id})
+                    )
+
+                # Create system notification for modifications
+                Notification.objects.create(
+                    title=f'Device Modified: {asset.name}',
+                    message=(
+                        f'Device has been modified:\n'
+                        f'Device: {asset.name}\n'
+                        f'Serial Number: {asset.serial_number}\n'
+                        f'Modified by: {self.request.user.get_full_name() or self.request.user.username}\n'
+                        f'Changes Made:\n' + '\n'.join(f'• {change}' for change in changes)
+                    ),
+                    category=modification_category,
+                    priority='medium',
+                    content_type=ContentType.objects.get_for_model(asset),
+                    object_id=asset.id,
+                    action_url=reverse('inventory:asset_detail', kwargs={'pk': asset.id})
+                )
+
+                # Create history record for modification
+                AssetHistory.objects.create(
+                    asset=asset,
+                    action='modified',
+                    employee=asset.assigned_to,
+                    notes=f'Device modified:\n' + '\n'.join(changes),
+                    created_by=self.request.user
+                )
+
+            # Handle status changes, maintenance, and retirement
+            if old_status != asset.status:
+                action = asset.status
+                notes = f'Asset status changed from {old_status} to {asset.status}'
+                
+                # If status changed to maintenance
+                if asset.status == 'maintenance':
+                    notes = f'Asset sent for maintenance'
+                    # Notify the assigned employee
+                    if asset.assigned_to:
+                        Notification.objects.create(
+                            title=f'Your Device Needs Maintenance: {asset.name}',
+                            message=(
+                                f'Your assigned device has been sent for maintenance:\n'
+                                f'Device: {asset.name}\n'
+                                f'Serial Number: {asset.serial_number}\n'
+                                f'Previous Status: {old_status}\n'
+                                f'Expected Duration: To be determined\n'
+                                f'Note: A temporary replacement device may be provided if needed.\n\n'
+                                f'Please backup any important data if you haven\'t already.'
+                            ),
+                            category=maintenance_category,
+                            priority='high',
+                            employee_profile=asset.assigned_to,
+                            content_type=ContentType.objects.get_for_model(asset),
+                            object_id=asset.id,
+                            action_url=reverse('inventory:asset_detail', kwargs={'pk': asset.id})
+                        )
+                    
+                    # Create system notification for maintenance
+                    Notification.objects.create(
+                        title=f'Device In Maintenance: {asset.name}',
+                        message=(
+                            f'Device requires maintenance:\n'
+                            f'Device: {asset.name}\n'
+                            f'Serial Number: {asset.serial_number}\n'
+                            f'Previous Status: {old_status}\n'
+                            f'Assigned To: {asset.assigned_to.get_full_name() if asset.assigned_to else "Not Assigned"}\n'
+                            f'Action Required: Schedule maintenance and update status when complete.'
+                        ),
+                        category=maintenance_category,
+                        priority='high',
+                        content_type=ContentType.objects.get_for_model(asset),
+                        object_id=asset.id,
+                        action_url=reverse('inventory:asset_detail', kwargs={'pk': asset.id})
+                    )
+                
+                # If status changed from maintenance to available/assigned
+                elif old_status == 'maintenance' and asset.status in ['available', 'assigned']:
+                    notes = f'Asset returned from maintenance'
+                    # Notify the assigned employee
+                    if asset.assigned_to:
+                        Notification.objects.create(
+                            title=f'Your Device Has Returned from Maintenance: {asset.name}',
+                            message=(
+                                f'Your device has completed maintenance:\n'
+                                f'Device: {asset.name}\n'
+                                f'Serial Number: {asset.serial_number}\n'
+                                f'Current Status: {asset.get_status_display()}\n'
+                                f'Note: Please verify all your settings and data are intact.'
+                            ),
+                            category=maintenance_category,
+                            priority='medium',
+                            employee_profile=asset.assigned_to,
+                            content_type=ContentType.objects.get_for_model(asset),
+                            object_id=asset.id,
+                            action_url=reverse('inventory:asset_detail', kwargs={'pk': asset.id})
+                        )
+
+                # If status changed to retired
+                elif asset.status == 'retired':
+                    notes = f'Asset retired from inventory'
+                    
+                    # Notify the previously assigned employee
+                    if old_assigned_to:
+                        Notification.objects.create(
+                            title=f'Your Device Has Been Retired: {asset.name}',
+                            message=(
+                                f'Your previously assigned device has been retired:\n'
+                                f'Device: {asset.name}\n'
+                                f'Serial Number: {asset.serial_number}\n'
+                                f'Model: {asset.model}\n'
+                                f'Manufacturer: {asset.manufacturer}\n\n'
+                                f'If you need a replacement device, please contact IT support.'
+                            ),
+                            category=system_category,
+                            priority='high',
+                            employee_profile=old_assigned_to,
+                            content_type=ContentType.objects.get_for_model(asset),
+                            object_id=asset.id,
+                            action_url=reverse('inventory:asset_detail', kwargs={'pk': asset.id})
+                        )
+
+                    # Create system notification for retirement
+                    Notification.objects.create(
+                        title=f'Device Retired: {asset.name}',
+                        message=(
+                            f'Device has been retired from inventory:\n'
+                            f'Device: {asset.name}\n'
+                            f'Serial Number: {asset.serial_number}\n'
+                            f'Model: {asset.model}\n'
+                            f'Previous Status: {old_status}\n'
+                            f'Last Assigned To: {old_assigned_to.get_full_name() if old_assigned_to else "Not Assigned"}\n'
+                            f'Action Required: Update inventory records and process device disposal if necessary.'
+                        ),
+                        category=system_category,
+                        priority='medium',
+                        content_type=ContentType.objects.get_for_model(asset),
+                        object_id=asset.id,
+                        action_url=reverse('inventory:asset_detail', kwargs={'pk': asset.id})
+                    )
+                
+                # Create history record for status change
+                AssetHistory.objects.create(
+                    asset=asset,
+                    action=action,
+                    employee=asset.assigned_to,
+                    notes=notes,
+                    created_by=self.request.user
+                )
+
+            # Rest of the existing code for warranty notifications
+            if asset.warranty_expiry:
+                days_remaining = (asset.warranty_expiry - timezone.now().date()).days
+                warranty_changed = old_warranty_expiry != asset.warranty_expiry
+                
+                # Only create notification if:
+                # 1. Warranty date has changed OR
+                # 2. Warranty is expiring soon (but not already expired)
+                if warranty_changed or (0 < days_remaining <= 90):
+                    warranty_category, _ = NotificationCategory.objects.get_or_create(
+                        name='Warranty',
+                        defaults={
+                            'icon': 'fa-shield-alt',
+                            'color': 'warning',
+                            'description': 'Notifications about warranty status'
+                        }
+                    )
+
+                    # Set appropriate priority and message based on status
+                    if days_remaining <= 0:
+                        priority = 'high'
+                        title = f'Warranty Expired: {asset.name}'
+                        message = (
+                            f'Warranty has expired for device:\n'
+                            f'Device: {asset.name}\n'
+                            f'Serial Number: {asset.serial_number}\n'
+                            f'Expiry Date: {asset.warranty_expiry}\n'
+                            f'Action Required: Please review and update warranty status.'
+                        )
+                    else:
+                        priority = 'high' if days_remaining <= 30 else 'medium'
+                        title = f'Warranty Expiring Soon: {asset.name}'
+                        message = (
+                            f'Warranty Alert for {asset.name}\n'
+                            f'Serial Number: {asset.serial_number}\n'
+                            f'Days Remaining: {days_remaining}\n'
+                            f'Expiry Date: {asset.warranty_expiry}\n'
+                            f'Action Required: Please plan for warranty renewal.'
+                        )
+
+                    # Only create notification if warranty changed or it's not expired
+                    if warranty_changed or days_remaining > 0:
+                        Notification.objects.create(
+                            title=title,
+                            message=message,
+                            category=warranty_category,
+                            priority=priority,
+                            content_type=ContentType.objects.get_for_model(asset),
+                            object_id=asset.id,
+                            action_url=reverse('inventory:asset_detail', kwargs={'pk': asset.id})
+                        )
+
+            messages.success(self.request, 'IT Asset updated successfully.')
+        except Exception as e:
+            messages.warning(self.request, f'Asset updated but there was an error with notifications: {str(e)}')
         
-        messages.success(self.request, 'IT Asset updated successfully.')
         return response
 
 class ITAssetDeleteView(LoginRequiredMixin, DeleteView):
@@ -1623,14 +2022,27 @@ def get_notifications_ajax(request):
     else:
         notification_filter = Q(employee_profile__isnull=True)
     
-    notifications = Notification.objects.filter(
+    # Get unread count first
+    unread_count = Notification.objects.filter(
         notification_filter,
         status='unread'
-    ).select_related('category').order_by('-created_at')[:5]
+    ).count()
+    
+    # Get both read and unread notifications, but prioritize unread ones
+    notifications = Notification.objects.filter(
+        notification_filter
+    ).exclude(
+        status='archived'
+    ).select_related(
+        'category'
+    ).order_by(
+        '-status',  # This will put unread first since 'unread' > 'read'
+        '-created_at'
+    )[:10]  # Limit to 10 most recent notifications
     
     context = {
         'notifications': notifications,
-        'unread_notifications_count': notifications.count()
+        'unread_notifications_count': unread_count
     }
     
     html = render_to_string(
@@ -1641,7 +2053,7 @@ def get_notifications_ajax(request):
     
     return JsonResponse({
         'html': html,
-        'unread_count': context['unread_notifications_count']
+        'unread_count': unread_count
     })
 
 class UserPermissionsView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
@@ -1872,4 +2284,43 @@ class ContactView(TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['title'] = 'Contact Us'
-        return context  
+        return context
+
+def get_notification_context(request):
+    """Context processor for notifications"""
+    if request.user.is_authenticated:
+        # Build the filter based on user's employee profile
+        if hasattr(request.user, 'employee_profile') and request.user.employee_profile:
+            notification_filter = Q(
+                Q(employee_profile=request.user.employee_profile) |
+                Q(employee_profile__isnull=True)
+            )
+        else:
+            notification_filter = Q(employee_profile__isnull=True)
+        
+        # Get unread notifications count
+        unread_count = Notification.objects.filter(
+            notification_filter,
+            status='unread'
+        ).count()
+        
+        # Get recent notifications for dropdown
+        notifications = Notification.objects.filter(
+            notification_filter
+        ).exclude(
+            status='archived'
+        ).select_related(
+            'category'
+        ).order_by(
+            '-status',  # This will put unread first since 'unread' > 'read'
+            '-created_at'
+        )[:10]
+        
+        return {
+            'notifications': notifications,
+            'unread_notifications_count': unread_count
+        }
+    return {
+        'notifications': [],
+        'unread_notifications_count': 0
+    }  

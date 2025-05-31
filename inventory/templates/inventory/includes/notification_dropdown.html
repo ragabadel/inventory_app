@@ -2,99 +2,280 @@
 
 <style>
     .notification-dropdown {
-        width: 350px;
+        min-width: 320px;
+        max-width: 400px;
         max-height: 500px;
         overflow-y: auto;
+        padding: 0;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
     }
-    .notification-list {
-        max-height: 400px;
-        overflow-y: auto;
+
+    .notification-dropdown .dropdown-header {
+        background: var(--light-bg);
+        padding: 1rem;
+        border-bottom: 1px solid var(--border-color);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
     }
+
+    .notification-dropdown .dropdown-header h6 {
+        margin: 0;
+        font-weight: 600;
+    }
+
+    .notification-item {
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid var(--border-color);
+        transition: background-color 0.2s;
+        cursor: pointer;
+        display: flex;
+        gap: 1rem;
+        align-items: flex-start;
+        position: relative;
+    }
+
+    .notification-item:last-child {
+        border-bottom: none;
+    }
+
     .notification-item:hover {
-        background-color: rgba(0,0,0,.03);
+        background-color: var(--light-bg);
     }
+
+    .notification-item.unread {
+        background-color: var(--light-hover);
+    }
+
+    .notification-item.unread:hover {
+        background-color: var(--light-bg);
+    }
+
+    .notification-item.read {
+        opacity: 0.8;
+    }
+
     .notification-icon {
-        width: 30px;
-        text-align: center;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
     }
-    .dropdown-menu {
-        margin-top: 0.5rem;
+
+    .notification-content {
+        flex-grow: 1;
+        min-width: 0;
+    }
+
+    .notification-title {
+        font-size: 0.875rem;
+        font-weight: 500;
+        margin-bottom: 0.25rem;
+        color: var(--body-color);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .notification-message {
+        font-size: 0.8125rem;
+        color: var(--body-quiet-color);
+        margin-bottom: 0.25rem;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .notification-meta {
+        font-size: 0.75rem;
+        color: var(--body-quiet-color);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .notification-priority {
+        font-size: 0.75rem;
+        padding: 0.125rem 0.5rem;
+        border-radius: 50px;
+        font-weight: 500;
+    }
+
+    .notification-status {
+        position: absolute;
+        top: 0.5rem;
+        right: 0.5rem;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+    }
+
+    .notification-status.unread {
+        background-color: var(--primary);
+    }
+
+    .notification-dropdown .dropdown-footer {
+        background: var(--light-bg);
+        padding: 0.75rem;
+        text-align: center;
+        border-top: 1px solid var(--border-color);
+    }
+
+    .notification-empty {
+        padding: 2rem 1rem;
+        text-align: center;
+        color: var(--body-quiet-color);
+    }
+
+    .notification-empty i {
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+        opacity: 0.5;
+    }
+
+    /* Custom Scrollbar */
+    .notification-dropdown::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .notification-dropdown::-webkit-scrollbar-track {
+        background: var(--light-bg);
+    }
+
+    .notification-dropdown::-webkit-scrollbar-thumb {
+        background: var(--border-color);
+        border-radius: 3px;
+    }
+
+    .notification-dropdown::-webkit-scrollbar-thumb:hover {
+        background: var(--body-quiet-color);
+    }
+
+    /* Animation */
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .notification-item {
+        animation: fadeIn 0.3s ease-out;
+    }
+
+    /* Badge Animation */
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.1); }
+        100% { transform: scale(1); }
+    }
+
+    .notification-badge {
+        animation: pulse 2s infinite;
     }
 </style>
 
-{% if notifications %}
-    <div class="notification-header d-flex justify-content-between align-items-center p-3 border-bottom">
-        <h6 class="mb-0">{% trans "Notifications" %}</h6>
-        <span class="badge bg-primary">{{ unread_notifications_count }}</span>
+<div class="notification-dropdown">
+    <div class="dropdown-header">
+        <h6>
+            <i class="fas fa-bell me-2"></i>{% trans "Notifications" %}
+            {% if unread_notifications_count > 0 %}
+            <span class="badge bg-danger notification-badge ms-2">{{ unread_notifications_count }}</span>
+            {% endif %}
+        </h6>
+        {% if unread_notifications_count > 0 %}
+        <form action="{% url 'inventory:mark_all_read' %}" method="post" class="d-inline">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-link btn-sm p-0 text-muted">
+                <i class="fas fa-check-double"></i>
+            </button>
+        </form>
+        {% endif %}
     </div>
-    <div class="notification-list">
-        {% for notification in notifications %}
-            <div class="notification-item p-3 border-bottom {% if notification.status == 'unread' %}bg-light{% endif %}">
-                <div class="d-flex align-items-start">
-                    <div class="notification-icon me-3">
-                        <i class="fas {{ notification.category.icon }} text-{{ notification.category.color }}"></i>
-                    </div>
-                    <div class="notification-content flex-grow-1">
-                        <h6 class="mb-1">{{ notification.title }}</h6>
-                        <p class="mb-1 text-muted small">{{ notification.message|truncatechars:100 }}</p>
-                        <small class="text-muted">{{ notification.created_at|timesince }} {% trans "ago" %}</small>
-                        
-                        {% if notification.action_url %}
-                            <div class="mt-2">
-                                <a href="{{ notification.action_url }}" class="btn btn-sm btn-outline-primary">
-                                    <i class="fas fa-external-link-alt me-1"></i>{% trans "View Details" %}
-                                </a>
-                            </div>
+
+    {% if notifications %}
+        <div class="notification-list">
+            {% for notification in notifications|slice:":10" %}
+            <div class="notification-item {% if notification.status == 'unread' %}unread{% else %}read{% endif %}" 
+                 onclick="window.location.href='{% if notification.action_url %}{{ notification.action_url }}{% else %}{% url 'inventory:notification_detail' notification.pk %}{% endif %}'">
+                <div class="notification-status {% if notification.status == 'unread' %}unread{% endif %}"></div>
+                <div class="notification-icon bg-{{ notification.category.color }}">
+                    <i class="fas {{ notification.category.icon }} text-white"></i>
+                </div>
+                <div class="notification-content">
+                    <div class="notification-title">{{ notification.title }}</div>
+                    <div class="notification-message">{{ notification.message }}</div>
+                    <div class="notification-meta">
+                        <span><i class="far fa-clock me-1"></i>{{ notification.created_at|timesince }}</span>
+                        {% if notification.priority in 'high,urgent' %}
+                            <span class="notification-priority bg-danger text-white">
+                                {{ notification.get_priority_display }}
+                            </span>
                         {% endif %}
-                    </div>
-                    <div class="notification-actions ms-2">
-                        <div class="dropdown">
-                            <button class="btn btn-link btn-sm p-0 text-muted" type="button" data-bs-toggle="dropdown">
-                                <i class="fas fa-ellipsis-v"></i>
-                            </button>
-                            <ul class="dropdown-menu dropdown-menu-end">
-                                {% if notification.status == 'unread' %}
-                                    <li>
-                                        <form action="{% url 'inventory:mark_notification_read' notification.pk %}" method="post">
-                                            {% csrf_token %}
-                                            <button type="submit" class="dropdown-item" data-notification-action="mark-read">
-                                                <i class="fas fa-check me-2"></i>{% trans "Mark as Read" %}
-                                            </button>
-                                        </form>
-                                    </li>
-                                {% else %}
-                                    <li>
-                                        <form action="{% url 'inventory:mark_notification_unread' notification.pk %}" method="post">
-                                            {% csrf_token %}
-                                            <button type="submit" class="dropdown-item" data-notification-action="mark-unread">
-                                                <i class="fas fa-envelope me-2"></i>{% trans "Mark as Unread" %}
-                                            </button>
-                                        </form>
-                                    </li>
-                                {% endif %}
-                                <li>
-                                    <form action="{% url 'inventory:archive_notification' notification.pk %}" method="post">
-                                        {% csrf_token %}
-                                        <button type="submit" class="dropdown-item" data-notification-action="archive">
-                                            <i class="fas fa-archive me-2"></i>{% trans "Archive" %}
-                                        </button>
-                                    </form>
-                                </li>
-                            </ul>
-                        </div>
                     </div>
                 </div>
             </div>
-        {% endfor %}
-    </div>
-    <div class="notification-footer p-2 text-center border-top">
-        <a href="{% url 'inventory:notification_list' %}" class="btn btn-link btn-sm text-decoration-none">
-            {% trans "View All" %}
-        </a>
-    </div>
-{% else %}
-    <div class="p-4 text-center text-muted">
-        <i class="fas fa-bell fa-2x mb-3"></i>
-        <p class="mb-0">{% trans "No new notifications" %}</p>
-    </div>
-{% endif %} 
+            {% endfor %}
+        </div>
+        <div class="dropdown-footer">
+            <a href="{% url 'inventory:notification_list' %}" class="btn btn-link btn-sm text-decoration-none">
+                {% trans "View All Notifications" %} <i class="fas fa-arrow-right ms-1"></i>
+            </a>
+        </div>
+    {% else %}
+        <div class="notification-empty">
+            <i class="fas fa-bell-slash d-block"></i>
+            <p class="mb-0">{% trans "No notifications" %}</p>
+        </div>
+    {% endif %}
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Handle notification item clicks
+        document.querySelectorAll('.notification-item').forEach(item => {
+            item.addEventListener('click', function(e) {
+                // Prevent click if clicking on a button
+                if (e.target.closest('button')) {
+                    e.stopPropagation();
+                    return;
+                }
+                
+                // Add loading effect
+                this.style.opacity = '0.7';
+                this.style.pointerEvents = 'none';
+            });
+        });
+
+        // Auto-update notifications
+        function updateNotifications() {
+            fetch("{% url 'inventory:get_notifications_ajax' %}")
+                .then(response => response.json())
+                .then(data => {
+                    const dropdown = document.querySelector('.notification-dropdown');
+                    if (dropdown) {
+                        dropdown.innerHTML = data.html;
+                    }
+
+                    // Update badge in navbar if it exists
+                    const navBadge = document.querySelector('#notificationBadge');
+                    if (navBadge) {
+                        if (data.unread_count > 0) {
+                            navBadge.textContent = data.unread_count;
+                            navBadge.classList.remove('d-none');
+                        } else {
+                            navBadge.classList.add('d-none');
+                        }
+                    }
+                })
+                .catch(error => console.error('Error updating notifications:', error));
+        }
+
+        // Update notifications every 30 seconds
+        setInterval(updateNotifications, 30000);
+    });
+</script> 

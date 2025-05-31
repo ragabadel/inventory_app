@@ -30,9 +30,9 @@ ALLOWED_HOSTS = [
     '127.0.0.1',
     '192.168.20.37',
     '192.168.20.37:8000',
+    '172.16.1.15:8000',
+    '172.16.1.15',
 ]
-
-
 # Application definition
 
 INSTALLED_APPS = [
@@ -61,9 +61,7 @@ ROOT_URLCONF = 'inventory_app.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [
-            BASE_DIR / 'inventory' / 'templates',
-        ],
+        'DIRS': [],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -71,7 +69,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
-                'inventory.context_processors.notification_count',
+                'inventory.context_processors.notification_context',
             ],
         },
     },

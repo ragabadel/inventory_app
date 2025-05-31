@@ -1,8 +1,160 @@
 {% extends 'inventory/base.html' %}
-{% load i18n %}
 {% load static %}
+{% load i18n %}
 
 {% block title %}{% trans "Notifications" %}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .notification-filters {
+        background: var(--body-bg);
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .notification-card {
+        background: var(--body-bg);
+        border-radius: 8px;
+        border: 1px solid var(--border-color);
+        margin-bottom: 1rem;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .notification-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+
+    .notification-card.unread {
+        border-left: 4px solid var(--primary);
+    }
+
+    .notification-header {
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--border-color);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .notification-body {
+        padding: 1.5rem;
+    }
+
+    .notification-footer {
+        padding: 1rem 1.5rem;
+        border-top: 1px solid var(--border-color);
+        background: var(--light-bg);
+        border-bottom-left-radius: 8px;
+        border-bottom-right-radius: 8px;
+    }
+
+    .priority-badge {
+        padding: 0.25rem 0.75rem;
+        border-radius: 50px;
+        font-size: 0.875rem;
+        font-weight: 500;
+    }
+
+    .priority-urgent {
+        background-color: #dc3545;
+        color: white;
+    }
+
+    .priority-high {
+        background-color: #fd7e14;
+        color: white;
+    }
+
+    .priority-medium {
+        background-color: #0dcaf0;
+        color: white;
+    }
+
+    .priority-low {
+        background-color: #198754;
+        color: white;
+    }
+
+    .category-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 1rem;
+    }
+
+    .notification-stats {
+        background: var(--body-bg);
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        border: 1px solid var(--border-color);
+    }
+
+    .stat-card {
+        padding: 1rem;
+        border-radius: 6px;
+        text-align: center;
+        background: var(--light-bg);
+        margin-bottom: 0.5rem;
+    }
+
+    .stat-number {
+        font-size: 1.5rem;
+        font-weight: bold;
+        margin-bottom: 0.25rem;
+    }
+
+    .stat-label {
+        font-size: 0.875rem;
+        color: var(--body-quiet-color);
+    }
+
+    .filter-badge {
+        background: var(--primary);
+        color: white;
+        padding: 0.25rem 0.75rem;
+        border-radius: 50px;
+        font-size: 0.875rem;
+        margin-right: 0.5rem;
+        display: inline-flex;
+        align-items: center;
+    }
+
+    .filter-badge .close {
+        margin-left: 0.5rem;
+        font-size: 1rem;
+        cursor: pointer;
+    }
+
+    .active-filters {
+        margin: 1rem 0;
+    }
+
+    .notification-empty {
+        text-align: center;
+        padding: 3rem 1rem;
+    }
+
+    .notification-empty i {
+        font-size: 3rem;
+        color: var(--body-quiet-color);
+        margin-bottom: 1rem;
+    }
+
+    @media (max-width: 768px) {
+        .notification-header {
+            flex-direction: column;
+            gap: 1rem;
+        }
+    }
+</style>
+{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
@@ -10,325 +162,63 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h1 class="h3 mb-0">{% trans "Notifications" %}</h1>
-            <p class="text-muted">{% trans "View and manage your notifications" %}</p>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'inventory:home' %}">{% trans "Home" %}</a></li>
+                    <li class="breadcrumb-item active">{% trans "Notifications" %}</li>
+                </ol>
+            </nav>
         </div>
         <div class="d-flex gap-2">
-            {% if notifications %}
-                <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#filterModal">
-                    <i class="fas fa-filter me-2"></i>{% trans "Filter" %}
+            {% if unread_count > 0 %}
+            <form action="{% url 'inventory:mark_all_read' %}" method="post" class="d-inline">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-outline-primary">
+                    <i class="fas fa-check-double me-2"></i>{% trans "Mark All as Read" %}
                 </button>
-                <form action="{% url 'inventory:mark_all_read' %}" method="post" class="d-inline">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-outline-success">
-                        <i class="fas fa-check-double me-2"></i>{% trans "Mark All as Read" %}
-                    </button>
-                </form>
+            </form>
             {% endif %}
         </div>
     </div>
 
-    <!-- Filters Summary -->
-    {% if current_status or current_priority or current_category or current_date_range or search_query %}
-        <div class="alert alert-info mb-4">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <h6 class="mb-2">{% trans "Active Filters:" %}</h6>
-                    <div class="d-flex flex-wrap gap-2">
-                        {% if current_status %}
-                            <span class="badge bg-secondary">
-                                {% trans "Status" %}: {{ current_status|title }}
-                                <a href="?{% if current_priority %}priority={{ current_priority }}&{% endif %}{% if current_category %}category={{ current_category }}&{% endif %}{% if current_date_range %}date_range={{ current_date_range }}&{% endif %}{% if search_query %}q={{ search_query }}{% endif %}"
-                                   class="text-white ms-2 text-decoration-none">×</a>
-                            </span>
-                        {% endif %}
-                        {% if current_priority %}
-                            <span class="badge bg-secondary">
-                                {% trans "Priority" %}: {{ current_priority|title }}
-                                <a href="?{% if current_status %}status={{ current_status }}&{% endif %}{% if current_category %}category={{ current_category }}&{% endif %}{% if current_date_range %}date_range={{ current_date_range }}&{% endif %}{% if search_query %}q={{ search_query }}{% endif %}"
-                                   class="text-white ms-2 text-decoration-none">×</a>
-                            </span>
-                        {% endif %}
-                        {% if current_category %}
-                            <span class="badge bg-secondary">
-                                {% trans "Category" %}: {{ current_category|title }}
-                                <a href="?{% if current_status %}status={{ current_status }}&{% endif %}{% if current_priority %}priority={{ current_priority }}&{% endif %}{% if current_date_range %}date_range={{ current_date_range }}&{% endif %}{% if search_query %}q={{ search_query }}{% endif %}"
-                                   class="text-white ms-2 text-decoration-none">×</a>
-                            </span>
-                        {% endif %}
-                        {% if current_date_range %}
-                            <span class="badge bg-secondary">
-                                {% trans "Date Range" %}: {{ current_date_range|title }}
-                                <a href="?{% if current_status %}status={{ current_status }}&{% endif %}{% if current_priority %}priority={{ current_priority }}&{% endif %}{% if current_category %}category={{ current_category }}&{% endif %}{% if search_query %}q={{ search_query }}{% endif %}"
-                                   class="text-white ms-2 text-decoration-none">×</a>
-                            </span>
-                        {% endif %}
-                        {% if search_query %}
-                            <span class="badge bg-secondary">
-                                {% trans "Search" %}: {{ search_query }}
-                                <a href="?{% if current_status %}status={{ current_status }}&{% endif %}{% if current_priority %}priority={{ current_priority }}&{% endif %}{% if current_category %}category={{ current_category }}&{% endif %}{% if current_date_range %}date_range={{ current_date_range }}{% endif %}"
-                                   class="text-white ms-2 text-decoration-none">×</a>
-                            </span>
-                        {% endif %}
-                    </div>
-                </div>
-                <a href="{% url 'inventory:notification_list' %}" class="btn btn-sm btn-outline-secondary">
-                    {% trans "Clear All Filters" %}
-                </a>
-            </div>
-        </div>
-    {% endif %}
-
     <div class="row">
-        <!-- Notification Stats -->
+        <!-- Sidebar with Stats and Filters -->
         <div class="col-md-3">
-            <!-- Status Overview -->
-            <div class="card mb-4">
-                <div class="card-body">
-                    <h5 class="card-title">{% trans "Overview" %}</h5>
-                    <div class="list-group list-group-flush">
-                        <a href="?status=unread" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
-                            <span><i class="fas fa-envelope me-2"></i>{% trans "Unread" %}</span>
-                            <span class="badge bg-primary rounded-pill">{{ unread_count }}</span>
-                        </a>
-                        <a href="?status=read" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
-                            <span><i class="fas fa-envelope-open me-2"></i>{% trans "Read" %}</span>
-                            <span class="badge bg-secondary rounded-pill">{{ total_count|add:"-"|add:unread_count|add:"-"|add:archived_count }}</span>
-                        </a>
-                        <a href="?status=archived" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
-                            <span><i class="fas fa-archive me-2"></i>{% trans "Archived" %}</span>
-                            <span class="badge bg-secondary rounded-pill">{{ archived_count }}</span>
-                        </a>
+            <!-- Notification Stats -->
+            <div class="notification-stats mb-4">
+                <h5 class="mb-3">{% trans "Statistics" %}</h5>
+                <div class="row g-2">
+                    <div class="col-6">
+                        <div class="stat-card">
+                            <div class="stat-number">{{ total_count }}</div>
+                            <div class="stat-label">{% trans "Total" %}</div>
+                        </div>
                     </div>
-                </div>
-            </div>
-
-            <!-- Priority Stats -->
-            <div class="card mb-4">
-                <div class="card-body">
-                    <h5 class="card-title">{% trans "By Priority" %}</h5>
-                    <div class="list-group list-group-flush">
-                        <a href="?priority=urgent" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
-                            <span><i class="fas fa-exclamation-circle text-danger me-2"></i>{% trans "Urgent" %}</span>
-                            <span class="badge bg-danger rounded-pill">{{ priority_counts.urgent|default:"0" }}</span>
-                        </a>
-                        <a href="?priority=high" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
-                            <span><i class="fas fa-arrow-up text-warning me-2"></i>{% trans "High" %}</span>
-                            <span class="badge bg-warning rounded-pill">{{ priority_counts.high|default:"0" }}</span>
-                        </a>
-                        <a href="?priority=medium" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
-                            <span><i class="fas fa-minus text-info me-2"></i>{% trans "Medium" %}</span>
-                            <span class="badge bg-info rounded-pill">{{ priority_counts.medium|default:"0" }}</span>
-                        </a>
-                        <a href="?priority=low" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
-                            <span><i class="fas fa-arrow-down text-success me-2"></i>{% trans "Low" %}</span>
-                            <span class="badge bg-success rounded-pill">{{ priority_counts.low|default:"0" }}</span>
-                        </a>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Category Stats -->
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">{% trans "By Category" %}</h5>
-                    <div class="list-group list-group-flush">
-                        {% for category in category_counts %}
-                            <a href="?category={{ category.category__id }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
-                                <span>
-                                    <i class="fas {{ category.category__icon }} text-{{ category.category__color }} me-2"></i>
-                                    {{ category.category__name }}
-                                </span>
-                                <span class="badge bg-{{ category.category__color }} rounded-pill">{{ category.count }}</span>
-                            </a>
-                        {% endfor %}
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Notifications List -->
-        <div class="col-md-9">
-            {% if notifications %}
-                <div class="card">
-                    <div class="card-body p-0">
-                        <div class="list-group list-group-flush">
-                            {% for notification in notifications %}
-                                <div class="list-group-item list-group-item-action {% if notification.status == 'unread' %}bg-light{% endif %}">
-                                    <div class="d-flex justify-content-between align-items-start">
-                                        <div class="notification-content flex-grow-1">
-                                            <!-- Priority & Category Indicator -->
-                                            <div class="d-flex align-items-center gap-2 mb-2">
-                                                <span class="badge bg-{{ notification.category.color }}">
-                                                    <i class="fas {{ notification.category.icon }} me-1"></i>
-                                                    {{ notification.category.name }}
-                                                </span>
-                                                <span class="badge {% if notification.priority == 'urgent' %}bg-danger{% elif notification.priority == 'high' %}bg-warning{% elif notification.priority == 'medium' %}bg-info{% else %}bg-success{% endif %}">
-                                                    {{ notification.get_priority_display }}
-                                                </span>
-                                                {% if notification.status == 'archived' %}
-                                                    <span class="badge bg-secondary">
-                                                        <i class="fas fa-archive me-1"></i>{% trans "Archived" %}
-                                                    </span>
-                                                {% endif %}
-                                            </div>
-                                            
-                                            <!-- Title & Message -->
-                                            <h6 class="mb-1">{{ notification.title }}</h6>
-                                            <p class="mb-2 text-muted">{{ notification.message }}</p>
-                                            
-                                            <!-- Metadata -->
-                                            <div class="d-flex align-items-center gap-3 text-muted small">
-                                                <span>
-                                                    <i class="fas fa-clock me-1"></i>
-                                                    {{ notification.created_at|timesince }} {% trans "ago" %}
-                                                </span>
-                                                {% if notification.read_at %}
-                                                    <span>
-                                                        <i class="fas fa-check me-1"></i>
-                                                        {% trans "Read" %} {{ notification.read_at|timesince }} {% trans "ago" %}
-                                                    </span>
-                                                {% endif %}
-                                            </div>
-
-                                            <!-- Related Content Links -->
-                                            {% if notification.action_url or notification.related_object %}
-                                                <div class="mt-2">
-                                                    {% if notification.action_url %}
-                                                        <a href="{{ notification.action_url }}" class="btn btn-sm btn-outline-primary me-2">
-                                                            <i class="fas fa-external-link-alt me-1"></i>{% trans "View Details" %}
-                                                        </a>
-                                                    {% endif %}
-                                                    {% if notification.related_object %}
-                                                        <a href="{{ notification.related_object.get_absolute_url }}" class="btn btn-sm btn-outline-secondary">
-                                                            <i class="fas fa-link me-1"></i>{% trans "Related Item" %}
-                                                        </a>
-                                                    {% endif %}
-                                                </div>
-                                            {% endif %}
-                                        </div>
-
-                                        <!-- Actions -->
-                                        <div class="notification-actions ms-3">
-                                            <div class="dropdown">
-                                                <button class="btn btn-sm btn-light" type="button" data-bs-toggle="dropdown">
-                                                    <i class="fas fa-ellipsis-v"></i>
-                                                </button>
-                                                <ul class="dropdown-menu dropdown-menu-end">
-                                                    {% if notification.status == 'unread' %}
-                                                        <li>
-                                                            <form action="{% url 'inventory:mark_notification_read' notification.pk %}" method="post" class="d-inline">
-                                                                {% csrf_token %}
-                                                                <button type="submit" class="dropdown-item">
-                                                                    <i class="fas fa-check me-2"></i>{% trans "Mark as Read" %}
-                                                                </button>
-                                                            </form>
-                                                        </li>
-                                                    {% elif notification.status == 'read' %}
-                                                        <li>
-                                                            <form action="{% url 'inventory:mark_notification_unread' notification.pk %}" method="post" class="d-inline">
-                                                                {% csrf_token %}
-                                                                <button type="submit" class="dropdown-item">
-                                                                    <i class="fas fa-envelope me-2"></i>{% trans "Mark as Unread" %}
-                                                                </button>
-                                                            </form>
-                                                        </li>
-                                                    {% endif %}
-                                                    {% if notification.status != 'archived' %}
-                                                        <li>
-                                                            <form action="{% url 'inventory:archive_notification' notification.pk %}" method="post" class="d-inline">
-                                                                {% csrf_token %}
-                                                                <button type="submit" class="dropdown-item">
-                                                                    <i class="fas fa-archive me-2"></i>{% trans "Archive" %}
-                                                                </button>
-                                                            </form>
-                                                        </li>
-                                                    {% else %}
-                                                        <li>
-                                                            <form action="{% url 'inventory:unarchive_notification' notification.pk %}" method="post" class="d-inline">
-                                                                {% csrf_token %}
-                                                                <button type="submit" class="dropdown-item">
-                                                                    <i class="fas fa-box-open me-2"></i>{% trans "Unarchive" %}
-                                                                </button>
-                                                            </form>
-                                                        </li>
-                                                    {% endif %}
-                                                </ul>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            {% endfor %}
+                    <div class="col-6">
+                        <div class="stat-card">
+                            <div class="stat-number">{{ unread_count }}</div>
+                            <div class="stat-label">{% trans "Unread" %}</div>
                         </div>
                     </div>
                 </div>
-
-                <!-- Pagination -->
-                {% if is_paginated %}
-                    <nav aria-label="Notification pagination" class="mt-4">
-                        <ul class="pagination justify-content-center">
-                            {% if page_obj.has_previous %}
-                                <li class="page-item">
-                                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.priority %}&priority={{ request.GET.priority }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.date_range %}&date_range={{ request.GET.date_range }}{% endif %}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">
-                                        <i class="fas fa-chevron-left"></i>
-                                    </a>
-                                </li>
-                            {% endif %}
-
-                            {% for num in page_obj.paginator.page_range %}
-                                {% if page_obj.number == num %}
-                                    <li class="page-item active">
-                                        <span class="page-link">{{ num }}</span>
-                                    </li>
-                                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
-                                    <li class="page-item">
-                                        <a class="page-link" href="?page={{ num }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.priority %}&priority={{ request.GET.priority }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.date_range %}&date_range={{ request.GET.date_range }}{% endif %}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">
-                                            {{ num }}
-                                        </a>
-                                    </li>
-                                {% endif %}
-                            {% endfor %}
-
-                            {% if page_obj.has_next %}
-                                <li class="page-item">
-                                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.priority %}&priority={{ request.GET.priority }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.date_range %}&date_range={{ request.GET.date_range }}{% endif %}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">
-                                        <i class="fas fa-chevron-right"></i>
-                                    </a>
-                                </li>
-                            {% endif %}
-                        </ul>
-                    </nav>
-                {% endif %}
-            {% else %}
-                <!-- Empty State -->
-                <div class="text-center py-5">
-                    <img src="{% static 'images/empty-notifications.svg' %}" alt="No notifications" class="mb-4" style="max-width: 200px;">
-                    <h4 class="text-muted">{% trans "No notifications found" %}</h4>
-                    <p class="text-muted">{% trans "There are no notifications matching your criteria." %}</p>
-                    {% if current_status or current_priority or current_category or current_date_range or search_query %}
-                        <a href="{% url 'inventory:notification_list' %}" class="btn btn-primary">
-                            <i class="fas fa-times me-2"></i>{% trans "Clear Filters" %}
-                        </a>
-                    {% endif %}
+                <div class="mt-3">
+                    <h6 class="mb-2">{% trans "By Priority" %}</h6>
+                    {% for priority, count in priority_counts.items %}
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="priority-badge priority-{{ priority }}">{{ priority|title }}</span>
+                        <span class="badge bg-secondary">{{ count }}</span>
+                    </div>
+                    {% endfor %}
                 </div>
-            {% endif %}
-        </div>
-    </div>
-</div>
-
-<!-- Filter Modal -->
-<div class="modal fade" id="filterModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">{% trans "Filter Notifications" %}</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body">
-                <form action="" method="get" id="filterForm">
-                    <!-- Status -->
+
+            <!-- Filters -->
+            <div class="notification-filters">
+                <h5 class="mb-3">{% trans "Filters" %}</h5>
+                <form method="get" id="filterForm">
                     <div class="mb-3">
                         <label class="form-label">{% trans "Status" %}</label>
-                        <select name="status" class="form-select">
+                        <select name="status" class="form-select" onchange="this.form.submit()">
                             <option value="">{% trans "All" %}</option>
                             <option value="unread" {% if current_status == 'unread' %}selected{% endif %}>{% trans "Unread" %}</option>
                             <option value="read" {% if current_status == 'read' %}selected{% endif %}>{% trans "Read" %}</option>
@@ -336,10 +226,9 @@
                         </select>
                     </div>
 
-                    <!-- Priority -->
                     <div class="mb-3">
                         <label class="form-label">{% trans "Priority" %}</label>
-                        <select name="priority" class="form-select">
+                        <select name="priority" class="form-select" onchange="this.form.submit()">
                             <option value="">{% trans "All" %}</option>
                             <option value="urgent" {% if current_priority == 'urgent' %}selected{% endif %}>{% trans "Urgent" %}</option>
                             <option value="high" {% if current_priority == 'high' %}selected{% endif %}>{% trans "High" %}</option>
@@ -348,23 +237,21 @@
                         </select>
                     </div>
 
-                    <!-- Category -->
                     <div class="mb-3">
                         <label class="form-label">{% trans "Category" %}</label>
-                        <select name="category" class="form-select">
+                        <select name="category" class="form-select" onchange="this.form.submit()">
                             <option value="">{% trans "All" %}</option>
                             {% for category in categories %}
-                                <option value="{{ category.id }}" {% if current_category == category.id|stringformat:"s" %}selected{% endif %}>
-                                    {{ category.name }}
-                                </option>
+                            <option value="{{ category.id }}" {% if current_category == category.id|stringformat:"i" %}selected{% endif %}>
+                                {{ category.name }}
+                            </option>
                             {% endfor %}
                         </select>
                     </div>
 
-                    <!-- Date Range -->
                     <div class="mb-3">
                         <label class="form-label">{% trans "Date Range" %}</label>
-                        <select name="date_range" class="form-select">
+                        <select name="date_range" class="form-select" onchange="this.form.submit()">
                             <option value="">{% trans "All Time" %}</option>
                             <option value="today" {% if current_date_range == 'today' %}selected{% endif %}>{% trans "Today" %}</option>
                             <option value="week" {% if current_date_range == 'week' %}selected{% endif %}>{% trans "Last 7 Days" %}</option>
@@ -372,74 +259,199 @@
                         </select>
                     </div>
 
-                    <!-- Search -->
                     <div class="mb-3">
                         <label class="form-label">{% trans "Search" %}</label>
-                        <input type="text" name="q" class="form-control" value="{{ search_query }}" placeholder="{% trans 'Search in title and message...' %}">
+                        <div class="input-group">
+                            <input type="text" name="q" class="form-control" placeholder="{% trans 'Search notifications...' %}" value="{{ search_query }}">
+                            <button class="btn btn-outline-primary" type="submit">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
                     </div>
                 </form>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "Cancel" %}</button>
-                <button type="submit" form="filterForm" class="btn btn-primary">{% trans "Apply Filters" %}</button>
-            </div>
+        </div>
+
+        <!-- Notifications List -->
+        <div class="col-md-9">
+            {% if notifications %}
+                <!-- Active Filters Display -->
+                {% if current_status or current_priority or current_category or current_date_range or search_query %}
+                <div class="active-filters">
+                    {% if current_status %}
+                    <span class="filter-badge">
+                        {% trans "Status" %}: {{ current_status|title }}
+                        <a href="?{% if current_priority %}priority={{ current_priority }}{% endif %}{% if current_category %}&category={{ current_category }}{% endif %}{% if current_date_range %}&date_range={{ current_date_range }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}" class="text-white text-decoration-none">
+                            <i class="fas fa-times close"></i>
+                        </a>
+                    </span>
+                    {% endif %}
+                    <!-- Similar badges for other active filters -->
+                </div>
+                {% endif %}
+
+                <!-- Notifications Cards -->
+                {% for notification in notifications %}
+                <div class="notification-card {% if notification.status == 'unread' %}unread{% endif %}">
+                    <div class="notification-header">
+                        <div class="d-flex align-items-center">
+                            <div class="category-icon bg-{{ notification.category.color }}">
+                                <i class="fas {{ notification.category.icon }} text-white"></i>
+                            </div>
+                            <div>
+                                <h5 class="mb-1">{{ notification.title }}</h5>
+                                <small class="text-muted">
+                                    <i class="far fa-clock me-1"></i>{{ notification.created_at|timesince }} {% trans "ago" %}
+                                </small>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="priority-badge priority-{{ notification.priority }}">
+                                {{ notification.get_priority_display }}
+                            </span>
+                            {% if notification.status == 'unread' %}
+                            <span class="badge bg-primary">{% trans "New" %}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="notification-body">
+                        <p class="mb-0">{{ notification.message|linebreaks }}</p>
+                    </div>
+                    <div class="notification-footer">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="btn-group">
+                                {% if notification.action_url %}
+                                <a href="{{ notification.action_url }}" class="btn btn-sm btn-primary">
+                                    <i class="fas fa-external-link-alt me-1"></i>{% trans "View Details" %}
+                                </a>
+                                {% endif %}
+                                {% if notification.status == 'unread' %}
+                                <form action="{% url 'inventory:mark_notification_read' notification.pk %}" method="post" class="d-inline">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-outline-success">
+                                        <i class="fas fa-check me-1"></i>{% trans "Mark as Read" %}
+                                    </button>
+                                </form>
+                                {% else %}
+                                <form action="{% url 'inventory:mark_notification_unread' notification.pk %}" method="post" class="d-inline">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-undo me-1"></i>{% trans "Mark as Unread" %}
+                                    </button>
+                                </form>
+                                {% endif %}
+                                {% if notification.status != 'archived' %}
+                                <form action="{% url 'inventory:archive_notification' notification.pk %}" method="post" class="d-inline">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-outline-secondary">
+                                        <i class="fas fa-archive me-1"></i>{% trans "Archive" %}
+                                    </button>
+                                </form>
+                                {% else %}
+                                <form action="{% url 'inventory:unarchive_notification' notification.pk %}" method="post" class="d-inline">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-outline-secondary">
+                                        <i class="fas fa-box-open me-1"></i>{% trans "Unarchive" %}
+                                    </button>
+                                </form>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+
+                <!-- Pagination -->
+                {% if is_paginated %}
+                <nav aria-label="{% trans 'Notification pagination' %}">
+                    <ul class="pagination justify-content-center">
+                        {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page=1{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.priority %}&priority={{ request.GET.priority }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.date_range %}&date_range={{ request.GET.date_range }}{% endif %}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">
+                                <i class="fas fa-angle-double-left"></i>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.priority %}&priority={{ request.GET.priority }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.date_range %}&date_range={{ request.GET.date_range }}{% endif %}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">
+                                <i class="fas fa-angle-left"></i>
+                            </a>
+                        </li>
+                        {% endif %}
+
+                        {% for num in page_obj.paginator.page_range %}
+                        {% if page_obj.number == num %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ num }}</span>
+                        </li>
+                        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ num }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.priority %}&priority={{ request.GET.priority }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.date_range %}&date_range={{ request.GET.date_range }}{% endif %}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">{{ num }}</a>
+                        </li>
+                        {% endif %}
+                        {% endfor %}
+
+                        {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.priority %}&priority={{ request.GET.priority }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.date_range %}&date_range={{ request.GET.date_range }}{% endif %}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">
+                                <i class="fas fa-angle-right"></i>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.priority %}&priority={{ request.GET.priority }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.date_range %}&date_range={{ request.GET.date_range }}{% endif %}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">
+                                <i class="fas fa-angle-double-right"></i>
+                            </a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+            {% else %}
+                <div class="notification-empty">
+                    <i class="fas fa-bell-slash mb-3"></i>
+                    <h4>{% trans "No notifications found" %}</h4>
+                    <p class="text-muted">{% trans "There are no notifications matching your criteria." %}</p>
+                    {% if request.GET %}
+                    <a href="{% url 'inventory:notification_list' %}" class="btn btn-primary">
+                        <i class="fas fa-times me-1"></i>{% trans "Clear Filters" %}
+                    </a>
+                    {% endif %}
+                </div>
+            {% endif %}
         </div>
     </div>
 </div>
 
-{% endblock %}
-
 {% block extra_js %}
 <script>
-    // Real-time notification updates
-    function updateNotifications() {
-        fetch("{% url 'inventory:get_notifications_ajax' %}")
-            .then(response => response.json())
-            .then(data => {
-                const notificationDropdown = document.querySelector('.notification-dropdown');
-                if (notificationDropdown) {
-                    notificationDropdown.innerHTML = data.html;
-                }
-                
-                const unreadBadge = document.querySelector('#unreadNotificationsBadge');
-                if (unreadBadge) {
-                    if (data.unread_count > 0) {
-                        unreadBadge.textContent = data.unread_count;
-                        unreadBadge.classList.remove('d-none');
-                    } else {
-                        unreadBadge.classList.add('d-none');
-                    }
-                }
-            });
-    }
+    // Auto-submit form when filters change
+    document.querySelectorAll('#filterForm select').forEach(select => {
+        select.addEventListener('change', function() {
+            this.form.submit();
+        });
+    });
 
-    // Update notifications every 30 seconds
-    setInterval(updateNotifications, 30000);
+    // Add loading state to buttons
+    document.querySelectorAll('form').forEach(form => {
+        form.addEventListener('submit', function() {
+            const button = this.querySelector('button[type="submit"]');
+            if (button) {
+                button.disabled = true;
+                const originalText = button.innerHTML;
+                button.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Processing...';
+                setTimeout(() => {
+                    button.disabled = false;
+                    button.innerHTML = originalText;
+                }, 2000);
+            }
+        });
+    });
 
-    // Handle notification actions via AJAX
-    document.addEventListener('click', function(e) {
-        const target = e.target;
-        if (target.matches('[data-notification-action]')) {
-            e.preventDefault();
-            const form = target.closest('form');
-            fetch(form.action, {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': form.querySelector('[name=csrfmiddlewaretoken]').value,
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === 'success') {
-                    const notificationItem = target.closest('.notification-item');
-                    if (notificationItem) {
-                        notificationItem.remove();
-                    }
-                    updateNotifications();
-                }
-            });
-        }
+    // Smooth scroll to top after pagination
+    document.querySelectorAll('.pagination .page-link').forEach(link => {
+        link.addEventListener('click', function() {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
     });
 </script>
+{% endblock %}
 {% endblock %} 
