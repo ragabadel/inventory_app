@@ -199,12 +199,36 @@
                                 </a>
                             </li>
                             {% endif %}
+                            {% if request.user.is_superuser %}
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item" href="{% url 'inventory:database_backup' %}">
+                                    <i class="fas fa-download me-2"></i>{% trans "Database Backup" %}
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{% url 'inventory:database_restore' %}">
+                                    <i class="fas fa-upload me-2"></i>{% trans "Database Restore" %}
+                                </a>
+                            </li>
+                            {% endif %}
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item" href="{% url 'inventory:user_account' %}">
+                                    <i class="fas fa-user-cog me-2"></i>{% trans "My Account" %}
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{% url 'inventory:change_password' %}">
+                                    <i class="fas fa-key me-2"></i>{% trans "Change Password" %}
+                                </a>
+                            </li>
                             <li><hr class="dropdown-divider"></li>
                             <li>
                                 <form method="post" action="{% url 'logout' %}" class="d-inline">
                                     {% csrf_token %}
                                     <button type="submit" class="dropdown-item">
-                                        <i class="fas fa-sign-out-alt me-2"></i>Logout
+                                        <i class="fas fa-sign-out-alt me-2"></i>{% trans "Logout" %}
                                     </button>
                                 </form>
                             </li>

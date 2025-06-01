@@ -1,7 +1,7 @@
 # inventory/views.py
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
-from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView, TemplateView
+from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView, TemplateView, View
 from django.urls import reverse_lazy, reverse
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth.decorators import login_required
@@ -35,6 +35,9 @@ import tempfile
 import json
 import io
 from io import BytesIO
+import os
+import zipfile
+from django.core import management
 
 @login_required
 def home(request):
@@ -2324,3 +2327,236 @@ def get_notification_context(request):
         'notifications': [],
         'unread_notifications_count': 0
     }  
+
+class UserAccountView(LoginRequiredMixin, UpdateView):
+    model = User
+    template_name = 'inventory/user_account.html'
+    fields = ['first_name', 'last_name', 'email']
+    success_url = reverse_lazy('inventory:user_account')
+
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        form.fields['first_name'].widget.attrs.update({'class': 'form-control'})
+        form.fields['last_name'].widget.attrs.update({'class': 'form-control'})
+        form.fields['email'].widget.attrs.update({'class': 'form-control'})
+        return form
+
+    def get_object(self):
+        return self.request.user
+
+    def form_valid(self, form):
+        messages.success(self.request, _('Your account information has been updated successfully.'))
+        return super().form_valid(form)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['employee_profile'] = getattr(self.request.user, 'employee_profile', None)
+        return context
+
+@login_required
+def change_password(request):
+    if request.method == 'POST':
+        old_password = request.POST.get('old_password')
+        new_password = request.POST.get('new_password')
+        confirm_password = request.POST.get('confirm_password')
+
+        if not request.user.check_password(old_password):
+            messages.error(request, _('Current password is incorrect.'))
+        elif new_password != confirm_password:
+            messages.error(request, _('New passwords do not match.'))
+        elif len(new_password) < 8:
+            messages.error(request, _('Password must be at least 8 characters long.'))
+        else:
+            request.user.set_password(new_password)
+            request.user.save()
+            messages.success(request, _('Your password has been changed successfully.'))
+            return redirect('login')
+
+    return render(request, 'inventory/change_password.html')
+
+class UserPermissionsView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
+    template_name = 'inventory/user_permissions.html'
+
+    def test_func(self):
+        return self.request.user.is_staff or self.request.user.is_superuser
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        search_query = self.request.GET.get('search', '')
+        group_filter = self.request.GET.get('group', '')
+
+        users = User.objects.all().order_by('username')
+        
+        if search_query:
+            users = users.filter(
+                Q(username__icontains=search_query) |
+                Q(first_name__icontains=search_query) |
+                Q(last_name__icontains=search_query) |
+                Q(email__icontains=search_query)
+            )
+        
+        if group_filter:
+            users = users.filter(groups__id=group_filter)
+
+        # Paginate users
+        paginator = Paginator(users, 10)
+        page = self.request.GET.get('page')
+        users = paginator.get_page(page)
+
+        context.update({
+            'users': users,
+            'groups': Group.objects.all(),
+            'available_permissions': Permission.objects.all().order_by('content_type__app_label', 'content_type__model'),
+            'search_query': search_query,
+            'group_filter': group_filter,
+        })
+        return context
+
+    def post(self, request, *args, **kwargs):
+        action = request.POST.get('action')
+        user_id = request.POST.get('user_id')
+        user = get_object_or_404(User, id=user_id)
+
+        if action == 'update_groups':
+            group_ids = request.POST.getlist('groups')
+            user.groups.set(group_ids)
+            messages.success(request, _(f'Groups updated for user {user.username}'))
+
+        elif action == 'update_permissions':
+            permission_ids = request.POST.getlist('permissions')
+            user.user_permissions.set(permission_ids)
+            messages.success(request, _(f'Permissions updated for user {user.username}'))
+
+        elif action == 'toggle_active':
+            user.is_active = not user.is_active
+            user.save()
+            status = 'activated' if user.is_active else 'deactivated'
+            messages.success(request, _(f'User {user.username} has been {status}'))
+
+        elif action == 'toggle_staff':
+            if request.user.is_superuser:
+                user.is_staff = not user.is_staff
+                user.save()
+                status = 'granted' if user.is_staff else 'removed'
+                messages.success(request, _(f'Staff status {status} for user {user.username}'))
+
+        return redirect('inventory:user_permissions')
+
+class DatabaseBackupView(LoginRequiredMixin, UserPassesTestMixin, View):
+    def test_func(self):
+        return self.request.user.is_superuser
+
+    def get(self, request):
+        return render(request, 'inventory/database/backup.html')
+
+    def post(self, request):
+        try:
+            # Get database settings
+            db_settings = settings.DATABASES['default']
+            timestamp = timezone.now().strftime('%Y%m%d_%H%M%S')
+            backup_dir = os.path.join(settings.BASE_DIR, 'backups')
+            
+            # Create backups directory if it doesn't exist
+            if not os.path.exists(backup_dir):
+                os.makedirs(backup_dir)
+
+            # Backup filename with timestamp
+            backup_file = os.path.join(backup_dir, f'db_backup_{timestamp}.json')
+
+            # Use Django's dumpdata command with UTF-8 encoding
+            with open(backup_file, 'w', encoding='utf-8') as f:
+                management.call_command(
+                    'dumpdata',
+                    '--exclude', 'auth.permission',
+                    '--exclude', 'contenttypes',
+                    '--exclude', 'admin.logentry',
+                    '--exclude', 'sessions.session',
+                    '--indent', '2',
+                    stdout=f
+                )
+
+            # Create a zip file containing the backup
+            zip_file = os.path.join(backup_dir, f'db_backup_{timestamp}.zip')
+            with zipfile.ZipFile(zip_file, 'w', zipfile.ZIP_DEFLATED) as zf:
+                # Write the file with UTF-8 encoding
+                zf.write(backup_file, os.path.basename(backup_file))
+
+            # Read the zip file and create response
+            with open(zip_file, 'rb') as f:
+                response = HttpResponse(f.read(), content_type='application/zip')
+                response['Content-Disposition'] = f'attachment; filename=db_backup_{timestamp}.zip'
+
+            # Clean up temporary files
+            os.remove(backup_file)
+            os.remove(zip_file)
+
+            return response
+
+        except Exception as e:
+            messages.error(request, f'Backup failed: {str(e)}')
+            return redirect('inventory:database_backup')
+
+class DatabaseRestoreView(LoginRequiredMixin, UserPassesTestMixin, View):
+    def test_func(self):
+        return self.request.user.is_superuser
+
+    def get(self, request):
+        # Get list of available backups in the backups directory
+        backup_dir = os.path.join(settings.BASE_DIR, 'backups')
+        backups = []
+        
+        if os.path.exists(backup_dir):
+            for file in os.listdir(backup_dir):
+                if file.endswith('.zip'):
+                    file_path = os.path.join(backup_dir, file)
+                    backups.append({
+                        'name': file,
+                        'size': os.path.getsize(file_path),
+                        'date': datetime.fromtimestamp(os.path.getctime(file_path))
+                    })
+        
+        return render(request, 'inventory/database/restore.html', {'backups': backups})
+
+    def post(self, request):
+        try:
+            if 'backup_file' not in request.FILES:
+                messages.error(request, 'No backup file provided')
+                return redirect('inventory:database_restore')
+
+            backup_file = request.FILES['backup_file']
+            if not backup_file.name.endswith('.zip'):
+                messages.error(request, 'Invalid backup file format. Please upload a ZIP file.')
+                return redirect('inventory:database_restore')
+
+            # Create temporary directory for extraction
+            with tempfile.TemporaryDirectory() as temp_dir:
+                # Save uploaded zip file
+                zip_path = os.path.join(temp_dir, backup_file.name)
+                with open(zip_path, 'wb') as f:
+                    for chunk in backup_file.chunks():
+                        f.write(chunk)
+
+                # Extract zip file
+                with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+                    zip_ref.extractall(temp_dir)
+
+                # Find the JSON file
+                json_files = [f for f in os.listdir(temp_dir) if f.endswith('.json')]
+                if not json_files:
+                    messages.error(request, 'No JSON backup file found in the archive')
+                    return redirect('inventory:database_restore')
+
+                json_path = os.path.join(temp_dir, json_files[0])
+
+                # Flush the database
+                management.call_command('flush', '--no-input')
+
+                # Load the backup data
+                management.call_command('loaddata', json_path)
+
+                messages.success(request, 'Database restored successfully')
+                return redirect('inventory:home')
+
+        except Exception as e:
+            messages.error(request, f'Restore failed: {str(e)}')
+            return redirect('inventory:database_restore')

@@ -13,8 +13,40 @@
         </div>
     </div>
 
+    <!-- Search and Filter Section -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-6">
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <i class="fas fa-search"></i>
+                        </span>
+                        <input type="text" name="search" class="form-control" placeholder="{% trans 'Search users...' %}"
+                               value="{{ search_query }}">
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <select name="group" class="form-select">
+                        <option value="">{% trans "All Groups" %}</option>
+                        {% for group in groups %}
+                        <option value="{{ group.id }}" {% if group.id|stringformat:"s" == group_filter %}selected{% endif %}>
+                            {{ group.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-filter me-2"></i>{% trans "Filter" %}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Users List -->
-    <div class="card">
+    <div class="card shadow-sm">
         <div class="card-body">
             <div class="table-responsive">
                 <table class="table table-hover">
@@ -31,7 +63,20 @@
                     <tbody>
                         {% for user in users %}
                         <tr>
-                            <td>{{ user.username }}</td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="avatar avatar-sm me-2">
+                                        {% if user.employee_profile.photo %}
+                                            <img src="{{ user.employee_profile.photo.url }}" alt="Avatar" class="avatar-img rounded-circle">
+                                        {% else %}
+                                            <span class="avatar-text rounded-circle bg-primary">
+                                                {{ user.username|make_list|first|upper }}
+                                            </span>
+                                        {% endif %}
+                                    </div>
+                                    {{ user.username }}
+                                </div>
+                            </td>
                             <td>
                                 {% if user.employee_profile %}
                                     {{ user.employee_profile.get_full_name }}
@@ -56,20 +101,21 @@
                             </td>
                             <td>
                                 <div class="btn-group">
-                                    <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#groupsModal{{ user.id }}">
-                                        <i class="fas fa-users" title="{% trans 'Manage Groups' %}"></i>
+                                    <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" 
+                                            data-bs-target="#groupsModal{{ user.id }}" title="{% trans 'Manage Groups' %}">
+                                        <i class="fas fa-users"></i>
                                     </button>
-                                    <button type="button" class="btn btn-sm btn-outline-info" data-bs-toggle="modal" data-bs-target="#permissionsModal{{ user.id }}">
-                                        <i class="fas fa-key" title="{% trans 'Manage Permissions' %}"></i>
+                                    <button type="button" class="btn btn-sm btn-outline-info" data-bs-toggle="modal" 
+                                            data-bs-target="#permissionsModal{{ user.id }}" title="{% trans 'Manage Permissions' %}">
+                                        <i class="fas fa-key"></i>
                                     </button>
                                     <form method="post" class="d-inline" onsubmit="return confirm('{% trans "Are you sure?" %}')">
                                         {% csrf_token %}
                                         <input type="hidden" name="user_id" value="{{ user.id }}">
                                         <input type="hidden" name="action" value="toggle_active">
-                                        <button type="submit" class="btn btn-sm {% if user.is_active %}btn-outline-danger{% else %}btn-outline-success{% endif %}">
-                                            <i class="fas {% if user.is_active %}fa-user-times{% else %}fa-user-check{% endif %}" 
-                                               title="{% if user.is_active %}{% trans 'Deactivate User' %}{% else %}{% trans 'Activate User' %}{% endif %}">
-                                            </i>
+                                        <button type="submit" class="btn btn-sm {% if user.is_active %}btn-outline-danger{% else %}btn-outline-success{% endif %}"
+                                                title="{% if user.is_active %}{% trans 'Deactivate User' %}{% else %}{% trans 'Activate User' %}{% endif %}">
+                                            <i class="fas {% if user.is_active %}fa-user-times{% else %}fa-user-check{% endif %}"></i>
                                         </button>
                                     </form>
                                     {% if request.user.is_superuser %}
@@ -77,10 +123,9 @@
                                         {% csrf_token %}
                                         <input type="hidden" name="user_id" value="{{ user.id }}">
                                         <input type="hidden" name="action" value="toggle_staff">
-                                        <button type="submit" class="btn btn-sm {% if user.is_staff %}btn-outline-warning{% else %}btn-outline-secondary{% endif %}">
-                                            <i class="fas {% if user.is_staff %}fa-user-shield{% else %}fa-user{% endif %}"
-                                               title="{% if user.is_staff %}{% trans 'Remove Staff Status' %}{% else %}{% trans 'Grant Staff Status' %}{% endif %}">
-                                            </i>
+                                        <button type="submit" class="btn btn-sm {% if user.is_staff %}btn-outline-warning{% else %}btn-outline-secondary{% endif %}"
+                                                title="{% if user.is_staff %}{% trans 'Remove Staff Status' %}{% else %}{% trans 'Grant Staff Status' %}{% endif %}">
+                                            <i class="fas {% if user.is_staff %}fa-user-shield{% else %}fa-user{% endif %}"></i>
                                         </button>
                                     </form>
                                     {% endif %}
@@ -96,23 +141,30 @@
                                                 <input type="hidden" name="action" value="update_groups">
                                                 
                                                 <div class="modal-header">
-                                                    <h5 class="modal-title">{% trans "Manage Groups for" %} {{ user.username }}</h5>
+                                                    <h5 class="modal-title">
+                                                        <i class="fas fa-users me-2"></i>
+                                                        {% trans "Manage Groups for" %} {{ user.username }}
+                                                    </h5>
                                                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                                 </div>
                                                 <div class="modal-body">
-                                                    {% for group in groups %}
-                                                    <div class="form-check">
-                                                        <input class="form-check-input" type="checkbox" name="groups" value="{{ group.id }}"
-                                                               id="group{{ user.id }}{{ group.id }}" {% if group in user.groups.all %}checked{% endif %}>
-                                                        <label class="form-check-label" for="group{{ user.id }}{{ group.id }}">
+                                                    <div class="list-group">
+                                                        {% for group in groups %}
+                                                        <label class="list-group-item">
+                                                            <input class="form-check-input me-2" type="checkbox" name="groups" 
+                                                                   value="{{ group.id }}" {% if group in user.groups.all %}checked{% endif %}>
                                                             {{ group.name }}
                                                         </label>
+                                                        {% endfor %}
                                                     </div>
-                                                    {% endfor %}
                                                 </div>
                                                 <div class="modal-footer">
-                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "Close" %}</button>
-                                                    <button type="submit" class="btn btn-primary">{% trans "Save Changes" %}</button>
+                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                                        <i class="fas fa-times me-2"></i>{% trans "Close" %}
+                                                    </button>
+                                                    <button type="submit" class="btn btn-primary">
+                                                        <i class="fas fa-save me-2"></i>{% trans "Save Changes" %}
+                                                    </button>
                                                 </div>
                                             </form>
                                         </div>
@@ -129,7 +181,10 @@
                                                 <input type="hidden" name="action" value="update_permissions">
                                                 
                                                 <div class="modal-header">
-                                                    <h5 class="modal-title">{% trans "Manage Permissions for" %} {{ user.username }}</h5>
+                                                    <h5 class="modal-title">
+                                                        <i class="fas fa-key me-2"></i>
+                                                        {% trans "Manage Permissions for" %} {{ user.username }}
+                                                    </h5>
                                                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                                 </div>
                                                 <div class="modal-body">
@@ -137,24 +192,34 @@
                                                         {% regroup available_permissions by content_type as permission_groups %}
                                                         {% for group in permission_groups %}
                                                         <div class="col-md-6 mb-3">
-                                                            <h6 class="text-muted mb-2">{{ group.grouper.name|title }}</h6>
-                                                            {% for permission in group.list %}
-                                                            <div class="form-check">
-                                                                <input class="form-check-input" type="checkbox" name="permissions" 
-                                                                       value="{{ permission.id }}" id="perm{{ user.id }}{{ permission.id }}"
-                                                                       {% if permission in user.user_permissions.all %}checked{% endif %}>
-                                                                <label class="form-check-label" for="perm{{ user.id }}{{ permission.id }}">
-                                                                    {{ permission.name }}
-                                                                </label>
+                                                            <div class="card">
+                                                                <div class="card-header bg-light">
+                                                                    <h6 class="mb-0">{{ group.grouper.name|title }}</h6>
+                                                                </div>
+                                                                <div class="card-body">
+                                                                    <div class="list-group list-group-flush">
+                                                                        {% for permission in group.list %}
+                                                                        <label class="list-group-item">
+                                                                            <input class="form-check-input me-2" type="checkbox" 
+                                                                                   name="permissions" value="{{ permission.id }}"
+                                                                                   {% if permission in user.user_permissions.all %}checked{% endif %}>
+                                                                            {{ permission.name }}
+                                                                        </label>
+                                                                        {% endfor %}
+                                                                    </div>
+                                                                </div>
                                                             </div>
-                                                            {% endfor %}
                                                         </div>
                                                         {% endfor %}
                                                     </div>
                                                 </div>
                                                 <div class="modal-footer">
-                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "Close" %}</button>
-                                                    <button type="submit" class="btn btn-primary">{% trans "Save Changes" %}</button>
+                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                                        <i class="fas fa-times me-2"></i>{% trans "Close" %}
+                                                    </button>
+                                                    <button type="submit" class="btn btn-primary">
+                                                        <i class="fas fa-save me-2"></i>{% trans "Save Changes" %}
+                                                    </button>
                                                 </div>
                                             </form>
                                         </div>
@@ -175,18 +240,110 @@
                     </tbody>
                 </table>
             </div>
+
+            <!-- Pagination -->
+            {% if users.has_other_pages %}
+            <nav aria-label="{% trans 'Page navigation' %}" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if users.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}{% if group_filter %}&group={{ group_filter }}{% endif %}">
+                            <i class="fas fa-angle-double-left"></i>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ users.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if group_filter %}&group={{ group_filter }}{% endif %}">
+                            <i class="fas fa-angle-left"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+
+                    {% for num in users.paginator.page_range %}
+                        {% if users.number == num %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ num }}</span>
+                        </li>
+                        {% elif num > users.number|add:'-3' and num < users.number|add:'3' %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}{% if group_filter %}&group={{ group_filter }}{% endif %}">
+                                {{ num }}
+                            </a>
+                        </li>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if users.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ users.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if group_filter %}&group={{ group_filter }}{% endif %}">
+                            <i class="fas fa-angle-right"></i>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ users.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}{% if group_filter %}&group={{ group_filter }}{% endif %}">
+                            <i class="fas fa-angle-double-right"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
         </div>
     </div>
 </div>
 {% endblock %}
 
+{% block extra_css %}
+<style>
+.avatar {
+    width: 32px;
+    height: 32px;
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.avatar-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.avatar-text {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: bold;
+}
+
+.list-group-item .form-check-input:checked + span {
+    color: var(--bs-primary);
+    font-weight: 500;
+}
+
+.modal-body {
+    max-height: calc(100vh - 210px);
+    overflow-y: auto;
+}
+</style>
+{% endblock %}
+
 {% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Add any additional JavaScript functionality here
+    // Initialize tooltips
     const tooltipTriggerList = [].slice.call(document.querySelectorAll('[title]'));
     const tooltipList = tooltipTriggerList.map(function(tooltipTriggerEl) {
         return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+
+    // Initialize modals
+    const modalTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="modal"]'));
+    const modalList = modalTriggerList.map(function(modalTriggerEl) {
+        return new bootstrap.Modal(modalTriggerEl);
     });
 });
 </script>

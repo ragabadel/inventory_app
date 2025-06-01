@@ -8,6 +8,10 @@ urlpatterns = [
     path('landing/', views.LandingPageView.as_view(), name='landing'),
     path('contact/', views.ContactView.as_view(), name='contact'),
     
+    # User Account Management
+    path('account/', views.UserAccountView.as_view(), name='user_account'),
+    path('account/change-password/', views.change_password, name='change_password'),
+    
     # Employee URLs
     path('employees/', views.EmployeeListView.as_view(), name='employee_list'),
     path('employees/create/', views.EmployeeCreateView.as_view(), name='employee_create'),
@@ -81,4 +85,8 @@ urlpatterns = [
     # Reports Dashboard
     path('reports/', views.reports_dashboard, name='reports_dashboard'),
     path('reports/pdf/', views.generate_report_pdf, name='generate_report_pdf'),
+
+    # Database Management URLs (Superuser Only)
+    path('database/backup/', views.DatabaseBackupView.as_view(), name='database_backup'),
+    path('database/restore/', views.DatabaseRestoreView.as_view(), name='database_restore'),
 ]
