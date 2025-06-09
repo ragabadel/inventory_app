@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>استلام عهدة - {{ asset.name }}</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 1cm;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 15px;
+            line-height: 1.3;
+            font-size: 14px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 15px;
+        }
+        .header h2 {
+            margin: 0 0 5px 0;
+        }
+        .header h3 {
+            margin: 0 0 10px 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 15px;
+            page-break-inside: avoid;
+        }
+        table, th, td {
+            border: 2px solid black;
+        }
+        th, td {
+            padding: 6px;
+            text-align: center;
+            vertical-align: middle;
+        }
+        .table-header {
+            background-color: #f2f2f2;
+            font-weight: bold;
+            text-align: center;
+        }
+        .signature-row {
+            height: 40px;
+        }
+        .footer {
+            margin-top: 15px;
+        }
+        .inner-table {
+            width: 100%;
+            border: none;
+            margin: 0;
+        }
+        .inner-table td {
+            border: none;
+            padding: 4px;
+        }
+        .dotted-line {
+            border-bottom: 1px dotted #000;
+            display: inline-block;
+            width: 80%;
+        }
+        .text-right {
+            text-align: right;
+        }
+        .underline {
+            text-decoration: underline;
+            display: inline-block;
+            min-width: 150px;
+            border-bottom: 1px solid #000;
+        }
+        .declaration p {
+            margin: 5px 0;
+            text-align: justify;
+        }
+        .writable {
+            border-bottom: 1px solid #000;
+            min-width: 100px;
+            display: inline-block;
+            height: 20px;
+        }
+        .form-input {
+            border: none;
+            border-bottom: 1px solid #000;
+            background: transparent;
+            font-family: inherit;
+            font-size: inherit;
+            text-align: center;
+            width: 90%;
+            padding: 2px;
+            margin: 0;
+        }
+        .form-input:focus {
+            outline: none;
+            border-bottom: 2px solid #000;
+        }
+        @media print {
+            body {
+                padding: 0;
+                margin: 0;
+            }
+            .container {
+                max-width: 100%;
+            }
+            .no-print {
+                display: none;
+            }
+            .form-input {
+                border: none;
+                border-bottom: 1px solid #000;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h2>إقرار</h2>
+            <h3>"إستلام عهدة"</h3>
+            <p><strong>التاريخ:</strong> <span id="current-date"></span></p>
+        </div>
+
+        <!-- بيانات المستلم -->
+        <table>
+            <tr class="table-header">
+                <td colspan="4">بيانات المستلم</td>
+            </tr>
+            <tr>
+                <td width="25%">إسـم المـوظف</td>
+                <td width="25%"><input type="text" class="form-input" placeholder="اكتب اسم الموظف"></td>
+                <td width="25%">الكود الوظيفي</td>
+                <td width="25%">{{ asset.assigned_to.employee_id }}</td>
+            </tr>
+            <tr>
+                <td>الإدارة</td>
+                <td><input type="text" class="form-input" placeholder="اكتب اسم الإدارة"></td>
+                <td>الشركة</td>
+                <td><input type="text" class="form-input" placeholder="اكتب اسم الشركة"></td>
+            </tr>
+        </table>
+
+        <!-- بيانات العهدة المسلمة -->
+        <table>
+            <tr class="table-header">
+                <td colspan="5">بيانات العهدة المسلمة</td>
+            </tr>
+            <tr>
+                <td width="5%">م</td>
+                <td width="45%">بيان</td>
+                <td width="15%">الكمية</td>
+                <td width="20%">قيمة العهدة بـالجنيه</td>
+                <td width="15%">ملاحظة</td>
+            </tr>
+            <tr>
+                <td>1</td>
+                <td style="text-align: cinter;">
+                    {{ asset.manufacturer }}<br>
+                    {{ asset.processor }}<br>
+                    {{ asset.hdd1_capacity }}<br>
+                    {{ asset.ram_size }}<br>
+                    SN: {{ asset.serial_number }}
+                </td>
+                <td>1</td>
+                <td><input type="text" class="form-input" placeholder="اكتب القيمة"></td>
+                <td>{{ asset.notes|default:'' }}</td>
+            </tr>
+        </table>
+
+        <!-- إقرار -->
+        <table>
+            <tr class="table-header">
+                <td>إقـرار</td>
+            </tr>
+            <tr>
+                <td style="text-align: right; padding: 15px;">
+                    <div style="line-height: 2; font-size: 14px;">
+                        أقر أنا الموقع أدناه؛ بأنني قد إستلمت بيان العُهدة الموضحة أعلاه على سبيل الأمانة من قِبل شركة 
+                        <input type="text" class="form-input" style="width: 120px; display: inline-block;" placeholder="اكتب اسم الشركة">
+                        ، بحالة جيدة وصالحة للإستخدام، وأتعهد بالمحافظة عليها وبإستخدمها فقط في أغراض العمل، وألا أتنازل عنها لأي شخص آخر وأتعهد بإعادتها وتسليمها لـ الشركة فور طلبها أو فور ترك العمل لأي سبب من الأسباب، كما أتعهد بسداد قيمة ما ينجم عن سوء الإستخدام من تلفيات، وكذا سداد كامل قيمة العهدة حال فقدها.
+                    </div>
+                    <div style="line-height: 2; font-size: 14px; margin-top: 10px;">
+                        كما أنني أفوض الشركة في إتخاذ اللازم حيال خصم القيمة التي تُقدرها مقابل تبديد هذه العُهدة، من مُستحقاتي لـديها وذلـك فـي حالـة عـدم إعـادة تسـليم العُهـدة المُسـلمة لـي وفقـا للبيان الوارد أعلاه - كلها أو بعضها - مع تحملي كامل المسئولية المدنية والجنائية جراء ذلك.
+                    </div>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <table class="inner-table">
+                        <tr>
+                            <td width="33%" style="text-align: center;">المُستلم:_________________________</td>
+                            <td width="33%" style="text-align: center;">الرقم القومي:_________________________</td>
+                            <td width="33%" style="text-align: center;">التوقيع:____________________________</td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+
+        <!-- خاص بمسؤول التسليم والاستلام -->
+        <table>
+            <tr class="table-header">
+                <td colspan="4">خاص بمسؤول التسليم والإستلام</td>
+            </tr>
+            <tr>
+                <td colspan="4" class="text-right">
+                    <p style="margin: 5px 0;">تم استلام العُهد في يوم: <span id="current-day"></span> الموافق: <span id="current-date-full"></span> وذلك بتمام الساعة: <span id="current-time"></span></p>
+                </td>
+            </tr>
+            <tr>
+                <td width="50%">إسم مسؤول التسليم:__________________________</td>
+                <td width="50%">التوقيع:_____________</td>
+            </tr>
+        </table>
+    </div>
+
+    <script>
+        function updateDateTime() {
+            const now = new Date();
+            const options = { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'numeric', 
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            };
+            const arabicDate = new Intl.DateTimeFormat('ar-EG', options).format(now);
+            const [date, time] = arabicDate.split('،');
+            
+            document.getElementById('current-date').textContent = new Intl.DateTimeFormat('ar-EG', {
+                year: 'numeric',
+                month: 'numeric',
+                day: 'numeric'
+            }).format(now) + ' م.';
+            
+            document.getElementById('current-day').textContent = date;
+            document.getElementById('current-date-full').textContent = new Intl.DateTimeFormat('ar-EG', {
+                year: 'numeric',
+                month: 'numeric',
+                day: 'numeric'
+            }).format(now);
+            document.getElementById('current-time').textContent = time.trim();
+        }
+
+        window.onload = updateDateTime;
+    </script>
+</body>
+</html> 

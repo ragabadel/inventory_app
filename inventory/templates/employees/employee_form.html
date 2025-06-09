@@ -1,0 +1,243 @@
+{% extends '../inventory/base_tailwind.html' %}
+{% load static %}
+
+{% block title %}{% if employee %}Edit Employee{% else %}Add Employee{% endif %}{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-6">
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+        <h1 class="text-2xl font-semibold text-gray-800 flex items-center mb-4 md:mb-0">
+            <i class="fas fa-user-plus mr-2"></i>{% if employee %}Edit Employee{% else %}Add Employee{% endif %}
+        </h1>
+        <a href="{% url 'inventory:employee_list' %}" class="btn-secondary">
+            <i class="fas fa-arrow-left mr-2"></i>Back
+        </a>
+    </div>
+
+    {% if messages %}
+    <div class="mb-6">
+        {% for message in messages %}
+        <div class="rounded-md p-4 mb-4 {% if message.tags == 'success' %}bg-green-50 text-green-800{% elif message.tags == 'error' %}bg-red-50 text-red-800{% elif message.tags == 'warning' %}bg-yellow-50 text-yellow-800{% else %}bg-blue-50 text-blue-800{% endif %}" 
+             x-data="{ show: true }" 
+             x-show="show">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center">
+                    <i class="fas {% if message.tags == 'success' %}fa-check-circle text-green-400{% elif message.tags == 'error' %}fa-exclamation-circle text-red-400{% elif message.tags == 'warning' %}fa-exclamation-triangle text-yellow-400{% else %}fa-info-circle text-blue-400{% endif %} mr-3"></i>
+                    <p>{{ message }}</p>
+                </div>
+                <button @click="show = false" class="text-gray-400 hover:text-gray-500">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="bg-white rounded-lg shadow-md overflow-hidden">
+        <div class="p-6">
+            <form method="post" novalidate class="space-y-6">
+                {% csrf_token %}
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Left Column -->
+                    <div>
+                        <h5 class="mb-4 text-lg font-medium text-blue-600">Personal Information</h5>
+                        
+                        <!-- Employee ID -->
+                        <div class="mb-4">
+                            <label for="id_employee_id" class="block text-sm font-medium text-gray-700">
+                                Employee ID <span class="text-red-500">*</span>
+                            </label>
+                            <div class="mt-1">
+                                {{ form.employee_id|safe }}
+                                {% if form.employee_id.help_text %}
+                                    <p class="mt-1 text-sm text-gray-500">{{ form.employee_id.help_text }}</p>
+                                {% endif %}
+                                {% if form.employee_id.errors %}
+                                    <p class="mt-1 text-sm text-red-600">{{ form.employee_id.errors }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- National ID -->
+                        <div class="mb-4">
+                            <label for="id_national_id" class="block text-sm font-medium text-gray-700">
+                                National ID <span class="text-red-500">*</span>
+                            </label>
+                            <div class="mt-1">
+                                {{ form.national_id|safe }}
+                                {% if form.national_id.help_text %}
+                                    <p class="mt-1 text-sm text-gray-500">{{ form.national_id.help_text }}</p>
+                                {% endif %}
+                                {% if form.national_id.errors %}
+                                    <p class="mt-1 text-sm text-red-600">{{ form.national_id.errors }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- First Name -->
+                        <div class="mb-4">
+                            <label for="id_first_name" class="block text-sm font-medium text-gray-700">
+                                First Name <span class="text-red-500">*</span>
+                            </label>
+                            <div class="mt-1">
+                                {{ form.first_name|safe }}
+                                {% if form.first_name.errors %}
+                                    <p class="mt-1 text-sm text-red-600">{{ form.first_name.errors }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Last Name -->
+                        <div class="mb-4">
+                            <label for="id_last_name" class="block text-sm font-medium text-gray-700">
+                                Last Name <span class="text-red-500">*</span>
+                            </label>
+                            <div class="mt-1">
+                                {{ form.last_name|safe }}
+                                {% if form.last_name.errors %}
+                                    <p class="mt-1 text-sm text-red-600">{{ form.last_name.errors }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Email -->
+                        <div class="mb-4">
+                            <label for="id_email" class="block text-sm font-medium text-gray-700">
+                                Email <span class="text-red-500">*</span>
+                            </label>
+                            <div class="mt-1">
+                                {{ form.email|safe }}
+                                {% if form.email.errors %}
+                                    <p class="mt-1 text-sm text-red-600">{{ form.email.errors }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Phone Number -->
+                        <div class="mb-4">
+                            <label for="id_phone_number" class="block text-sm font-medium text-gray-700">
+                                Phone Number
+                            </label>
+                            <div class="mt-1">
+                                {{ form.phone_number|safe }}
+                                {% if form.phone_number.errors %}
+                                    <p class="mt-1 text-sm text-red-600">{{ form.phone_number.errors }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Column -->
+                    <div>
+                        <h5 class="mb-4 text-lg font-medium text-blue-600">Employment Information</h5>
+                        
+                        <!-- Department -->
+                        <div class="mb-4">
+                            <label for="id_department" class="block text-sm font-medium text-gray-700">
+                                Department <span class="text-red-500">*</span>
+                            </label>
+                            <div class="mt-1">
+                                {{ form.department|safe }}
+                                {% if form.department.errors %}
+                                    <p class="mt-1 text-sm text-red-600">{{ form.department.errors }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Position -->
+                        <div class="mb-4">
+                            <label for="id_position" class="block text-sm font-medium text-gray-700">
+                                Position <span class="text-red-500">*</span>
+                            </label>
+                            <div class="mt-1">
+                                {{ form.position|safe }}
+                                {% if form.position.errors %}
+                                    <p class="mt-1 text-sm text-red-600">{{ form.position.errors }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Company -->
+                        <div class="mb-4">
+                            <label for="id_company" class="block text-sm font-medium text-gray-700">
+                                Company <span class="text-red-500">*</span>
+                            </label>
+                            <div class="mt-1">
+                                {{ form.company|safe }}
+                                {% if form.company.errors %}
+                                    <p class="mt-1 text-sm text-red-600">{{ form.company.errors }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Hire Date -->
+                        <div class="mb-4">
+                            <label for="id_hire_date" class="block text-sm font-medium text-gray-700">
+                                Hire Date <span class="text-red-500">*</span>
+                            </label>
+                            <div class="mt-1">
+                                {{ form.hire_date|safe }}
+                                {% if form.hire_date.errors %}
+                                    <p class="mt-1 text-sm text-red-600">{{ form.hire_date.errors }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Status -->
+                        <div class="mb-4">
+                            <div class="flex items-center">
+                                <div class="flex items-center h-5">
+                                    {{ form.is_active|safe }}
+                                </div>
+                                <div class="ml-3 text-sm">
+                                    <label for="id_is_active" class="font-medium text-gray-700">Active</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex justify-end mt-6">
+                    <button type="submit" class="btn-primary">
+                        <i class="fas fa-save mr-2"></i>{% if employee %}Update{% else %}Add{% endif %} Employee
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Add Tailwind classes to form fields
+        const formFields = document.querySelectorAll('input:not([type="checkbox"]), select');
+        formFields.forEach(field => {
+            field.classList.add('mt-1', 'block', 'w-full', 'rounded-md', 'border-gray-300', 'shadow-sm', 'focus:border-blue-500', 'focus:ring-blue-500');
+        });
+
+        // Add Tailwind classes to select fields
+        const selectFields = document.querySelectorAll('select');
+        selectFields.forEach(field => {
+            field.classList.add('mt-1', 'block', 'w-full', 'rounded-md', 'border-gray-300', 'shadow-sm', 'focus:border-blue-500', 'focus:ring-blue-500');
+        });
+
+        // Add Tailwind classes to checkbox
+        const checkboxFields = document.querySelectorAll('input[type="checkbox"]');
+        checkboxFields.forEach(field => {
+            field.classList.add('h-4', 'w-4', 'text-blue-600', 'border-gray-300', 'rounded', 'focus:ring-blue-500');
+        });
+
+        // Add form validation
+        const form = document.querySelector('form');
+        form.addEventListener('submit', function(event) {
+            if (!form.checkValidity()) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+        });
+    });
+</script>
+{% endblock %}

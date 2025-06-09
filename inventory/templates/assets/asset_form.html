@@ -1,0 +1,491 @@
+{% extends '../inventory/base_tailwind.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{% if form.instance.pk %}{% trans "Edit" %}{% else %}{% trans "Add" %}{% endif %} {% trans "IT Asset" %}{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-6">
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+        <h1 class="text-2xl font-semibold text-gray-800 flex items-center mb-4 md:mb-0">
+            <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+            </svg>
+            {% if form.instance.pk %}{% trans "Edit" %}{% else %}{% trans "Add" %}{% endif %} {% trans "IT Asset" %}
+        </h1>
+        <a href="{% url 'inventory:asset_list' %}" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+            </svg>
+            {% trans "Back to List" %}
+        </a>
+    </div>
+
+    {% if messages %}
+    <div class="mb-6">
+        {% for message in messages %}
+        <div class="rounded-md p-4 mb-4 {% if message.tags == 'success' %}bg-green-50 text-green-800{% elif message.tags == 'error' %}bg-red-50 text-red-800{% elif message.tags == 'warning' %}bg-yellow-50 text-yellow-800{% else %}bg-blue-50 text-blue-800{% endif %}">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <svg class="h-5 w-5 {% if message.tags == 'success' %}text-green-400{% elif message.tags == 'error' %}text-red-400{% elif message.tags == 'warning' %}text-yellow-400{% else %}text-blue-400{% endif %}" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                    </svg>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm">{{ message }}</p>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="bg-white shadow rounded-lg">
+        <form method="post" id="assetForm" class="space-y-8 divide-y divide-gray-200">
+            {% csrf_token %}
+            
+            <div class="p-6">
+                <!-- Basic Information -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+                    <!-- Left Column -->
+                    <div class="space-y-6">
+                        <h3 class="text-lg font-medium leading-6 text-gray-900">{% trans "Basic Information" %}</h3>
+                        
+                        <!-- Name -->
+                        <div>
+                            <label for="{{ form.name.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                                {% trans "Asset Name" %} <span class="text-red-500">*</span>
+                            </label>
+                            <div class="mt-1">
+                                {{ form.name }}
+                                {% if form.name.help_text %}
+                                    <p class="mt-1 text-sm text-gray-500">{{ form.name.help_text }}</p>
+                                {% endif %}
+                                {% if form.name.errors %}
+                                    <p class="mt-1 text-sm text-red-600">{{ form.name.errors }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Asset Type -->
+                        <div>
+                            <label for="{{ form.asset_type.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                                {% trans "Asset Type" %} <span class="text-red-500">*</span>
+                            </label>
+                            <div class="mt-1">
+                                {{ form.asset_type }}
+                                {% if form.asset_type.help_text %}
+                                    <p class="mt-1 text-sm text-gray-500">{{ form.asset_type.help_text }}</p>
+                                {% endif %}
+                                {% if form.asset_type.errors %}
+                                    <p class="mt-1 text-sm text-red-600">{{ form.asset_type.errors }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Serial Number -->
+                        <div>
+                            <label for="{{ form.serial_number.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                                {% trans "Serial Number" %} <span class="text-red-500">*</span>
+                            </label>
+                            <div class="mt-1">
+                                {{ form.serial_number }}
+                                {% if form.serial_number.help_text %}
+                                    <p class="mt-1 text-sm text-gray-500">{{ form.serial_number.help_text }}</p>
+                                {% endif %}
+                                {% if form.serial_number.errors %}
+                                    <p class="mt-1 text-sm text-red-600">{{ form.serial_number.errors }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Model -->
+                        <div>
+                            <label for="{{ form.model.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                                {% trans "Model" %} <span class="text-red-500">*</span>
+                            </label>
+                            <div class="mt-1">
+                                {{ form.model }}
+                                {% if form.model.help_text %}
+                                    <p class="mt-1 text-sm text-gray-500">{{ form.model.help_text }}</p>
+                                {% endif %}
+                                {% if form.model.errors %}
+                                    <p class="mt-1 text-sm text-red-600">{{ form.model.errors }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Manufacturer -->
+                        <div>
+                            <label for="{{ form.manufacturer.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                                {% trans "Manufacturer" %} <span class="text-red-500">*</span>
+                            </label>
+                            <div class="mt-1">
+                                {{ form.manufacturer }}
+                                {% if form.manufacturer.help_text %}
+                                    <p class="mt-1 text-sm text-gray-500">{{ form.manufacturer.help_text }}</p>
+                                {% endif %}
+                                {% if form.manufacturer.errors %}
+                                    <p class="mt-1 text-sm text-red-600">{{ form.manufacturer.errors }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Column -->
+                    <div class="space-y-6">
+                        <h3 class="text-lg font-medium leading-6 text-gray-900">{% trans "Assignment Information" %}</h3>
+
+                        <!-- Owner Company -->
+                        <div>
+                            <label for="{{ form.owner.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                                {% trans "Owner Company" %} <span class="text-red-500">*</span>
+                            </label>
+                            <div class="mt-1">
+                                {{ form.owner }}
+                                {% if form.owner.help_text %}
+                                    <p class="mt-1 text-sm text-gray-500">{{ form.owner.help_text }}</p>
+                                {% endif %}
+                                {% if form.owner.errors %}
+                                    <p class="mt-1 text-sm text-red-600">{{ form.owner.errors }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Status -->
+                        <div>
+                            <label for="{{ form.status.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                                {% trans "Status" %} <span class="text-red-500">*</span>
+                            </label>
+                            <div class="mt-1">
+                                {{ form.status }}
+                                {% if form.status.help_text %}
+                                    <p class="mt-1 text-sm text-gray-500">{{ form.status.help_text }}</p>
+                                {% endif %}
+                                {% if form.status.errors %}
+                                    <p class="mt-1 text-sm text-red-600">{{ form.status.errors }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Assigned To -->
+                        <div>
+                            <label for="{{ form.assigned_to.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                                {% trans "Assigned To" %}
+                            </label>
+                            <div class="mt-1">
+                                {{ form.assigned_to }}
+                                {% if form.assigned_to.help_text %}
+                                    <p class="mt-1 text-sm text-gray-500">{{ form.assigned_to.help_text }}</p>
+                                {% endif %}
+                                {% if form.assigned_to.errors %}
+                                    <p class="mt-1 text-sm text-red-600">{{ form.assigned_to.errors }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Purchase Date -->
+                        <div>
+                            <label for="{{ form.purchase_date.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                                {% trans "Purchase Date" %} <span class="text-red-500">*</span>
+                            </label>
+                            <div class="mt-1">
+                                {{ form.purchase_date }}
+                                {% if form.purchase_date.help_text %}
+                                    <p class="mt-1 text-sm text-gray-500">{{ form.purchase_date.help_text }}</p>
+                                {% endif %}
+                                {% if form.purchase_date.errors %}
+                                    <p class="mt-1 text-sm text-red-600">{{ form.purchase_date.errors }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Warranty Expiry -->
+                        <div>
+                            <label for="{{ form.warranty_expiry.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                                {% trans "Warranty Expiry" %}
+                            </label>
+                            <div class="mt-1">
+                                {{ form.warranty_expiry }}
+                                {% if form.warranty_expiry.help_text %}
+                                    <p class="mt-1 text-sm text-gray-500">{{ form.warranty_expiry.help_text }}</p>
+                                {% endif %}
+                                {% if form.warranty_expiry.errors %}
+                                    <p class="mt-1 text-sm text-red-600">{{ form.warranty_expiry.errors }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Network Information -->
+                <div class="mt-10">
+                    <h3 class="text-lg font-medium leading-6 text-gray-900 mb-6">{% trans "Network Information" %}</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <!-- Network fields here -->
+                        <div>
+                            <label for="{{ form.mac_address_wifi.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                                {% trans "Wi-Fi MAC Address" %}
+                            </label>
+                            <div class="mt-1">
+                                {{ form.mac_address_wifi }}
+                                <p class="mt-1 text-sm text-gray-500">{% trans "Example: 00:1A:2B:3C:4D:5E" %}</p>
+                            </div>
+                        </div>
+                        <div>
+                            <label for="{{ form.mac_address_ethernet.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                                {% trans "Ethernet MAC Address" %}
+                            </label>
+                            <div class="mt-1">
+                                {{ form.mac_address_ethernet }}
+                                <p class="mt-1 text-sm text-gray-500">{% trans "Example: 00:1A:2B:3C:4D:5F" %}</p>
+                            </div>
+                        </div>
+                        <div>
+                            <label for="{{ form.ip_address.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                                {% trans "IP Address" %}
+                            </label>
+                            <div class="mt-1">
+                                {{ form.ip_address }}
+                                <p class="mt-1 text-sm text-gray-500">{% trans "Example: 192.168.1.100" %}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Asset Type Specific Fields -->
+                <div id="computerFields" class="asset-type-fields hidden mt-10">
+                    <h3 class="text-lg font-medium leading-6 text-gray-900 mb-6">{% trans "Computer Specifications" %}</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Computer fields here -->
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.processor.id_for_label }}" class="form-label">Processor</label>
+                            {{ form.processor }}
+                            <div class="form-text">Example: Intel Core i7-1165G7, AMD Ryzen 7 5800H</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.ram_size.id_for_label }}" class="form-label">RAM Size</label>
+                            {{ form.ram_size }}
+                            <div class="form-text">Example: 16GB, 32GB</div>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.hdd1_capacity.id_for_label }}" class="form-label">Primary Storage</label>
+                            {{ form.hdd1_capacity }}
+                            <div class="form-text">Example: 512GB SSD, 1TB HDD</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.hdd2_capacity.id_for_label }}" class="form-label">Secondary Storage</label>
+                            {{ form.hdd2_capacity }}
+                            <div class="form-text">Example: 1TB SSD (if applicable)</div>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.operating_system.id_for_label }}" class="form-label">Operating System</label>
+                            {{ form.operating_system }}
+                            <div class="form-text">Example: Windows 10, Ubuntu 20.04</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.os_version.id_for_label }}" class="form-label">OS Version</label>
+                            {{ form.os_version }}
+                            <div class="form-text">Example: 21H2, 20.04.3 LTS</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="monitorFields" class="asset-type-fields hidden mt-10">
+                    <h3 class="text-lg font-medium leading-6 text-gray-900 mb-6">{% trans "Monitor Specifications" %}</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Monitor fields here -->
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.screen_size.id_for_label }}" class="form-label">Screen Size</label>
+                            {{ form.screen_size }}
+                            <div class="form-text">Example: 24", 27"</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.resolution.id_for_label }}" class="form-label">Resolution</label>
+                            {{ form.resolution }}
+                            <div class="form-text">Example: 1920x1080, 2560x1440</div>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.refresh_rate.id_for_label }}" class="form-label">Refresh Rate</label>
+                            {{ form.refresh_rate }}
+                            <div class="form-text">Example: 60Hz, 144Hz</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.panel_type.id_for_label }}" class="form-label">Panel Type</label>
+                            {{ form.panel_type }}
+                            <div class="form-text">Example: IPS, TN, VA</div>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="col-md-6 mb-3">
+                            <div class="form-check">
+                                {{ form.vesa_mount }}
+                                <label class="form-check-label" for="{{ form.vesa_mount.id_for_label }}">
+                                    VESA Mount Compatible
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="form-check">
+                                {{ form.built_in_speakers }}
+                                <label class="form-check-label" for="{{ form.built_in_speakers.id_for_label }}">
+                                    Built-in Speakers
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="printerFields" class="asset-type-fields hidden mt-10">
+                    <h3 class="text-lg font-medium leading-6 text-gray-900 mb-6">{% trans "Printer Specifications" %}</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Printer fields here -->
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.printer_type.id_for_label }}" class="form-label">Printer Type</label>
+                            {{ form.printer_type }}
+                            <div class="form-text">Example: Laser, Inkjet, 3D</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.connection_type.id_for_label }}" class="form-label">Connection Type</label>
+                            {{ form.connection_type }}
+                            <div class="form-text">Example: USB, Network, Wi-Fi</div>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.printer_department.id_for_label }}" class="form-label">Department</label>
+                            {{ form.printer_department }}
+                            <div class="form-text">Example: IT, HR, Finance</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.printer_responsible.id_for_label }}" class="form-label">Responsible Person</label>
+                            {{ form.printer_responsible }}
+                            <div class="form-text">Person responsible for maintenance</div>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.paper_size_support.id_for_label }}" class="form-label">Paper Size Support</label>
+                            {{ form.paper_size_support }}
+                            <div class="form-text">Example: A4, A3, Legal</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.toner_cartridge_model.id_for_label }}" class="form-label">Toner Cartridge Model</label>
+                            {{ form.toner_cartridge_model }}
+                            <div class="form-text">Example: HP 26A, Brother TN-760</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="upsFields" class="asset-type-fields hidden mt-10">
+                    <h3 class="text-lg font-medium leading-6 text-gray-900 mb-6">{% trans "UPS Specifications" %}</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- UPS fields here -->
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.ups_capacity.id_for_label }}" class="form-label">Capacity (VA)</label>
+                            {{ form.ups_capacity }}
+                            <div class="form-text">Example: 1500, 2200</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.ups_battery_count.id_for_label }}" class="form-label">Number of Batteries</label>
+                            {{ form.ups_battery_count }}
+                            <div class="form-text">Example: 1, 2</div>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.ups_battery_life.id_for_label }}" class="form-label">Battery Life (months)</label>
+                            {{ form.ups_battery_life }}
+                            <div class="form-text">Remaining battery life in months</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.ups_battery_replacement_date.id_for_label }}" class="form-label">Battery Replacement Date</label>
+                            {{ form.ups_battery_replacement_date }}
+                            <div class="form-text">When should batteries be replaced?</div>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.ups_manufacturer.id_for_label }}" class="form-label">UPS Manufacturer</label>
+                            {{ form.ups_manufacturer }}
+                            <div class="form-text">Example: APC, CyberPower, Eaton</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Notes -->
+                <div class="mt-10">
+                    <h3 class="text-lg font-medium leading-6 text-gray-900 mb-6">{% trans "Additional Information" %}</h3>
+                    <div>
+                        <label for="{{ form.notes.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                            {% trans "Notes" %}
+                        </label>
+                        <div class="mt-1">
+                            {{ form.notes }}
+                            {% if form.notes.help_text %}
+                                <p class="mt-1 text-sm text-gray-500">{{ form.notes.help_text }}</p>
+                            {% endif %}
+                            {% if form.notes.errors %}
+                                <p class="mt-1 text-sm text-red-600">{{ form.notes.errors }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Form Actions -->
+                <div class="flex justify-end mt-8">
+                    <button type="submit" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/>
+                        </svg>
+                        {% if form.instance.pk %}{% trans "Update" %}{% else %}{% trans "Add" %}{% endif %} {% trans "Asset" %}
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Add Tailwind classes to form fields
+        const formFields = document.querySelectorAll('input:not([type="checkbox"]), select, textarea');
+        formFields.forEach(field => {
+            field.classList.add('mt-1', 'block', 'w-full', 'rounded-md', 'border-gray-300', 'shadow-sm', 'focus:ring-blue-500', 'focus:border-blue-500', 'sm:text-sm');
+        });
+
+        // Add Tailwind classes to checkbox fields
+        const checkboxFields = document.querySelectorAll('input[type="checkbox"]');
+        checkboxFields.forEach(field => {
+            field.classList.add('h-4', 'w-4', 'text-blue-600', 'border-gray-300', 'rounded', 'focus:ring-blue-500');
+        });
+
+        // Asset type fields toggle
+        const assetTypeSelect = document.getElementById('{{ form.asset_type.id_for_label }}');
+        const computerFields = document.getElementById('computerFields');
+        const monitorFields = document.getElementById('monitorFields');
+        const printerFields = document.getElementById('printerFields');
+        const upsFields = document.getElementById('upsFields');
+
+        function toggleFields() {
+            const selectedType = assetTypeSelect.options[assetTypeSelect.selectedIndex].text.toLowerCase();
+            
+            computerFields.classList.toggle('hidden', !selectedType.includes('laptop') && !selectedType.includes('desktop') && !selectedType.includes('computer'));
+            monitorFields.classList.toggle('hidden', !selectedType.includes('monitor'));
+            printerFields.classList.toggle('hidden', !selectedType.includes('printer'));
+            upsFields.classList.toggle('hidden', !selectedType.includes('ups'));
+        }
+
+        assetTypeSelect.addEventListener('change', toggleFields);
+        toggleFields(); // Initial check
+    });
+</script>
+{% endblock %}

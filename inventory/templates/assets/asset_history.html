@@ -1,0 +1,203 @@
+{% extends '../inventory/base_tailwind.html' %}
+{% load i18n %}
+
+{% block title %}{% trans "Asset History" %} - {{ asset.name }}{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <!-- Page Header -->
+    <div class="mb-8">
+        <div class="md:flex md:items-center md:justify-between">
+            <div class="flex-1 min-w-0">
+                <h1 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
+                    {% trans "Asset History" %}
+                </h1>
+                <p class="mt-1 text-sm text-gray-500">
+                    {% trans "View detailed history and information about this asset" %}
+                </p>
+            </div>
+            <div class="mt-4 flex md:mt-0 md:ml-4">
+                <a href="{% url 'inventory:asset_list' %}" 
+                   class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                    </svg>
+                    {% trans "Back to Assets" %}
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
+        <!-- Asset Details Card -->
+        <div class="md:col-span-4">
+            <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+                <div class="px-4 py-5 sm:px-6">
+                    <h3 class="text-lg leading-6 font-medium text-gray-900">
+                        {% trans "Asset Information" %}
+                    </h3>
+                </div>
+                <div class="border-t border-gray-200 px-4 py-5 sm:px-6">
+                    <dl class="grid grid-cols-1 gap-y-4">
+                        <div>
+                            <dt class="text-sm font-medium text-gray-500">{% trans "Name" %}</dt>
+                            <dd class="mt-1 text-sm text-gray-900">{{ asset.name }}</dd>
+                        </div>
+
+                        <div>
+                            <dt class="text-sm font-medium text-gray-500">{% trans "Serial Number" %}</dt>
+                            <dd class="mt-1 text-sm text-gray-900">{{ asset.serial_number }}</dd>
+                        </div>
+
+                        <div>
+                            <dt class="text-sm font-medium text-gray-500">{% trans "Type" %}</dt>
+                            <dd class="mt-1 text-sm text-gray-900">{{ asset.asset_type.display_name }}</dd>
+                        </div>
+
+                        <div>
+                            <dt class="text-sm font-medium text-gray-500">{% trans "Status" %}</dt>
+                            <dd class="mt-1">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                    {% if asset.status == 'available' %}bg-green-100 text-green-800
+                                    {% elif asset.status == 'assigned' %}bg-blue-100 text-blue-800
+                                    {% elif asset.status == 'maintenance' %}bg-yellow-100 text-yellow-800
+                                    {% else %}bg-red-100 text-red-800{% endif %}">
+                                    {{ asset.get_status_display }}
+                                </span>
+                            </dd>
+                        </div>
+
+                        <div>
+                            <dt class="text-sm font-medium text-gray-500">{% trans "Owner Company" %}</dt>
+                            <dd class="mt-1 text-sm text-gray-900">{{ asset.owner.name }}</dd>
+                        </div>
+
+                        <div>
+                            <dt class="text-sm font-medium text-gray-500">{% trans "Current User" %}</dt>
+                            <dd class="mt-1 text-sm">
+                                {% if asset.assigned_to %}
+                                    <div class="flex items-center">
+                                        <svg class="h-5 w-5 text-blue-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                                        </svg>
+                                        <span class="text-gray-900">{{ asset.assigned_to.get_full_name }}</span>
+                                    </div>
+                                {% else %}
+                                    <span class="text-gray-500">{% trans "Not Assigned" %}</span>
+                                {% endif %}
+                            </dd>
+                        </div>
+
+                        <div>
+                            <dt class="text-sm font-medium text-gray-500">{% trans "Purchase Date" %}</dt>
+                            <dd class="mt-1 text-sm text-gray-900">{{ asset.purchase_date|date:"Y-m-d" }}</dd>
+                        </div>
+
+                        <div>
+                            <dt class="text-sm font-medium text-gray-500">{% trans "Warranty Until" %}</dt>
+                            <dd class="mt-1 text-sm {% if asset.warranty_expiry and asset.warranty_expiry|date:'Y-m-d' < now|date:'Y-m-d' %}text-red-600{% else %}text-gray-900{% endif %}">
+                                {{ asset.warranty_expiry|date:"Y-m-d" }}
+                            </dd>
+                        </div>
+                    </dl>
+                </div>
+            </div>
+        </div>
+
+        <!-- History Timeline -->
+        <div class="md:col-span-8">
+            <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+                <div class="px-4 py-5 sm:px-6">
+                    <h3 class="text-lg leading-6 font-medium text-gray-900">
+                        {% trans "Asset History" %}
+                    </h3>
+                </div>
+                <div class="border-t border-gray-200">
+                    <div class="px-4 py-5 sm:px-6">
+                        <div class="flow-root">
+                            <ul role="list" class="-mb-8">
+                                {% for event in asset_history %}
+                                <li>
+                                    <div class="relative pb-8">
+                                        {% if not forloop.last %}
+                                        <span class="absolute top-4 left-4 -ml-px h-full w-0.5 bg-gray-200" aria-hidden="true"></span>
+                                        {% endif %}
+                                        <div class="relative flex space-x-3">
+                                            <div>
+                                                <span class="h-8 w-8 rounded-full flex items-center justify-center ring-8 ring-white
+                                                    {% if event.action == 'assigned' %}bg-blue-500
+                                                    {% elif event.action == 'maintenance' %}bg-yellow-500
+                                                    {% elif event.action == 'retired' %}bg-red-500
+                                                    {% elif event.action == 'received' %}bg-green-500
+                                                    {% else %}bg-gray-500{% endif %}">
+                                                    {% if event.action == 'assigned' %}
+                                                        <svg class="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/>
+                                                        </svg>
+                                                    {% elif event.action == 'maintenance' %}
+                                                        <svg class="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                                        </svg>
+                                                    {% elif event.action == 'retired' %}
+                                                        <svg class="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/>
+                                                        </svg>
+                                                    {% elif event.action == 'received' %}
+                                                        <svg class="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+                                                        </svg>
+                                                    {% elif event.action == 'returned' %}
+                                                        <svg class="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/>
+                                                        </svg>
+                                                    {% endif %}
+                                                </span>
+                                            </div>
+                                            <div class="min-w-0 flex-1">
+                                                <div class="text-sm font-medium text-gray-900">
+                                                    {{ event.get_action_display }}
+                                                </div>
+                                                <div class="mt-1 text-sm text-gray-500">
+                                                    <p>{{ event.notes }}</p>
+                                                    {% if event.employee %}
+                                                    <p class="mt-1 flex items-center text-sm">
+                                                        <svg class="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                                                        </svg>
+                                                        {{ event.employee.get_full_name }}
+                                                    </p>
+                                                    {% endif %}
+                                                    {% if event.created_by %}
+                                                    <p class="mt-1 flex items-center text-sm">
+                                                        <svg class="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                                                        </svg>
+                                                        {% trans "By" %} {{ event.created_by.get_full_name }}
+                                                    </p>
+                                                    {% endif %}
+                                                </div>
+                                                <div class="mt-2 text-sm text-gray-500">
+                                                    {{ event.date|date:"Y-m-d H:i" }}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </li>
+                                {% empty %}
+                                <li class="text-center py-8">
+                                    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                    </svg>
+                                    <p class="mt-2 text-sm text-gray-500">{% trans "No history records found for this asset." %}</p>
+                                </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

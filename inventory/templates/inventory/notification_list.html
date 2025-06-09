@@ -1,271 +1,133 @@
-{% extends 'inventory/base.html' %}
+{% extends 'inventory/base_tailwind.html' %}
 {% load static %}
 {% load i18n %}
 
 {% block title %}{% trans "Notifications" %}{% endblock %}
 
-{% block extra_css %}
-<style>
-    .notification-filters {
-        background: var(--body-bg);
-        border-radius: 8px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        padding: 1.5rem;
-        margin-bottom: 1.5rem;
-    }
-
-    .notification-card {
-        background: var(--body-bg);
-        border-radius: 8px;
-        border: 1px solid var(--border-color);
-        margin-bottom: 1rem;
-        transition: transform 0.2s, box-shadow 0.2s;
-    }
-
-    .notification-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-    }
-
-    .notification-card.unread {
-        border-left: 4px solid var(--primary);
-    }
-
-    .notification-header {
-        padding: 1rem 1.5rem;
-        border-bottom: 1px solid var(--border-color);
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-
-    .notification-body {
-        padding: 1.5rem;
-    }
-
-    .notification-footer {
-        padding: 1rem 1.5rem;
-        border-top: 1px solid var(--border-color);
-        background: var(--light-bg);
-        border-bottom-left-radius: 8px;
-        border-bottom-right-radius: 8px;
-    }
-
-    .priority-badge {
-        padding: 0.25rem 0.75rem;
-        border-radius: 50px;
-        font-size: 0.875rem;
-        font-weight: 500;
-    }
-
-    .priority-urgent {
-        background-color: #dc3545;
-        color: white;
-    }
-
-    .priority-high {
-        background-color: #fd7e14;
-        color: white;
-    }
-
-    .priority-medium {
-        background-color: #0dcaf0;
-        color: white;
-    }
-
-    .priority-low {
-        background-color: #198754;
-        color: white;
-    }
-
-    .category-icon {
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin-right: 1rem;
-    }
-
-    .notification-stats {
-        background: var(--body-bg);
-        border-radius: 8px;
-        padding: 1rem;
-        margin-bottom: 1rem;
-        border: 1px solid var(--border-color);
-    }
-
-    .stat-card {
-        padding: 1rem;
-        border-radius: 6px;
-        text-align: center;
-        background: var(--light-bg);
-        margin-bottom: 0.5rem;
-    }
-
-    .stat-number {
-        font-size: 1.5rem;
-        font-weight: bold;
-        margin-bottom: 0.25rem;
-    }
-
-    .stat-label {
-        font-size: 0.875rem;
-        color: var(--body-quiet-color);
-    }
-
-    .filter-badge {
-        background: var(--primary);
-        color: white;
-        padding: 0.25rem 0.75rem;
-        border-radius: 50px;
-        font-size: 0.875rem;
-        margin-right: 0.5rem;
-        display: inline-flex;
-        align-items: center;
-    }
-
-    .filter-badge .close {
-        margin-left: 0.5rem;
-        font-size: 1rem;
-        cursor: pointer;
-    }
-
-    .active-filters {
-        margin: 1rem 0;
-    }
-
-    .notification-empty {
-        text-align: center;
-        padding: 3rem 1rem;
-    }
-
-    .notification-empty i {
-        font-size: 3rem;
-        color: var(--body-quiet-color);
-        margin-bottom: 1rem;
-    }
-
-    @media (max-width: 768px) {
-        .notification-header {
-            flex-direction: column;
-            gap: 1rem;
-        }
-    }
-</style>
-{% endblock %}
-
 {% block content %}
-<div class="container-fluid">
+<div class="container mx-auto px-4 py-6">
     <!-- Page Header -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
         <div>
-            <h1 class="h3 mb-0">{% trans "Notifications" %}</h1>
+            <h1 class="text-2xl font-semibold text-gray-800 flex items-center mb-2">
+                <i class="fas fa-bell mr-2"></i>{% trans "Notifications" %}
+            </h1>
             <nav aria-label="breadcrumb">
-                <ol class="breadcrumb">
-                    <li class="breadcrumb-item"><a href="{% url 'inventory:home' %}">{% trans "Home" %}</a></li>
-                    <li class="breadcrumb-item active">{% trans "Notifications" %}</li>
+                <ol class="flex text-sm text-gray-500">
+                    <li class="hover:text-blue-600"><a href="{% url 'inventory:home' %}">{% trans "Home" %}</a></li>
+                    <li class="mx-2">/</li>
+                    <li class="text-gray-700">{% trans "Notifications" %}</li>
                 </ol>
             </nav>
         </div>
-        <div class="d-flex gap-2">
+        <div class="mt-4 md:mt-0">
             {% if unread_count > 0 %}
-            <form action="{% url 'inventory:mark_all_read' %}" method="post" class="d-inline">
+            <form action="{% url 'inventory:mark_all_read' %}" method="post" class="inline">
                 {% csrf_token %}
-                <button type="submit" class="btn btn-outline-primary">
-                    <i class="fas fa-check-double me-2"></i>{% trans "Mark All as Read" %}
+                <button type="submit" class="flex items-center px-4 py-2 bg-white border border-blue-500 text-blue-600 rounded-md hover:bg-blue-50 transition duration-150 ease-in-out">
+                    <i class="fas fa-check-double mr-2"></i>{% trans "Mark All as Read" %}
                 </button>
             </form>
             {% endif %}
         </div>
     </div>
 
-    <div class="row">
+    <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
         <!-- Sidebar with Stats and Filters -->
-        <div class="col-md-3">
+        <div class="lg:col-span-1">
             <!-- Notification Stats -->
-            <div class="notification-stats mb-4">
-                <h5 class="mb-3">{% trans "Statistics" %}</h5>
-                <div class="row g-2">
-                    <div class="col-6">
-                        <div class="stat-card">
-                            <div class="stat-number">{{ total_count }}</div>
-                            <div class="stat-label">{% trans "Total" %}</div>
-                        </div>
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
+                <h2 class="text-lg font-medium text-gray-800 mb-4">{% trans "Statistics" %}</h2>
+                <div class="grid grid-cols-2 gap-3 mb-4">
+                    <div class="bg-gray-50 rounded-lg p-3 text-center">
+                        <div class="text-xl font-bold text-gray-800">{{ total_count }}</div>
+                        <div class="text-sm text-gray-500">{% trans "Total" %}</div>
                     </div>
-                    <div class="col-6">
-                        <div class="stat-card">
-                            <div class="stat-number">{{ unread_count }}</div>
-                            <div class="stat-label">{% trans "Unread" %}</div>
-                        </div>
+                    <div class="bg-gray-50 rounded-lg p-3 text-center">
+                        <div class="text-xl font-bold text-gray-800">{{ unread_count }}</div>
+                        <div class="text-sm text-gray-500">{% trans "Unread" %}</div>
                     </div>
                 </div>
-                <div class="mt-3">
-                    <h6 class="mb-2">{% trans "By Priority" %}</h6>
+                <div class="space-y-3">
+                    <h3 class="text-sm font-medium text-gray-700">{% trans "By Priority" %}</h3>
                     {% for priority, count in priority_counts.items %}
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <span class="priority-badge priority-{{ priority }}">{{ priority|title }}</span>
-                        <span class="badge bg-secondary">{{ count }}</span>
+                    <div class="flex justify-between items-center">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                            {% if priority == 'urgent' %}bg-red-100 text-red-800
+                            {% elif priority == 'high' %}bg-orange-100 text-orange-800
+                            {% elif priority == 'medium' %}bg-blue-100 text-blue-800
+                            {% else %}bg-green-100 text-green-800{% endif %}">
+                            {{ priority|title }}
+                        </span>
+                        <span class="bg-gray-200 text-gray-700 text-xs px-2 py-0.5 rounded-full">{{ count }}</span>
                     </div>
                     {% endfor %}
                 </div>
             </div>
 
             <!-- Filters -->
-            <div class="notification-filters">
-                <h5 class="mb-3">{% trans "Filters" %}</h5>
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+                <h2 class="text-lg font-medium text-gray-800 mb-4">{% trans "Filters" %}</h2>
                 <form method="get" id="filterForm">
-                    <div class="mb-3">
-                        <label class="form-label">{% trans "Status" %}</label>
-                        <select name="status" class="form-select" onchange="this.form.submit()">
-                            <option value="">{% trans "All" %}</option>
-                            <option value="unread" {% if current_status == 'unread' %}selected{% endif %}>{% trans "Unread" %}</option>
-                            <option value="read" {% if current_status == 'read' %}selected{% endif %}>{% trans "Read" %}</option>
-                            <option value="archived" {% if current_status == 'archived' %}selected{% endif %}>{% trans "Archived" %}</option>
-                        </select>
-                    </div>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">{% trans "Status" %}</label>
+                            <select name="status" 
+                                    class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50">
+                                <option value="">{% trans "All" %}</option>
+                                <option value="unread" {% if current_status == 'unread' %}selected{% endif %}>{% trans "Unread" %}</option>
+                                <option value="read" {% if current_status == 'read' %}selected{% endif %}>{% trans "Read" %}</option>
+                                <option value="archived" {% if current_status == 'archived' %}selected{% endif %}>{% trans "Archived" %}</option>
+                            </select>
+                        </div>
 
-                    <div class="mb-3">
-                        <label class="form-label">{% trans "Priority" %}</label>
-                        <select name="priority" class="form-select" onchange="this.form.submit()">
-                            <option value="">{% trans "All" %}</option>
-                            <option value="urgent" {% if current_priority == 'urgent' %}selected{% endif %}>{% trans "Urgent" %}</option>
-                            <option value="high" {% if current_priority == 'high' %}selected{% endif %}>{% trans "High" %}</option>
-                            <option value="medium" {% if current_priority == 'medium' %}selected{% endif %}>{% trans "Medium" %}</option>
-                            <option value="low" {% if current_priority == 'low' %}selected{% endif %}>{% trans "Low" %}</option>
-                        </select>
-                    </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">{% trans "Priority" %}</label>
+                            <select name="priority" 
+                                    class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50">
+                                <option value="">{% trans "All" %}</option>
+                                <option value="urgent" {% if current_priority == 'urgent' %}selected{% endif %}>{% trans "Urgent" %}</option>
+                                <option value="high" {% if current_priority == 'high' %}selected{% endif %}>{% trans "High" %}</option>
+                                <option value="medium" {% if current_priority == 'medium' %}selected{% endif %}>{% trans "Medium" %}</option>
+                                <option value="low" {% if current_priority == 'low' %}selected{% endif %}>{% trans "Low" %}</option>
+                            </select>
+                        </div>
 
-                    <div class="mb-3">
-                        <label class="form-label">{% trans "Category" %}</label>
-                        <select name="category" class="form-select" onchange="this.form.submit()">
-                            <option value="">{% trans "All" %}</option>
-                            {% for category in categories %}
-                            <option value="{{ category.id }}" {% if current_category == category.id|stringformat:"i" %}selected{% endif %}>
-                                {{ category.name }}
-                            </option>
-                            {% endfor %}
-                        </select>
-                    </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">{% trans "Category" %}</label>
+                            <select name="category" 
+                                    class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50">
+                                <option value="">{% trans "All" %}</option>
+                                {% for category in categories %}
+                                <option value="{{ category.id }}" {% if current_category == category.id|stringformat:"i" %}selected{% endif %}>
+                                    {{ category.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
 
-                    <div class="mb-3">
-                        <label class="form-label">{% trans "Date Range" %}</label>
-                        <select name="date_range" class="form-select" onchange="this.form.submit()">
-                            <option value="">{% trans "All Time" %}</option>
-                            <option value="today" {% if current_date_range == 'today' %}selected{% endif %}>{% trans "Today" %}</option>
-                            <option value="week" {% if current_date_range == 'week' %}selected{% endif %}>{% trans "Last 7 Days" %}</option>
-                            <option value="month" {% if current_date_range == 'month' %}selected{% endif %}>{% trans "Last 30 Days" %}</option>
-                        </select>
-                    </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">{% trans "Date Range" %}</label>
+                            <select name="date_range" 
+                                    class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50">
+                                <option value="">{% trans "All Time" %}</option>
+                                <option value="today" {% if current_date_range == 'today' %}selected{% endif %}>{% trans "Today" %}</option>
+                                <option value="week" {% if current_date_range == 'week' %}selected{% endif %}>{% trans "Last 7 Days" %}</option>
+                                <option value="month" {% if current_date_range == 'month' %}selected{% endif %}>{% trans "Last 30 Days" %}</option>
+                            </select>
+                        </div>
 
-                    <div class="mb-3">
-                        <label class="form-label">{% trans "Search" %}</label>
-                        <div class="input-group">
-                            <input type="text" name="q" class="form-control" placeholder="{% trans 'Search notifications...' %}" value="{{ search_query }}">
-                            <button class="btn btn-outline-primary" type="submit">
-                                <i class="fas fa-search"></i>
-                            </button>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">{% trans "Search" %}</label>
+                            <div class="flex rounded-md shadow-sm">
+                                <input type="text" name="q" 
+                                       class="flex-1 rounded-l-md border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50" 
+                                       placeholder="{% trans 'Search notifications...' %}" 
+                                       value="{{ search_query }}">
+                                <button class="inline-flex items-center px-3 py-2 border border-l-0 border-gray-300 bg-gray-50 text-gray-500 rounded-r-md hover:bg-gray-100">
+                                    <i class="fas fa-search"></i>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </form>
@@ -273,146 +135,191 @@
         </div>
 
         <!-- Notifications List -->
-        <div class="col-md-9">
+        <div class="lg:col-span-3">
             {% if notifications %}
                 <!-- Active Filters Display -->
                 {% if current_status or current_priority or current_category or current_date_range or search_query %}
-                <div class="active-filters">
+                <div class="flex flex-wrap gap-2 mb-4">
                     {% if current_status %}
-                    <span class="filter-badge">
+                    <div class="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-600 text-white">
                         {% trans "Status" %}: {{ current_status|title }}
-                        <a href="?{% if current_priority %}priority={{ current_priority }}{% endif %}{% if current_category %}&category={{ current_category }}{% endif %}{% if current_date_range %}&date_range={{ current_date_range }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}" class="text-white text-decoration-none">
-                            <i class="fas fa-times close"></i>
+                        <a href="?{% if current_priority %}priority={{ current_priority }}{% endif %}{% if current_category %}&category={{ current_category }}{% endif %}{% if current_date_range %}&date_range={{ current_date_range }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}" 
+                           class="ml-2 text-white hover:text-blue-200">
+                            <i class="fas fa-times"></i>
                         </a>
-                    </span>
+                    </div>
                     {% endif %}
+                    
+                    {% if current_priority %}
+                    <div class="inline-flex items-center px-3 py-1 rounded-full text-sm
+                        {% if current_priority == 'urgent' %}bg-red-600 text-white
+                        {% elif current_priority == 'high' %}bg-orange-500 text-white
+                        {% elif current_priority == 'medium' %}bg-blue-500 text-white
+                        {% else %}bg-green-600 text-white{% endif %}">
+                        {% trans "Priority" %}: {{ current_priority|title }}
+                        <a href="?{% if current_status %}status={{ current_status }}{% endif %}{% if current_category %}&category={{ current_category }}{% endif %}{% if current_date_range %}&date_range={{ current_date_range }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}" 
+                           class="ml-2 text-white hover:text-opacity-80">
+                            <i class="fas fa-times"></i>
+                        </a>
+                    </div>
+                    {% endif %}
+                    
                     <!-- Similar badges for other active filters -->
                 </div>
                 {% endif %}
 
                 <!-- Notifications Cards -->
-                {% for notification in notifications %}
-                <div class="notification-card {% if notification.status == 'unread' %}unread{% endif %}">
-                    <div class="notification-header">
-                        <div class="d-flex align-items-center">
-                            <div class="category-icon bg-{{ notification.category.color }}">
-                                <i class="fas {{ notification.category.icon }} text-white"></i>
+                <div class="space-y-4">
+                    {% for notification in notifications %}
+                    <div class="bg-white rounded-lg shadow-sm overflow-hidden border {% if notification.status == 'unread' %}border-l-4 border-l-blue-500{% else %}border-gray-200{% endif %}">
+                        <div class="p-6 border-b border-gray-200 flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+                            <div class="flex items-start space-x-3">
+                                <div class="flex-shrink-0">
+                                    <div class="w-10 h-10 rounded-full flex items-center justify-center
+                                        {% if notification.category.color == 'success' %}bg-green-100 text-green-600
+                                        {% elif notification.category.color == 'warning' %}bg-yellow-100 text-yellow-600
+                                        {% elif notification.category.color == 'danger' %}bg-red-100 text-red-600
+                                        {% else %}bg-blue-100 text-blue-600{% endif %}">
+                                        <i class="fas {{ notification.category.icon }}"></i>
+                                    </div>
+                                </div>
+                                <div>
+                                    <h3 class="text-lg font-medium text-gray-900">{{ notification.title }}</h3>
+                                    <p class="text-sm text-gray-500">
+                                        <i class="far fa-clock mr-1"></i>{{ notification.created_at|timesince }} {% trans "ago" %}
+                                    </p>
+                                </div>
                             </div>
-                            <div>
-                                <h5 class="mb-1">{{ notification.title }}</h5>
-                                <small class="text-muted">
-                                    <i class="far fa-clock me-1"></i>{{ notification.created_at|timesince }} {% trans "ago" %}
-                                </small>
+                            <div class="flex items-center space-x-2">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                    {% if notification.priority == 'urgent' %}bg-red-100 text-red-800
+                                    {% elif notification.priority == 'high' %}bg-orange-100 text-orange-800
+                                    {% elif notification.priority == 'medium' %}bg-blue-100 text-blue-800
+                                    {% else %}bg-green-100 text-green-800{% endif %}">
+                                    {{ notification.get_priority_display }}
+                                </span>
+                                {% if notification.status == 'unread' %}
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                    {% trans "New" %}
+                                </span>
+                                {% endif %}
                             </div>
                         </div>
-                        <div class="d-flex align-items-center gap-2">
-                            <span class="priority-badge priority-{{ notification.priority }}">
-                                {{ notification.get_priority_display }}
-                            </span>
-                            {% if notification.status == 'unread' %}
-                            <span class="badge bg-primary">{% trans "New" %}</span>
-                            {% endif %}
+                        <div class="p-4 bg-white">
+                            <div class="prose max-w-none text-gray-700">
+                                {{ notification.message|linebreaks }}
+                            </div>
                         </div>
-                    </div>
-                    <div class="notification-body">
-                        <p class="mb-0">{{ notification.message|linebreaks }}</p>
-                    </div>
-                    <div class="notification-footer">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div class="btn-group">
+                        <div class="p-4 bg-gray-50 border-t border-gray-200">
+                            <div class="flex flex-wrap gap-2 justify-end">
                                 {% if notification.action_url %}
-                                <a href="{{ notification.action_url }}" class="btn btn-sm btn-primary">
-                                    <i class="fas fa-external-link-alt me-1"></i>{% trans "View Details" %}
+                                <a href="{{ notification.action_url }}" class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                                    <i class="fas fa-external-link-alt mr-1"></i>{% trans "View Details" %}
                                 </a>
                                 {% endif %}
+                                
                                 {% if notification.status == 'unread' %}
-                                <form action="{% url 'inventory:mark_notification_read' notification.pk %}" method="post" class="d-inline">
+                                <form action="{% url 'inventory:mark_notification_read' notification.pk %}" method="post" class="inline">
                                     {% csrf_token %}
-                                    <button type="submit" class="btn btn-sm btn-outline-success">
-                                        <i class="fas fa-check me-1"></i>{% trans "Mark as Read" %}
+                                    <button type="submit" class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-green-700 bg-green-100 hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                                        <i class="fas fa-check mr-1"></i>{% trans "Mark as Read" %}
                                     </button>
                                 </form>
                                 {% else %}
-                                <form action="{% url 'inventory:mark_notification_unread' notification.pk %}" method="post" class="d-inline">
+                                <form action="{% url 'inventory:mark_notification_unread' notification.pk %}" method="post" class="inline">
                                     {% csrf_token %}
-                                    <button type="submit" class="btn btn-sm btn-outline-primary">
-                                        <i class="fas fa-undo me-1"></i>{% trans "Mark as Unread" %}
+                                    <button type="submit" class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                                        <i class="fas fa-undo mr-1"></i>{% trans "Mark as Unread" %}
                                     </button>
                                 </form>
                                 {% endif %}
+                                
                                 {% if notification.status != 'archived' %}
-                                <form action="{% url 'inventory:archive_notification' notification.pk %}" method="post" class="d-inline">
+                                <form action="{% url 'inventory:archive_notification' notification.pk %}" method="post" class="inline">
                                     {% csrf_token %}
-                                    <button type="submit" class="btn btn-sm btn-outline-secondary">
-                                        <i class="fas fa-archive me-1"></i>{% trans "Archive" %}
+                                    <button type="submit" class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-700 bg-gray-100 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+                                        <i class="fas fa-archive mr-1"></i>{% trans "Archive" %}
                                     </button>
                                 </form>
                                 {% else %}
-                                <form action="{% url 'inventory:unarchive_notification' notification.pk %}" method="post" class="d-inline">
+                                <form action="{% url 'inventory:unarchive_notification' notification.pk %}" method="post" class="inline">
                                     {% csrf_token %}
-                                    <button type="submit" class="btn btn-sm btn-outline-secondary">
-                                        <i class="fas fa-box-open me-1"></i>{% trans "Unarchive" %}
+                                    <button type="submit" class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-700 bg-gray-100 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+                                        <i class="fas fa-box-open mr-1"></i>{% trans "Unarchive" %}
                                     </button>
                                 </form>
                                 {% endif %}
                             </div>
                         </div>
                     </div>
+                    {% endfor %}
                 </div>
-                {% endfor %}
 
                 <!-- Pagination -->
                 {% if is_paginated %}
-                <nav aria-label="{% trans 'Notification pagination' %}">
-                    <ul class="pagination justify-content-center">
-                        {% if page_obj.has_previous %}
-                        <li class="page-item">
-                            <a class="page-link" href="?page=1{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.priority %}&priority={{ request.GET.priority }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.date_range %}&date_range={{ request.GET.date_range }}{% endif %}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">
-                                <i class="fas fa-angle-double-left"></i>
-                            </a>
-                        </li>
-                        <li class="page-item">
-                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.priority %}&priority={{ request.GET.priority }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.date_range %}&date_range={{ request.GET.date_range }}{% endif %}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">
-                                <i class="fas fa-angle-left"></i>
-                            </a>
-                        </li>
-                        {% endif %}
+                <div class="mt-6">
+                    <nav class="flex justify-center">
+                        <ul class="flex items-center space-x-1">
+                            {% if page_obj.has_previous %}
+                            <li>
+                                <a href="?page=1{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.priority %}&priority={{ request.GET.priority }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.date_range %}&date_range={{ request.GET.date_range }}{% endif %}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}" 
+                                   class="inline-flex items-center px-2 py-2 rounded-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                    <i class="fas fa-angle-double-left"></i>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="?page={{ page_obj.previous_page_number }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.priority %}&priority={{ request.GET.priority }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.date_range %}&date_range={{ request.GET.date_range }}{% endif %}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}" 
+                                   class="inline-flex items-center px-2 py-2 rounded-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                    <i class="fas fa-angle-left"></i>
+                                </a>
+                            </li>
+                            {% endif %}
 
-                        {% for num in page_obj.paginator.page_range %}
-                        {% if page_obj.number == num %}
-                        <li class="page-item active">
-                            <span class="page-link">{{ num }}</span>
-                        </li>
-                        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
-                        <li class="page-item">
-                            <a class="page-link" href="?page={{ num }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.priority %}&priority={{ request.GET.priority }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.date_range %}&date_range={{ request.GET.date_range }}{% endif %}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">{{ num }}</a>
-                        </li>
-                        {% endif %}
-                        {% endfor %}
+                            {% for num in page_obj.paginator.page_range %}
+                            {% if page_obj.number == num %}
+                            <li>
+                                <span class="inline-flex items-center px-4 py-2 rounded-md border border-blue-500 bg-blue-50 text-sm font-medium text-blue-600">
+                                    {{ num }}
+                                </span>
+                            </li>
+                            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                            <li>
+                                <a href="?page={{ num }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.priority %}&priority={{ request.GET.priority }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.date_range %}&date_range={{ request.GET.date_range }}{% endif %}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}" 
+                                   class="inline-flex items-center px-4 py-2 rounded-md border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
+                                    {{ num }}
+                                </a>
+                            </li>
+                            {% endif %}
+                            {% endfor %}
 
-                        {% if page_obj.has_next %}
-                        <li class="page-item">
-                            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.priority %}&priority={{ request.GET.priority }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.date_range %}&date_range={{ request.GET.date_range }}{% endif %}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">
-                                <i class="fas fa-angle-right"></i>
-                            </a>
-                        </li>
-                        <li class="page-item">
-                            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.priority %}&priority={{ request.GET.priority }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.date_range %}&date_range={{ request.GET.date_range }}{% endif %}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">
-                                <i class="fas fa-angle-double-right"></i>
-                            </a>
-                        </li>
-                        {% endif %}
-                    </ul>
-                </nav>
+                            {% if page_obj.has_next %}
+                            <li>
+                                <a href="?page={{ page_obj.next_page_number }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.priority %}&priority={{ request.GET.priority }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.date_range %}&date_range={{ request.GET.date_range }}{% endif %}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}" 
+                                   class="inline-flex items-center px-2 py-2 rounded-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                    <i class="fas fa-angle-right"></i>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.priority %}&priority={{ request.GET.priority }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.date_range %}&date_range={{ request.GET.date_range }}{% endif %}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}" 
+                                   class="inline-flex items-center px-2 py-2 rounded-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                    <i class="fas fa-angle-double-right"></i>
+                                </a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                </div>
                 {% endif %}
             {% else %}
-                <div class="notification-empty">
-                    <i class="fas fa-bell-slash mb-3"></i>
-                    <h4>{% trans "No notifications found" %}</h4>
-                    <p class="text-muted">{% trans "There are no notifications matching your criteria." %}</p>
+                <div class="bg-white rounded-lg shadow-sm p-8 text-center">
+                    <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 mb-4">
+                        <i class="fas fa-bell-slash text-gray-400 text-2xl"></i>
+                    </div>
+                    <h3 class="text-lg font-medium text-gray-900 mb-2">{% trans "No notifications found" %}</h3>
+                    <p class="text-gray-500 mb-4">{% trans "There are no notifications matching your criteria." %}</p>
                     {% if request.GET %}
-                    <a href="{% url 'inventory:notification_list' %}" class="btn btn-primary">
-                        <i class="fas fa-times me-1"></i>{% trans "Clear Filters" %}
+                    <a href="{% url 'inventory:notification_list' %}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">
+                        <i class="fas fa-times mr-2"></i>{% trans "Clear Filters" %}
                     </a>
                     {% endif %}
                 </div>
@@ -436,22 +343,22 @@
             const button = this.querySelector('button[type="submit"]');
             if (button) {
                 button.disabled = true;
-                const originalText = button.innerHTML;
-                button.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Processing...';
+                const originalHTML = button.innerHTML;
+                button.innerHTML = '<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Processing...';
                 setTimeout(() => {
                     button.disabled = false;
-                    button.innerHTML = originalText;
+                    button.innerHTML = originalHTML;
                 }, 2000);
             }
         });
     });
 
     // Smooth scroll to top after pagination
-    document.querySelectorAll('.pagination .page-link').forEach(link => {
+    document.querySelectorAll('.pagination a').forEach(link => {
         link.addEventListener('click', function() {
             window.scrollTo({ top: 0, behavior: 'smooth' });
         });
     });
 </script>
 {% endblock %}
-{% endblock %} 
+{% endblock %}

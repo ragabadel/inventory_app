@@ -86,6 +86,37 @@ For production deployment:
 4. Configure static files serving
 5. Set up SSL certificate
 
+### Security Setup
+
+1. Create a secure environment file:
+```bash
+cp .env.example .env
+```
+
+2. Generate a new Django secret key:
+```python
+python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"
+```
+
+3. Update the .env file with:
+- The newly generated secret key
+- Your database credentials
+- Appropriate DEBUG setting (False for production)
+- Allowed hosts for your environment
+- Email settings if using email notifications
+
+4. Security Checklist for Production:
+- [ ] Set DEBUG=False
+- [ ] Use strong, unique SECRET_KEY
+- [ ] Configure ALLOWED_HOSTS properly
+- [ ] Set up SSL/TLS certificate
+- [ ] Configure secure database credentials
+- [ ] Enable HTTPS only
+- [ ] Set up proper backup strategy
+- [ ] Configure proper logging
+- [ ] Review user permissions
+- [ ] Set up firewall rules
+
 ## Contributing
 
 1. Fork the repository

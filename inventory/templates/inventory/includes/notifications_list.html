@@ -1,0 +1,52 @@
+{% if notifications %}
+    <div class="divide-y divide-gray-100">
+        {% for notification in notifications|slice:":10" %}
+            <div class="notification-item p-4 hover:bg-gray-50 cursor-pointer {% if not notification.is_read %}bg-blue-50{% endif %}"
+                 onclick="window.location.href='{{ notification.action_url }}'">
+                <div class="flex items-start space-x-3">
+                    <div class="flex-shrink-0">
+                        <div class="w-10 h-10 rounded-full flex items-center justify-center
+                            {% if notification.category == 'success' %}bg-green-100 text-green-600
+                            {% elif notification.category == 'warning' %}bg-yellow-100 text-yellow-600
+                            {% elif notification.category == 'error' %}bg-red-100 text-red-600
+                            {% else %}bg-blue-100 text-blue-600{% endif %}">
+                            <i class="fas {% if notification.category == 'success' %}fa-check
+                                      {% elif notification.category == 'warning' %}fa-exclamation-triangle
+                                      {% elif notification.category == 'error' %}fa-exclamation-circle
+                                      {% else %}fa-info-circle{% endif %}">
+                            </i>
+                        </div>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-sm font-medium text-gray-900 truncate">
+                            {{ notification.title }}
+                        </p>
+                        <p class="text-sm text-gray-500 line-clamp-2">
+                            {{ notification.message|linebreaksbr }}
+                        </p>
+                        <div class="mt-1 flex items-center space-x-2">
+                            <span class="text-xs text-gray-500">
+                                <i class="far fa-clock mr-1"></i>{{ notification.created_at|timesince }} ago
+                            </span>
+                            {% if notification.priority == 'high' %}
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800">
+                                    High Priority
+                                </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% if not notification.is_read %}
+                        <div class="w-2 h-2 bg-blue-600 rounded-full"></div>
+                    {% endif %}
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="p-8 text-center">
+        <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 mb-4">
+            <i class="fas fa-bell text-gray-400 text-2xl"></i>
+        </div>
+        <p class="text-gray-500">No new notifications</p>
+    </div>
+{% endif %} 

@@ -30,6 +30,7 @@ urlpatterns = [
     path('assets/create/', views.ITAssetCreateView.as_view(), name='asset_create'),
     path('assets/<int:pk>/update/', views.ITAssetUpdateView.as_view(), name='asset_update'),
     path('assets/<int:pk>/delete/', views.ITAssetDeleteView.as_view(), name='asset_delete'),
+    path('assets/<int:pk>/receipt/', views.asset_receipt, name='asset_receipt'),
     path('assets/assign/', views.asset_assign, name='asset_assign'),
     path('assets/upload/', views.asset_upload, name='asset_upload'),
     path('assets/download-template/', views.download_asset_template, name='download_asset_template'),

@@ -6,7 +6,8 @@ from django.urls import reverse_lazy, reverse
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
-from django.db.models import Q, Count
+from django.db.models import Q, Count, Sum
+from django.db.models.functions import TruncMonth
 from django.contrib.contenttypes.models import ContentType
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
@@ -177,7 +178,7 @@ def employee_list(request):
         'total_pages': total_pages,
     }
     
-    return render(request, 'inventory/employee_list.html', context)
+    return render(request, 'employees/employee_list.html', context)
 
 @login_required
 def employee_create(request):
@@ -190,12 +191,12 @@ def employee_create(request):
     else:
         form = EmployeeForm()
     
-    return render(request, 'inventory/employee_form.html', {'form': form})
+    return render(request, 'employees/employee_form.html', {'form': form})
 
 @login_required
 def employee_detail(request, pk):
     employee = get_object_or_404(Employee, pk=pk)
-    return render(request, 'inventory/employee_detail.html', {'employee': employee})
+    return render(request, 'employees/employee_detail.html', {'employee': employee})
 
 @login_required
 def employee_update(request, pk):
@@ -210,7 +211,7 @@ def employee_update(request, pk):
     else:
         form = EmployeeForm(instance=employee)
     
-    return render(request, 'inventory/employee_form.html', {'form': form, 'employee': employee})
+    return render(request, 'employees/employee_form.html', {'form': form, 'employee': employee})
 
 @login_required
 def employee_delete(request, pk):
@@ -222,7 +223,7 @@ def employee_delete(request, pk):
         messages.success(request, f'Employee "{employee_name}" was successfully deleted.')
         return redirect('inventory:employee_list')
     
-    return render(request, 'inventory/employee_confirm_delete.html', {'employee': employee})
+    return render(request, 'employees/employee_confirm_delete.html', {'employee': employee})
 
 @login_required
 def employee_toggle_status(request, pk):
@@ -322,11 +323,11 @@ def asset_assign(request):
         'available_assets': available_assets,
     }
     
-    return render(request, 'inventory/asset_assign.html', context)
+    return render(request, 'assets/asset_assign.html', context)
 
 class ITAssetListView(LoginRequiredMixin, ListView):
     model = ITAsset
-    template_name = 'inventory/asset_list.html'
+    template_name = 'assets/asset_list.html'
     context_object_name = 'assets'
     paginate_by = 10
 
@@ -375,17 +376,91 @@ class ITAssetListView(LoginRequiredMixin, ListView):
                 normalized_manufacturers.add(m.strip().title())
         context['manufacturers'] = sorted(normalized_manufacturers)
         
+        # Add current filter parameters to context
+        context['current_filters'] = {
+            'search': self.request.GET.get('search', ''),
+            'asset_type': self.request.GET.get('asset_type', ''),
+            'status': self.request.GET.get('status', ''),
+            'manufacturer': self.request.GET.get('manufacturer', '')
+        }
+        
         return context
+
+    def get(self, request, *args, **kwargs):
+        if request.GET.get('export') == 'excel':
+            # Get the filtered queryset
+            queryset = self.get_queryset()
+            
+            # Create workbook and select active sheet
+            wb = Workbook()
+            ws = wb.active
+            ws.title = "Filtered Assets"
+            
+            # Write headers
+            headers = [
+                'Asset Name',
+                'Asset Type',
+                'Serial Number',
+                'Model',
+                'Manufacturer',
+                'Status',
+                'Assigned To',
+                'Department',
+                'Purchase Date',
+                'Warranty Expiry'
+            ]
+            ws.append(headers)
+            
+            # Write data
+            for asset in queryset:
+                row = [
+                    asset.name,
+                    asset.asset_type.display_name if asset.asset_type else '',
+                    asset.serial_number,
+                    asset.model,
+                    asset.manufacturer,
+                    asset.get_status_display(),
+                    asset.assigned_to.get_full_name() if asset.assigned_to else '',
+                    asset.assigned_to.department.name if asset.assigned_to and asset.assigned_to.department else '',
+                    asset.purchase_date.strftime('%Y-%m-%d') if asset.purchase_date else '',
+                    asset.warranty_expiry.strftime('%Y-%m-%d') if asset.warranty_expiry else ''
+                ]
+                ws.append(row)
+            
+            # Adjust column widths
+            for column in ws.columns:
+                max_length = 0
+                column_letter = get_column_letter(column[0].column)
+                for cell in column:
+                    try:
+                        if len(str(cell.value)) > max_length:
+                            max_length = len(str(cell.value))
+                    except:
+                        pass
+                adjusted_width = (max_length + 2)
+                ws.column_dimensions[column_letter].width = adjusted_width
+            
+            # Create response
+            response = HttpResponse(
+                content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            )
+            response['Content-Disposition'] = 'attachment; filename=filtered_assets.xlsx'
+            
+            # Save workbook to response
+            wb.save(response)
+            return response
+            
+        return super().get(request, *args, **kwargs)
 
 class ITAssetDetailView(LoginRequiredMixin, DetailView):
     model = ITAsset
-    template_name = 'inventory/asset_detail.html'
+    template_name = 'assets/asset_detail.html'
     context_object_name = 'asset'
 
 class ITAssetCreateView(LoginRequiredMixin, CreateView):
     model = ITAsset
     form_class = ITAssetForm
-    template_name = 'inventory/asset_form.html'
+    template_name = 'assets/asset_form.html'
     success_url = reverse_lazy('inventory:asset_list')
 
     def form_valid(self, form):
@@ -464,7 +539,7 @@ class ITAssetCreateView(LoginRequiredMixin, CreateView):
 class ITAssetUpdateView(LoginRequiredMixin, UpdateView):
     model = ITAsset
     form_class = ITAssetForm
-    template_name = 'inventory/asset_form.html'
+    template_name = 'assets/asset_form.html'
     success_url = reverse_lazy('inventory:asset_list')
 
     def form_valid(self, form):
@@ -870,7 +945,7 @@ class ITAssetUpdateView(LoginRequiredMixin, UpdateView):
 
 class ITAssetDeleteView(LoginRequiredMixin, DeleteView):
     model = ITAsset
-    template_name = 'inventory/asset_confirm_delete.html'
+    template_name = 'assets/asset_confirm_delete.html'
     success_url = reverse_lazy('inventory:asset_list')
 
     def delete(self, request, *args, **kwargs):
@@ -937,7 +1012,7 @@ def employee_upload(request):
             except Exception as e:
                 messages.error(request, f'Error uploading file: {str(e)}')
     
-    return render(request, 'inventory/employee_upload.html')
+    return render(request, 'employees/employee_upload.html')
 
 @login_required
 def download_employee_template(request):
@@ -1346,7 +1421,7 @@ def asset_upload(request):
             except Exception as e:
                 messages.error(request, f'Error uploading file: {str(e)}')
     
-    return render(request, 'inventory/asset_upload.html')
+    return render(request, 'assets/asset_upload.html')
 
 @login_required
 def download_asset_data(request):
@@ -1443,12 +1518,12 @@ def download_asset_data(request):
 # Asset Type Views
 class AssetTypeListView(LoginRequiredMixin, ListView):
     model = AssetType
-    template_name = 'inventory/asset_type_list.html'
+    template_name = 'assets/asset_type_list.html'
     context_object_name = 'asset_types'
 
 class AssetTypeCreateView(LoginRequiredMixin, CreateView):
     model = AssetType
-    template_name = 'inventory/asset_type_form.html'
+    template_name = 'assets/asset_type_form.html'
     fields = ['name', 'display_name']
     success_url = reverse_lazy('inventory:asset_type_list')
 
@@ -1458,7 +1533,7 @@ class AssetTypeCreateView(LoginRequiredMixin, CreateView):
 
 class AssetTypeUpdateView(LoginRequiredMixin, UpdateView):
     model = AssetType
-    template_name = 'inventory/asset_type_form.html'
+    template_name = 'assets/asset_type_form.html'
     fields = ['name', 'display_name']
     success_url = reverse_lazy('inventory:asset_type_list')
 
@@ -1468,7 +1543,7 @@ class AssetTypeUpdateView(LoginRequiredMixin, UpdateView):
 
 class AssetTypeDeleteView(LoginRequiredMixin, DeleteView):
     model = AssetType
-    template_name = 'inventory/asset_type_confirm_delete.html'
+    template_name = 'assets/asset_type_confirm_delete.html'
     success_url = reverse_lazy('inventory:asset_type_list')
 
     def delete(self, request, *args, **kwargs):
@@ -1512,7 +1587,7 @@ class OwnerCompanyDeleteView(LoginRequiredMixin, DeleteView):
 
 class EmployeePDFView(LoginRequiredMixin, DetailView):
     model = Employee
-    template_name = 'inventory/employee_pdf.html'
+    template_name = 'employees/employee_pdf.html'
     
     def get(self, request, *args, **kwargs):
         employee = self.get_object()
@@ -1536,7 +1611,7 @@ class EmployeePDFView(LoginRequiredMixin, DetailView):
 
 class EmployeeListView(LoginRequiredMixin, ListView):
     model = Employee
-    template_name = 'inventory/employee_list.html'
+    template_name = 'employees/employee_list.html'
     context_object_name = 'employees'
     paginate_by = 10
 
@@ -1604,13 +1679,13 @@ class EmployeeListView(LoginRequiredMixin, ListView):
 
 class EmployeeDetailView(LoginRequiredMixin, DetailView):
     model = Employee
-    template_name = 'inventory/employee_detail.html'
+    template_name = 'employees/employee_detail.html'
     context_object_name = 'employee'
 
 class EmployeeCreateView(LoginRequiredMixin, CreateView):
     model = Employee
     form_class = EmployeeForm
-    template_name = 'inventory/employee_form.html'
+    template_name = 'employees/employee_form.html'
     success_url = reverse_lazy('inventory:employee_list')
 
     def form_valid(self, form):
@@ -1620,7 +1695,7 @@ class EmployeeCreateView(LoginRequiredMixin, CreateView):
 class EmployeeUpdateView(LoginRequiredMixin, UpdateView):
     model = Employee
     form_class = EmployeeForm
-    template_name = 'inventory/employee_form.html'
+    template_name = 'employees/employee_form.html'
     success_url = reverse_lazy('inventory:employee_list')
 
     def form_valid(self, form):
@@ -1629,7 +1704,7 @@ class EmployeeUpdateView(LoginRequiredMixin, UpdateView):
 
 class EmployeeDeleteView(LoginRequiredMixin, DeleteView):
     model = Employee
-    template_name = 'inventory/employee_confirm_delete.html'
+    template_name = 'employees/employee_confirm_delete.html'
     success_url = reverse_lazy('inventory:employee_list')
 
     def delete(self, request, *args, **kwargs):
@@ -1763,7 +1838,7 @@ def asset_history(request, pk):
         'asset_history': asset_history,
         'now': timezone.now(),
     }
-    return render(request, 'inventory/asset_history.html', context)
+    return render(request, 'assets/asset_history.html', context)
 
 class NotificationListView(LoginRequiredMixin, ListView):
     model = Notification
@@ -2259,7 +2334,47 @@ def reports_dashboard(request):
     # Get report data
     context = get_reports_data(request, date_from, date_to)
     
-    # Add filter values to context
+    # Calculate Asset Growth Analysis data
+    today = timezone.now()
+    twelve_months_ago = today - timedelta(days=365)
+    
+    # Monthly asset acquisition data
+    monthly_acquisitions = ITAsset.objects.filter(
+        purchase_date__gte=twelve_months_ago
+    ).annotate(
+        month=TruncMonth('purchase_date')
+    ).values('month').annotate(
+        new_assets=Count('id')
+    ).order_by('month')
+    
+    # Calculate growth rates
+    growth_data = []
+    previous_count = ITAsset.objects.filter(purchase_date__lt=twelve_months_ago).count()
+    
+    for acquisition in monthly_acquisitions:
+        current_count = previous_count + acquisition['new_assets']
+        if previous_count > 0:
+            growth_rate = ((current_count - previous_count) / previous_count) * 100
+        else:
+            growth_rate = 100 if current_count > 0 else 0
+            
+        growth_data.append({
+            'month': acquisition['month'].strftime('%B %Y'),
+            'new_assets': acquisition['new_assets'],
+            'total_assets': current_count,
+            'growth_rate': round(growth_rate, 2)
+        })
+        previous_count = current_count
+    
+    # Calculate trend indicators
+    if len(growth_data) >= 2:
+        last_month_growth = growth_data[-1]['growth_rate']
+        prev_month_growth = growth_data[-2]['growth_rate']
+        trend = 'up' if last_month_growth > prev_month_growth else 'down'
+    else:
+        trend = 'neutral'
+    
+    # Add growth analysis data to context
     context.update({
         'report_type': report_type,
         'date_from': date_from.strftime('%Y-%m-%d') if date_from else '',
@@ -2268,7 +2383,10 @@ def reports_dashboard(request):
             ('full', _('Full Report')),
             ('warranty', _('Warranty Report')),
             ('assignments', _('Assignments Report')),
-        ]
+        ],
+        'growth_data': growth_data,
+        'growth_trend': trend,
+        'total_growth_rate': growth_data[-1]['growth_rate'] if growth_data else 0,
     })
     
     return render(request, 'inventory/reports_dashboard.html', context)
@@ -2560,3 +2678,21 @@ class DatabaseRestoreView(LoginRequiredMixin, UserPassesTestMixin, View):
         except Exception as e:
             messages.error(request, f'Restore failed: {str(e)}')
             return redirect('inventory:database_restore')
+
+@login_required
+def asset_receipt(request, pk):
+    """View for displaying and handling the asset receipt form."""
+    asset = get_object_or_404(ITAsset, pk=pk)
+    
+    # Only show receipt for assigned assets
+    if asset.status != 'assigned' or not asset.assigned_to:
+        messages.error(request, 'Receipt can only be generated for assigned assets.')
+        return redirect('inventory:asset_detail', pk=pk)
+    
+    context = {
+        'asset': asset,
+        'company_name_ar': asset.owner.name_ar if hasattr(asset.owner, 'name_ar') else asset.owner.name,
+        'admin_name': request.user.get_full_name() or request.user.username,
+    }
+    
+    return render(request, 'assets/receipt_form.html', context)

@@ -1,0 +1,388 @@
+{% load i18n %}
+
+{# Buttons #}
+{% macro button variant="primary" size="md" icon=None disabled=False type="button" %}
+<button type="{{ type }}" 
+        class="btn btn-{{ variant }} {% if size == 'sm' %}px-3 py-1.5 text-sm{% elif size == 'lg' %}px-6 py-3{% endif %} {% if disabled %}opacity-50 cursor-not-allowed{% endif %}"
+        {% if disabled %}disabled{% endif %}>
+    {% if icon %}<i class="fas fa-{{ icon }} {% if kwargs.text %}mr-2{% endif %}"></i>{% endif %}
+    {{ kwargs.text|default:"" }}
+</button>
+{% endmacro %}
+
+{# Form Fields #}
+{% macro input_field type="text" name="" label="" value="" placeholder="" required=False error=None %}
+<div class="form-group">
+    {% if label %}
+    <label for="{{ name }}" class="block text-sm font-medium text-gray-700 mb-1">
+        {{ label }}{% if required %}<span class="text-danger-500 ml-1">*</span>{% endif %}
+    </label>
+    {% endif %}
+    <input type="{{ type }}" 
+           id="{{ name }}" 
+           name="{{ name }}" 
+           value="{{ value }}"
+           placeholder="{{ placeholder }}"
+           {% if required %}required{% endif %}
+           class="form-input {% if error %}border-danger-500 focus:border-danger-500 focus:ring-danger-500{% endif %}"
+    >
+    {% if error %}
+    <p class="mt-1 text-sm text-danger-600">{{ error }}</p>
+    {% endif %}
+</div>
+{% endmacro %}
+
+{% macro select_field name="" label="" options=[] value="" required=False error=None %}
+<div class="form-group">
+    {% if label %}
+    <label for="{{ name }}" class="block text-sm font-medium text-gray-700 mb-1">
+        {{ label }}{% if required %}<span class="text-danger-500 ml-1">*</span>{% endif %}
+    </label>
+    {% endif %}
+    <select id="{{ name }}" 
+            name="{{ name }}" 
+            {% if required %}required{% endif %}
+            class="form-select {% if error %}border-danger-500 focus:border-danger-500 focus:ring-danger-500{% endif %}">
+        {% for option in options %}
+        <option value="{{ option.value }}" {% if option.value == value %}selected{% endif %}>
+            {{ option.label }}
+        </option>
+        {% endfor %}
+    </select>
+    {% if error %}
+    <p class="mt-1 text-sm text-danger-600">{{ error }}</p>
+    {% endif %}
+</div>
+{% endmacro %}
+
+{# Cards #}
+{% macro card title="" footer=False %}
+<div class="card">
+    {% if title %}
+    <div class="card-header">
+        <h3 class="text-lg font-medium text-gray-900">{{ title }}</h3>
+    </div>
+    {% endif %}
+    <div class="card-body">
+        {{ kwargs.content|safe }}
+    </div>
+    {% if footer %}
+    <div class="card-footer">
+        {{ kwargs.footer|safe }}
+    </div>
+    {% endif %}
+</div>
+{% endmacro %}
+
+{# Stats Card #}
+{% macro stats_card title="" value="" description="" icon="" color="primary" %}
+<div class="stat-card">
+    <div class="flex items-center">
+        {% if icon %}
+        <div class="flex-shrink-0 mr-4">
+            <div class="w-12 h-12 rounded-lg flex items-center justify-center bg-{{ color }}-100">
+                <i class="fas fa-{{ icon }} text-{{ color }}-600 text-xl"></i>
+            </div>
+        </div>
+        {% endif %}
+        <div>
+            <p class="stat-card-title">{{ title }}</p>
+            <p class="stat-card-value">{{ value }}</p>
+            {% if description %}
+            <p class="stat-card-description">{{ description }}</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endmacro %}
+
+{# Tables #}
+{% macro table headers=[] responsive=True %}
+<div {% if responsive %}class="overflow-x-auto"{% endif %}>
+    <table class="table">
+        <thead>
+            <tr>
+                {% for header in headers %}
+                <th>{{ header }}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {{ kwargs.content|safe }}
+        </tbody>
+    </table>
+</div>
+{% endmacro %}
+
+{# Badges #}
+{% macro badge text="" variant="primary" %}
+<span class="badge badge-{{ variant }}">{{ text }}</span>
+{% endmacro %}
+
+{# Alerts #}
+{% macro alert type="info" dismissible=True %}
+<div x-data="{ show: true }" 
+     x-show="show"
+     class="alert alert-{{ type }}">
+    <div class="flex">
+        <div class="flex-shrink-0">
+            <i class="fas {% if type == 'success' %}fa-check-circle{% elif type == 'error' %}fa-exclamation-circle{% elif type == 'warning' %}fa-exclamation-triangle{% else %}fa-info-circle{% endif %} text-{{ type }}-400"></i>
+        </div>
+        <div class="ml-3">
+            <div class="text-sm font-medium">
+                {{ kwargs.content|safe }}
+            </div>
+        </div>
+        {% if dismissible %}
+        <div class="ml-auto pl-3">
+            <div class="-mx-1.5 -my-1.5">
+                <button @click="show = false" type="button" class="inline-flex rounded-md p-1.5 focus:outline-none focus:ring-2 focus:ring-offset-2 text-{{ type }}-500 hover:bg-{{ type }}-100">
+                    <span class="sr-only">{% trans "Dismiss" %}</span>
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endmacro %}
+
+{# Pagination #}
+{% macro pagination page_obj %}
+{% if page_obj.paginator.num_pages > 1 %}
+<nav class="flex items-center justify-between border-t border-gray-200 px-4 sm:px-0 mt-6">
+    <div class="flex w-0 flex-1">
+        {% if page_obj.has_previous %}
+        <a href="?page={{ page_obj.previous_page_number }}" class="inline-flex items-center border-t-2 border-transparent pt-4 pr-1 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700">
+            <i class="fas fa-arrow-left mr-3"></i>
+            {% trans "Previous" %}
+        </a>
+        {% endif %}
+    </div>
+    <div class="hidden md:flex">
+        {% for i in page_obj.paginator.page_range %}
+        {% if page_obj.number == i %}
+        <a href="#" class="inline-flex items-center border-t-2 border-primary-500 px-4 pt-4 text-sm font-medium text-primary-600">
+            {{ i }}
+        </a>
+        {% else %}
+        <a href="?page={{ i }}" class="inline-flex items-center border-t-2 border-transparent px-4 pt-4 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700">
+            {{ i }}
+        </a>
+        {% endif %}
+        {% endfor %}
+    </div>
+    <div class="flex w-0 flex-1 justify-end">
+        {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}" class="inline-flex items-center border-t-2 border-transparent pt-4 pl-1 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700">
+            {% trans "Next" %}
+            <i class="fas fa-arrow-right ml-3"></i>
+        </a>
+        {% endif %}
+    </div>
+</nav>
+{% endif %}
+{% endmacro %}
+
+{# Modal #}
+{% macro modal id="" title="" %}
+<div x-data="{ open: false }"
+     x-show="open"
+     @keydown.escape.window="open = false"
+     class="fixed inset-0 z-50 overflow-y-auto"
+     aria-labelledby="modal-title"
+     role="dialog"
+     aria-modal="true">
+    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+        <div x-show="open"
+             x-transition:enter="ease-out duration-300"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="ease-in duration-200"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0"
+             class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
+             @click="open = false"
+             aria-hidden="true"></div>
+
+        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+        <div x-show="open"
+             x-transition:enter="ease-out duration-300"
+             x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+             x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+             x-transition:leave="ease-in duration-200"
+             x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+             x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+             class="inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6">
+            <div class="absolute top-0 right-0 pt-4 pr-4">
+                <button @click="open = false" type="button" class="bg-white rounded-md text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                    <span class="sr-only">{% trans "Close" %}</span>
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            {% if title %}
+            <div class="sm:flex sm:items-start">
+                <div class="mt-3 text-center sm:mt-0 sm:text-left">
+                    <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">
+                        {{ title }}
+                    </h3>
+                </div>
+            </div>
+            {% endif %}
+            <div class="mt-5 sm:mt-4">
+                {{ kwargs.content|safe }}
+            </div>
+        </div>
+    </div>
+</div>
+{% endmacro %}
+
+{# Breadcrumbs #}
+{% macro breadcrumbs items=[] %}
+<nav class="flex" aria-label="Breadcrumb">
+    <ol class="flex items-center space-x-4">
+        <li>
+            <div>
+                <a href="{% url 'inventory:home' %}" class="text-gray-400 hover:text-gray-500">
+                    <i class="fas fa-home"></i>
+                    <span class="sr-only">{% trans "Home" %}</span>
+                </a>
+            </div>
+        </li>
+        {% for item in items %}
+        <li>
+            <div class="flex items-center">
+                <i class="fas fa-chevron-right text-gray-400 text-sm"></i>
+                {% if item.url %}
+                <a href="{{ item.url }}" class="ml-4 text-sm font-medium text-gray-500 hover:text-gray-700">
+                    {{ item.text }}
+                </a>
+                {% else %}
+                <span class="ml-4 text-sm font-medium text-gray-700">
+                    {{ item.text }}
+                </span>
+                {% endif %}
+            </div>
+        </li>
+        {% endfor %}
+    </ol>
+</nav>
+{% endmacro %}
+
+{# Empty State #}
+{% macro empty_state title="" description="" icon="" action_url="" action_text="" %}
+<div class="text-center py-12">
+    {% if icon %}
+    <div class="mx-auto h-12 w-12 text-gray-400">
+        <i class="fas fa-{{ icon }} text-4xl"></i>
+    </div>
+    {% endif %}
+    <h3 class="mt-2 text-sm font-medium text-gray-900">{{ title }}</h3>
+    <p class="mt-1 text-sm text-gray-500">{{ description }}</p>
+    {% if action_url and action_text %}
+    <div class="mt-6">
+        <a href="{{ action_url }}" class="btn btn-primary">
+            <i class="fas fa-plus mr-2"></i>
+            {{ action_text }}
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endmacro %}
+
+{# Loading Spinner #}
+{% macro loading_spinner size="md" %}
+<div class="flex justify-center">
+    <div class="animate-spin rounded-full border-t-2 border-b-2 border-primary-600 {% if size == 'sm' %}h-4 w-4{% elif size == 'lg' %}h-8 w-8{% else %}h-6 w-6{% endif %}"></div>
+</div>
+{% endmacro %}
+
+{# Tooltip #}
+{% macro tooltip text="" position="top" %}
+<div class="relative group">
+    {{ kwargs.content|safe }}
+    <div class="absolute hidden group-hover:block {% if position == 'top' %}bottom-full mb-2{% elif position == 'bottom' %}top-full mt-2{% elif position == 'left' %}right-full mr-2{% else %}left-full ml-2{% endif %} z-50">
+        <div class="bg-gray-900 text-white text-xs rounded py-1 px-2 whitespace-nowrap">
+            {{ text }}
+        </div>
+    </div>
+</div>
+{% endmacro %}
+
+{# Progress Bar #}
+{% macro progress_bar value=0 max=100 variant="primary" %}
+<div class="w-full bg-gray-200 rounded-full h-2.5">
+    <div class="bg-{{ variant }}-600 h-2.5 rounded-full" style="width: {{ value / max * 100 }}%"></div>
+</div>
+{% endmacro %}
+
+{# File Upload #}
+{% macro file_upload name="" label="" accept="" multiple=False required=False error=None %}
+<div class="form-group">
+    {% if label %}
+    <label for="{{ name }}" class="block text-sm font-medium text-gray-700 mb-1">
+        {{ label }}{% if required %}<span class="text-danger-500 ml-1">*</span>{% endif %}
+    </label>
+    {% endif %}
+    <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md hover:border-primary-500">
+        <div class="space-y-1 text-center">
+            <i class="fas fa-cloud-upload-alt text-gray-400 text-3xl"></i>
+            <div class="flex text-sm text-gray-600">
+                <label for="{{ name }}" class="relative cursor-pointer bg-white rounded-md font-medium text-primary-600 hover:text-primary-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-primary-500">
+                    <span>{% trans "Upload a file" %}</span>
+                    <input id="{{ name }}" 
+                           name="{{ name }}" 
+                           type="file" 
+                           class="sr-only"
+                           accept="{{ accept }}"
+                           {% if multiple %}multiple{% endif %}
+                           {% if required %}required{% endif %}>
+                </label>
+                <p class="pl-1">{% trans "or drag and drop" %}</p>
+            </div>
+            <p class="text-xs text-gray-500">
+                {% if accept %}{{ accept }}{% else %}{% trans "Any file type" %}{% endif %}
+            </p>
+        </div>
+    </div>
+    {% if error %}
+    <p class="mt-1 text-sm text-danger-600">{{ error }}</p>
+    {% endif %}
+</div>
+{% endmacro %}
+
+{# Search Input #}
+{% macro search_input placeholder="" %}
+<div class="relative">
+    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+        <i class="fas fa-search text-gray-400"></i>
+    </div>
+    <input type="text" 
+           name="search" 
+           class="form-input pl-10" 
+           placeholder="{{ placeholder|default:_('Search...') }}"
+           hx-trigger="keyup changed delay:500ms"
+           hx-target="#search-results"
+           hx-get="{% url 'inventory:search' %}">
+</div>
+{% endmacro %}
+
+{# Filter Group #}
+{% macro filter_group label="" %}
+<div class="space-y-4">
+    {% if label %}
+    <h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wide">{{ label }}</h4>
+    {% endif %}
+    <div class="space-y-2">
+        {{ kwargs.content|safe }}
+    </div>
+</div>
+{% endmacro %}
+
+{# Chart Container #}
+{% macro chart_container id="" height="400px" %}
+<div class="chart-container" style="height: {{ height }}">
+    <canvas id="{{ id }}"></canvas>
+</div>
+{% endmacro %} 

@@ -1,0 +1,59 @@
+{% comment %}
+Button Component
+Usage: {% include "components/button.html" with type="primary" size="md" icon="plus" text="Add Item" %}
+{% endcomment %}
+
+{% with 
+    type=type|default:"primary"
+    size=size|default:"md"
+    icon=icon|default:""
+    text=text|default:""
+    href=href|default:""
+    classes=classes|default:""
+%}
+
+{% spaceless %}
+{% if href %}
+<a href="{{ href }}"
+{% else %}
+<button type="{% if submit %}submit{% else %}button{% endif %}"
+{% endif %}
+    class="
+    inline-flex items-center justify-center rounded-md font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors duration-200
+    {% if type == 'primary' %}
+        bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500
+    {% elif type == 'secondary' %}
+        bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 focus:ring-primary-500
+    {% elif type == 'success' %}
+        bg-success-600 text-white hover:bg-success-700 focus:ring-success-500
+    {% elif type == 'danger' %}
+        bg-danger-600 text-white hover:bg-danger-700 focus:ring-danger-500
+    {% elif type == 'warning' %}
+        bg-warning-600 text-white hover:bg-warning-700 focus:ring-warning-500
+    {% endif %}
+    {% if size == 'xs' %}
+        px-2.5 py-1.5 text-xs
+    {% elif size == 'sm' %}
+        px-3 py-2 text-sm
+    {% elif size == 'md' %}
+        px-4 py-2 text-sm
+    {% elif size == 'lg' %}
+        px-4 py-2 text-base
+    {% elif size == 'xl' %}
+        px-6 py-3 text-base
+    {% endif %}
+    {{ classes }}"
+    {% if disabled %}disabled{% endif %}
+>
+    {% if icon %}
+        <i class="fas fa-{{ icon }} {% if text %}mr-2{% endif %} {% if size == 'xs' or size == 'sm' %}-ml-0.5{% else %}-ml-1{% endif %}"></i>
+    {% endif %}
+    {% if text %}{{ text }}{% endif %}
+{% if href %}
+</a>
+{% else %}
+</button>
+{% endif %}
+{% endspaceless %}
+
+{% endwith %} 
