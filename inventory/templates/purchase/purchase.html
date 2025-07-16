@@ -1,0 +1,39 @@
+{% extends "base_tailwind.html" %}
+{% load i18n %}
+
+{% block title %}{% translate "Purchase Management" %}{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <h1 class="text-2xl font-bold mb-6">{% translate "Purchase Management" %}</h1>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- Purchase Statistics -->
+            <div class="bg-gray-50 rounded p-4">
+                <h2 class="text-lg font-semibold mb-4">{% translate "Purchase Statistics" %}</h2>
+                <!-- Add your purchase statistics content here -->
+            </div>
+
+            <!-- Recent Purchases -->
+            <div class="bg-gray-50 rounded p-4">
+                <h2 class="text-lg font-semibold mb-4">{% translate "Recent Purchases" %}</h2>
+                <!-- Add your recent purchases content here -->
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="bg-gray-50 rounded p-4">
+                <h2 class="text-lg font-semibold mb-4">{% translate "Quick Actions" %}</h2>
+                <div class="space-y-2">
+                    <a href="#" class="block w-full text-center py-2 px-4 bg-blue-500 text-white rounded hover:bg-blue-600">
+                        {% translate "New Purchase" %}
+                    </a>
+                    <a href="#" class="block w-full text-center py-2 px-4 bg-green-500 text-white rounded hover:bg-green-600">
+                        {% translate "Purchase Reports" %}
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

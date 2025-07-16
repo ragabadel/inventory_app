@@ -25,14 +25,8 @@ SECRET_KEY = 'django-insecure-c4-+lbbyo$z@or7pkcc1-*qpq4py*4xw9b$0!x&ax1k=bodgd)
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = [
-    'localhost',
-    '127.0.0.1',
-    '192.168.20.37',
-    '192.168.20.37:8000',
-    '172.16.1.15:8000',
-    '172.16.1.15',
-]
+ALLOWED_HOSTS = []
+
 # Application definition
 
 INSTALLED_APPS = [
@@ -42,7 +36,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'inventory',
+    'inventory',  # Use the proper app config
 ]
 
 MIDDLEWARE = [
@@ -70,6 +64,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'inventory.context_processors.notification_context',
+                'inventory.context_processors.superuser_check',
             ],
         },
     },
@@ -126,6 +121,7 @@ LOCALE_PATHS = [
     BASE_DIR / 'locale',
 ]
 
+TIME_ZONE = 'UTC'
 USE_I18N = True
 USE_L10N = True
 USE_TZ = True
@@ -134,11 +130,15 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = [
     BASE_DIR / "inventory" / "static",
 ]
-STATIC_ROOT = BASE_DIR / "staticfiles"
+
+# Media files
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
@@ -146,14 +146,7 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Authentication Settings
+LOGIN_URL = '/accounts/login/'  # URL where requests are redirected for login
 LOGIN_REDIRECT_URL = '/inventory/'  # Redirect to inventory home page after login
 LOGOUT_REDIRECT_URL = '/'  # Redirect to home page after logout
-LOGIN_URL = '/accounts/login/'  # URL where requests are redirected for login
 
-# Allow specific IPs or all IPs in your network
-ALLOWED_HOSTS = [
-    'localhost',
-    '127.0.0.1',
-    '192.168.20.37/24',  # Replace with your network subnet
-    '*'  # Or use this to allow all hosts (not recommended for production)
-]

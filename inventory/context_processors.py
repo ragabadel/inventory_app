@@ -1,5 +1,6 @@
 from django.db.models import Q
 from .models import Notification
+from django.contrib.auth.models import User
 
 def notification_context(request):
     """Context processor for notifications"""
@@ -38,4 +39,10 @@ def notification_context(request):
     return {
         'notifications': [],
         'unread_notifications_count': 0
+    } 
+
+def superuser_check(request):
+    """Check if any superuser exists in the system."""
+    return {
+        'has_superuser': User.objects.filter(is_superuser=True).exists()
     } 

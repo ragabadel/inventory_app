@@ -26,6 +26,7 @@ urlpatterns = [
     
     # IT Asset URLs
     path('assets/', views.ITAssetListView.as_view(), name='asset_list'),
+    path('assets/content/', views.AssetListContentView.as_view(), name='asset_list_content'),
     path('assets/<int:pk>/', views.ITAssetDetailView.as_view(), name='asset_detail'),
     path('assets/create/', views.ITAssetCreateView.as_view(), name='asset_create'),
     path('assets/<int:pk>/update/', views.ITAssetUpdateView.as_view(), name='asset_update'),
@@ -36,6 +37,7 @@ urlpatterns = [
     path('assets/download-template/', views.download_asset_template, name='download_asset_template'),
     path('assets/download-data/', views.download_asset_data, name='download_asset_data'),
     path('assets/<int:pk>/history/', views.asset_history, name='asset_history'),
+    path('assets/<int:pk>/unassign/', views.asset_unassign, name='asset_unassign'),
     
     # Asset Type URLs
     path('asset-types/', views.AssetTypeListView.as_view(), name='asset_type_list'),
@@ -44,15 +46,11 @@ urlpatterns = [
     path('asset-types/<int:pk>/delete/', views.AssetTypeDeleteView.as_view(), name='asset_type_delete'),
     
     # Owner Company URLs
-    path('owner-companies/', views.OwnerCompanyListView.as_view(), name='owner_company_list'),
-    path('owner-companies/create/', views.OwnerCompanyCreateView.as_view(), name='owner_company_create'),
-    path('owner-companies/<int:pk>/update/', views.OwnerCompanyUpdateView.as_view(), name='owner_company_update'),
-    path('owner-companies/<int:pk>/delete/', views.OwnerCompanyDeleteView.as_view(), name='owner_company_delete'),
-    
-    # Owner Companies
-    path('companies/', views.owner_company_list, name='owner_company_list'),
-    path('companies/<int:pk>/', views.owner_company_detail, name='owner_company_detail'),
-    
+    path('companies/', views.OwnerCompanyListView.as_view(), name='owner_company_list'),
+    path('companies/create/', views.OwnerCompanyCreateView.as_view(), name='owner_company_create'),
+    path('companies/<int:pk>/update/', views.OwnerCompanyUpdateView.as_view(), name='owner_company_update'),
+    path('companies/<int:pk>/delete/', views.OwnerCompanyDeleteView.as_view(), name='owner_company_delete'),
+
     # Asset Types
     path('asset-types/', views.asset_type_list, name='asset_type_list'),
     path('asset-types/<int:pk>/', views.asset_type_detail, name='asset_type_detail'),

@@ -1,71 +1,118 @@
-{% extends '../inventory/base_tailwind.html' %}
+{% extends 'base/base_tailwind.html' %}
 {% load static %}
+{% load i18n %}
 
-{% block title %}{% if form.instance.pk %}Edit{% else %}Add{% endif %} Asset Type{% endblock %}
+{% block title %}
+    {% if form.instance.pk %}
+        {% trans "Edit Asset Type" %}
+    {% else %}
+        {% trans "Add Asset Type" %}
+    {% endif %}
+{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="h3 mb-0 text-gray-800">
-            <i class="fas fa-tags me-2"></i>{% if form.instance.pk %}Edit{% else %}Add{% endif %} Asset Type
+<div class="container mx-auto px-4 mt-6">
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+        <h1 class="text-2xl font-semibold text-gray-800 flex items-center mb-4 md:mb-0">
+            <i class="fas fa-tags mr-2"></i>
+            {% if form.instance.pk %}
+                {% trans "Edit Asset Type" %}
+            {% else %}
+                {% trans "Add Asset Type" %}
+            {% endif %}
         </h1>
-        <a href="{% url 'inventory:asset_type_list' %}" class="btn btn-secondary">
-            <i class="fas fa-arrow-left me-2"></i>Back to List
-        </a>
+        <div class="flex flex-wrap gap-2">
+            <a href="{% url 'inventory:asset_type_list' %}" class="btn-secondary">
+                <i class="fas fa-arrow-left mr-2"></i>{% trans "Back to List" %}
+            </a>
+        </div>
     </div>
 
-    <div class="card shadow">
-        <div class="card-body">
-            <form method="post" class="needs-validation" novalidate>
+    <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+        <div class="px-4 py-5 sm:p-6">
+            <form method="post" class="space-y-6">
                 {% csrf_token %}
                 
                 {% if form.non_field_errors %}
-                <div class="alert alert-danger">
-                    {% for error in form.non_field_errors %}
-                    {{ error }}
-                    {% endfor %}
+                <div class="bg-red-50 border-l-4 border-red-400 p-4 mb-4">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-exclamation-circle text-red-400"></i>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm text-red-700">
+                                {% for error in form.non_field_errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </p>
+                        </div>
+                    </div>
                 </div>
                 {% endif %}
 
-                <div class="mb-3">
-                    <label for="{{ form.name.id_for_label }}" class="form-label">Internal Name *</label>
-                    <input type="text" 
-                           class="form-control {% if form.name.errors %}is-invalid{% endif %}" 
-                           id="{{ form.name.id_for_label }}" 
-                           name="{{ form.name.html_name }}"
-                           value="{{ form.name.value|default:'' }}"
-                           required>
-                    <div class="form-text">Use lowercase letters, numbers, and underscores only (e.g., laptop, desktop_pc)</div>
-                    {% if form.name.errors %}
-                    <div class="invalid-feedback">
-                        {% for error in form.name.errors %}
-                        {{ error }}
-                        {% endfor %}
+                <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                    <!-- Name Field -->
+                    <div>
+                        <label for="{{ form.name.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                            {% trans "Internal Name" %} *
+                        </label>
+                        <div class="mt-1">
+                            <input type="text" 
+                                   name="{{ form.name.name }}" 
+                                   id="{{ form.name.id_for_label }}" 
+                                   value="{{ form.name.value|default:'' }}"
+                                   class="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md {% if form.name.errors %}border-red-300{% endif %}"
+                                   required>
+                        </div>
+                        {% if form.name.errors %}
+                        <p class="mt-2 text-sm text-red-600">
+                            {% for error in form.name.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </p>
+                        {% endif %}
+                        <p class="mt-2 text-sm text-gray-500">
+                            {% trans "Use lowercase letters, numbers, and underscores only (e.g., laptop, desktop_pc)" %}
+                        </p>
                     </div>
-                    {% endif %}
+
+                    <!-- Display Name Field -->
+                    <div>
+                        <label for="{{ form.display_name.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                            {% trans "Display Name" %} *
+                        </label>
+                        <div class="mt-1">
+                            <input type="text" 
+                                   name="{{ form.display_name.name }}" 
+                                   id="{{ form.display_name.id_for_label }}" 
+                                   value="{{ form.display_name.value|default:'' }}"
+                                   class="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md {% if form.display_name.errors %}border-red-300{% endif %}"
+                                   required>
+                        </div>
+                        {% if form.display_name.errors %}
+                        <p class="mt-2 text-sm text-red-600">
+                            {% for error in form.display_name.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </p>
+                        {% endif %}
+                        <p class="mt-2 text-sm text-gray-500">
+                            {% trans "The name that will be shown in the interface (e.g., Laptop, Desktop PC)" %}
+                        </p>
+                    </div>
                 </div>
 
-                <div class="mb-3">
-                    <label for="{{ form.display_name.id_for_label }}" class="form-label">Display Name *</label>
-                    <input type="text" 
-                           class="form-control {% if form.display_name.errors %}is-invalid{% endif %}" 
-                           id="{{ form.display_name.id_for_label }}" 
-                           name="{{ form.display_name.html_name }}"
-                           value="{{ form.display_name.value|default:'' }}"
-                           required>
-                    <div class="form-text">The name that will be shown in the interface (e.g., Laptop, Desktop PC)</div>
-                    {% if form.display_name.errors %}
-                    <div class="invalid-feedback">
-                        {% for error in form.display_name.errors %}
-                        {{ error }}
-                        {% endfor %}
-                    </div>
-                    {% endif %}
-                </div>
-
-                <div class="d-flex justify-content-end">
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-save me-2"></i>Save Asset Type
+                <div class="flex justify-end space-x-3">
+                    <a href="{% url 'inventory:asset_type_list' %}" class="btn-secondary">
+                        {% trans "Cancel" %}
+                    </a>
+                    <button type="submit" class="btn-primary">
+                        <i class="fas fa-save mr-2"></i>
+                        {% if form.instance.pk %}
+                            {% trans "Update Asset Type" %}
+                        {% else %}
+                            {% trans "Create Asset Type" %}
+                        {% endif %}
                     </button>
                 </div>
             </form>

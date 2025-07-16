@@ -1,0 +1,80 @@
+    <!-- Statistics Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+        <!-- Total Assets -->
+        <div class="card transform transition-transform duration-300 hover:-translate-y-1">
+            <div class="card-body flex items-center">
+                <div class="flex-shrink-0 w-14 h-14 rounded-lg bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center mr-4 shadow-lg">
+                    <i class="fas fa-laptop text-2xl text-white"></i>
+                </div>
+                <div>
+                    <h6 class="text-sm font-medium text-gray-500">{% trans "Total Assets" %}</h6>
+                    <div class="text-2xl font-semibold text-gray-900">{{ total_assets }}</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Available Assets -->
+        <div class="card transform transition-transform duration-300 hover:-translate-y-1">
+            <div class="card-body flex items-center">
+                <div class="flex-shrink-0 w-14 h-14 rounded-lg bg-gradient-to-br from-success-500 to-success-700 flex items-center justify-center mr-4 shadow-lg">
+                    <i class="fas fa-check-circle text-2xl text-white"></i>
+                </div>
+                <div>
+                    <h6 class="text-sm font-medium text-gray-500">{% trans "Available Assets" %}</h6>
+                    <div class="text-2xl font-semibold text-gray-900">{{ available_assets }}</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Assigned Assets -->
+        <div class="card transform transition-transform duration-300 hover:-translate-y-1">
+            <div class="card-body flex items-center">
+                <div class="flex-shrink-0 w-14 h-14 rounded-lg bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center mr-4 shadow-lg">
+                    <i class="fas fa-user-check text-2xl text-white"></i>
+                </div>
+                <div>
+                    <h6 class="text-sm font-medium text-gray-500">{% trans "Assigned Assets" %}</h6>
+                    <div class="text-2xl font-semibold text-gray-900">{{ assigned_assets }}</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- In Maintenance -->
+        <div class="card transform transition-transform duration-300 hover:-translate-y-1">
+            <div class="card-body flex items-center">
+                <div class="flex-shrink-0 w-14 h-14 rounded-lg bg-gradient-to-br from-warning-500 to-warning-700 flex items-center justify-center mr-4 shadow-lg">
+                    <i class="fas fa-tools text-2xl text-white"></i>
+                </div>
+                <div>
+                    <h6 class="text-sm font-medium text-gray-500">{% trans "In Maintenance" %}</h6>
+                    <div class="text-2xl font-semibold text-gray-900">{{ maintenance_assets }}</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Retired Assets -->
+        <div class="card transform transition-transform duration-300 hover:-translate-y-1">
+            <div class="card-body flex items-center">
+                <div class="flex-shrink-0 w-14 h-14 rounded-lg bg-gradient-to-br from-gray-500 to-gray-700 flex items-center justify-center mr-4 shadow-lg">
+                    <i class="fas fa-trash-alt text-2xl text-white"></i>
+                </div>
+                <div>
+                    <h6 class="text-sm font-medium text-gray-500">{% trans "Retired Assets" %}</h6>
+                    <div class="text-2xl font-semibold text-gray-900">{{ retired_assets }}</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Total Employees -->
+        <div class="card transform transition-transform duration-300 hover:-translate-y-1">
+            <div class="card-body flex items-center">
+                <div class="flex-shrink-0 w-14 h-14 rounded-lg bg-gradient-to-br from-warning-500 to-warning-700 flex items-center justify-center mr-4 shadow-lg">
+                    <i class="fas fa-users text-2xl text-white"></i>
+                </div>
+                <div>
+                    <h6 class="text-sm font-medium text-gray-500">{% trans "Total Employees" %}</h6>
+                    <div class="text-2xl font-semibold text-gray-900">{{ total_employees }}</div>
+                </div>
+            </div>
+        </div>
+    </div> 

@@ -1,0 +1,616 @@
+{% extends 'base/base_tailwind.html' %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}{% trans "Reports Dashboard" %}{% endblock %}
+
+{% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.css" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <!-- Filters -->
+    <div class="card mb-6">
+        <div class="card-body">
+            <form method="get" id="report-filters">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="form-group">
+                        <label for="type" class="form-label">{% trans "Report Type" %}</label>
+                        <select name="type" id="type" class="form-input">
+                            {% for value, label in report_types %}
+                            <option value="{{ value }}" {% if report_type == value %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="date_from" class="form-label">{% trans "Date From" %}</label>
+                        <input type="date" name="date_from" id="date_from" class="form-input" value="{{ date_from }}">
+                    </div>
+                    <div class="form-group">
+                        <label for="date_to" class="form-label">{% trans "Date To" %}</label>
+                        <input type="date" name="date_to" id="date_to" class="form-input" value="{{ date_to }}">
+                    </div>
+                    <div class="form-group flex items-end">
+                        <button type="submit" class="btn btn-primary w-full inline-flex items-center justify-center">
+                            <i class="fas fa-filter mr-2"></i>
+                            {% trans "Apply Filters" %}
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+ 
+    <!-- Stats Grid -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+        <!-- Total Assets -->
+        <div class="card transform transition-transform duration-300 hover:-translate-y-1">
+            <div class="card-body flex items-center">
+                <div class="flex-shrink-0 w-14 h-14 rounded-lg bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center mr-4 shadow-lg">
+                    <i class="fas fa-laptop text-2xl text-white"></i>
+                </div>
+                <div>
+                    <h3 class="text-sm font-medium text-gray-500">{% trans "Total Assets" %}</h3>
+                    <div class="text-2xl font-semibold text-gray-900">{{ total_assets }}</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Available Assets -->
+        <div class="card transform transition-transform duration-300 hover:-translate-y-1">
+            <div class="card-body flex items-center">
+                <div class="flex-shrink-0 w-14 h-14 rounded-lg bg-gradient-to-br from-success-500 to-success-700 flex items-center justify-center mr-4 shadow-lg">
+                    <i class="fas fa-check-circle text-2xl text-white"></i>
+                </div>
+                <div>
+                    <h3 class="text-sm font-medium text-gray-500">{% trans "Available Assets" %}</h3>
+                    <div class="text-2xl font-semibold text-gray-900">{{ available_assets }}</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Assigned Assets -->
+        <div class="card transform transition-transform duration-300 hover:-translate-y-1">
+            <div class="card-body flex items-center">
+                <div class="flex-shrink-0 w-14 h-14 rounded-lg bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center mr-4 shadow-lg">
+                    <i class="fas fa-user-check text-2xl text-white"></i>
+                </div>
+                <div>
+                    <h3 class="text-sm font-medium text-gray-500">{% trans "Assigned Assets" %}</h3>
+                    <div class="text-2xl font-semibold text-gray-900">{{ assigned_assets }}</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- In Maintenance -->
+        <div class="card transform transition-transform duration-300 hover:-translate-y-1">
+            <div class="card-body flex items-center">
+                <div class="flex-shrink-0 w-14 h-14 rounded-lg bg-gradient-to-br from-warning-500 to-warning-700 flex items-center justify-center mr-4 shadow-lg">
+                    <i class="fas fa-tools text-2xl text-white"></i>
+                </div>
+                <div>
+                    <h3 class="text-sm font-medium text-gray-500">{% trans "In Maintenance" %}</h3>
+                    <div class="text-2xl font-semibold text-gray-900">{{ maintenance_assets }}</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Retired Assets -->
+        <div class="bg-white rounded-lg shadow-md p-6 transform transition-transform duration-300 hover:-translate-y-1">
+            <div class="flex items-center">
+                <div class="flex-shrink-0 w-14 h-14 rounded-lg bg-gradient-to-br from-purple-600 to-indigo-700 flex items-center justify-center mr-4 shadow-lg">
+                    <i class="fas fa-archive text-2xl text-purple-200"></i>
+                </div>
+                <div>
+                    <h3 class="text-sm font-medium text-gray-500">{% trans "Retired Assets" %}</h3>
+                    <div class="text-2xl font-semibold text-gray-900">{{ retired_assets }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 mb-6">
+        <div class="card">
+            <div class="card-body">
+                <h3 class="text-lg font-medium text-gray-900 mb-4">{% trans "Department Asset Distribution" %}</h3>
+                <div class="h-[300px]">
+                    <canvas id="departmentChart"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-body">
+                <h3 class="text-lg font-medium text-gray-900 mb-4">{% trans "Asset Status Distribution" %}</h3>
+                <div class="h-[300px]">
+                    <canvas id="statusChart"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-body">
+                <h3 class="text-lg font-medium text-gray-900 mb-4">{% trans "Device Models Distribution" %}</h3>
+                <div class="h-[300px]">
+                    <canvas id="modelChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+       <!-- Asset Growth Analysis Section -->
+    <div class="card mb-6">
+        <div class="card-body">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-xl font-semibold text-gray-900">{% trans "Asset Growth Analysis" %}</h2>
+                <div class="flex items-center space-x-4">
+                    <!-- YoY Growth -->
+                    <div class="text-sm">
+                        <span class="text-gray-600">{% trans "Year-over-Year Growth:" %}</span>
+                        <span class="font-semibold ml-1 {% if yoy_growth > 0 %}text-green-600{% elif yoy_growth < 0 %}text-red-600{% else %}text-gray-600{% endif %}">
+                            {{ yoy_growth }}%
+                            {% if yoy_growth > 0 %}
+                                <i class="fas fa-arrow-up"></i>
+                            {% elif yoy_growth < 0 %}
+                                <i class="fas fa-arrow-down"></i>
+                            {% endif %}
+                        </span>
+                    </div>
+                    <!-- Average Growth Rate -->
+                    <div class="text-sm">
+                        <span class="text-gray-600">{% trans "Avg. Growth Rate (3M):" %}</span>
+                        <span class="font-semibold ml-1 {% if avg_growth_rate > 0 %}text-green-600{% elif avg_growth_rate < 0 %}text-red-600{% else %}text-gray-600{% endif %}">
+                            {{ avg_growth_rate }}%
+                        </span>
+                    </div>
+                    <!-- Total Investment -->
+                    <div class="text-sm">
+                        <span class="text-gray-600">{% trans "Total Investment:" %}</span>
+                        <span class="font-semibold ml-1 text-gray-900">${{ total_investment|floatformat:2 }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Growth Chart -->
+            <div class="h-80 mb-6">
+                <canvas id="assetGrowthChart"></canvas>
+            </div>
+
+            <!-- Monthly Details Table -->
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead>
+                        <tr>
+                            <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                {% trans "Month" %}
+                            </th>
+                            <th class="px-6 py-3 bg-gray-50 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                {% trans "New Assets" %}
+                            </th>
+                            <th class="px-6 py-3 bg-gray-50 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                {% trans "Total Assets" %}
+                            </th>
+                            <th class="px-6 py-3 bg-gray-50 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                {% trans "Growth Rate" %}
+                            </th>
+                            <th class="px-6 py-3 bg-gray-50 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                {% trans "Avg. Asset Price" %}
+                            </th>
+                            <th class="px-6 py-3 bg-gray-50 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                {% trans "Monthly Investment" %}
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {% for month_data in growth_data %}
+                        <tr class="hover:bg-gray-50 transition-colors duration-150">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                {{ month_data.month }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">
+                                {{ month_data.new_assets }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">
+                                {{ month_data.total_assets }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-right">
+                                <span class="{% if month_data.growth_rate > 0 %}text-green-600{% elif month_data.growth_rate < 0 %}text-red-600{% else %}text-gray-600{% endif %}">
+                                    {{ month_data.growth_rate }}%
+                                    {% if month_data.growth_rate > 0 %}
+                                        <i class="fas fa-arrow-up text-xs"></i>
+                                    {% elif month_data.growth_rate < 0 %}
+                                        <i class="fas fa-arrow-down text-xs"></i>
+                                    {% endif %}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">
+                                ${{ month_data.avg_asset_price|floatformat:2 }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">
+                                ${{ month_data.monthly_investment|floatformat:2 }}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Company Device Statistics -->
+    <div class="mb-6">
+        <h2 class="text-xl font-semibold text-gray-900 mb-4">{% trans "Company Device Statistics" %}</h2>
+        {% if company_device_stats %}
+            <div class="space-y-4">
+                {% for company_stat in company_device_stats %}
+                    <div class="card hover:shadow-lg transition-shadow duration-300" x-data="{ expanded: false }">
+                        <!-- Company Header -->
+        <div class="card-body">
+                            <div class="flex items-center justify-between cursor-pointer" @click="expanded = !expanded">
+                                <div class="flex items-center space-x-4">
+                                    <div class="flex-shrink-0">
+                                        <div class="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center">
+                                            <i class="fas fa-building text-xl text-white"></i>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <h3 class="text-lg font-medium text-gray-900">{{ company_stat.company.name }}</h3>
+                                        <p class="text-sm text-gray-500">{% trans "Total Devices" %}: {{ company_stat.total }}</p>
+                                    </div>
+                                </div>
+                                <button class="text-gray-400 hover:text-gray-600 transition-colors duration-200">
+                                    <i class="fas" :class="{ 'fa-chevron-down': !expanded, 'fa-chevron-up': expanded }"></i>
+                                </button>
+                            </div>
+
+                            <!-- Expanded Content -->
+                            <div x-show="expanded" x-collapse>
+                                <div class="mt-6 space-y-6">
+                                    <!-- Status Distribution -->
+                                    <div>
+                                        <h4 class="text-sm font-medium text-gray-700 mb-3">{% trans "Device Status Distribution" %}</h4>
+                                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                                            <!-- Available -->
+                                            <div class="bg-green-50 rounded-lg p-4">
+                                                <div class="flex justify-between items-center">
+                                                    <div>
+                                                        <p class="text-sm text-green-600 font-medium">{% trans "Available" %}</p>
+                                                        <p class="text-2xl font-semibold text-green-700">{{ company_stat.available }}</p>
+                                                    </div>
+                                                    <div class="text-right">
+                                                        <p class="text-sm text-green-600">{{ company_stat.available_percentage|floatformat:1 }}%</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <!-- Assigned -->
+                                            <div class="bg-blue-50 rounded-lg p-4">
+                                                <div class="flex justify-between items-center">
+                                                    <div>
+                                                        <p class="text-sm text-blue-600 font-medium">{% trans "Assigned" %}</p>
+                                                        <p class="text-2xl font-semibold text-blue-700">{{ company_stat.assigned }}</p>
+                                                    </div>
+                                                    <div class="text-right">
+                                                        <p class="text-sm text-blue-600">{{ company_stat.assigned_percentage|floatformat:1 }}%</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <!-- Maintenance -->
+                                            <div class="bg-yellow-50 rounded-lg p-4">
+                                                <div class="flex justify-between items-center">
+                                                    <div>
+                                                        <p class="text-sm text-yellow-600 font-medium">{% trans "Maintenance" %}</p>
+                                                        <p class="text-2xl font-semibold text-yellow-700">{{ company_stat.maintenance }}</p>
+                                                    </div>
+                                                    <div class="text-right">
+                                                        <p class="text-sm text-yellow-600">{{ company_stat.maintenance_percentage|floatformat:1 }}%</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <!-- Retired -->
+                                            <div class="bg-purple-50 rounded-lg p-4">
+                                                <div class="flex justify-between items-center">
+                                                    <div>
+                                                        <p class="text-sm text-purple-600 font-medium">{% trans "Retired" %}</p>
+                                                        <p class="text-2xl font-semibold text-purple-700">{{ company_stat.retired }}</p>
+                                                    </div>
+                                                    <div class="text-right">
+                                                        <p class="text-sm text-purple-600">{{ company_stat.retired_percentage|floatformat:1 }}%</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+            </div>
+
+                                    <!-- Device Types -->
+                                    {% if company_stat.device_types %}
+                                    <div class="mb-8">
+                                        <h4 class="text-base font-medium text-gray-900 mb-4">{% trans "Device Types" %}</h4>
+                                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                            {% for device_type in company_stat.device_types %}
+                                            <div class="bg-gray-50 rounded-lg p-4">
+                                                <div class="flex items-center">
+                                                    <!-- Device Icon -->
+                                                    <div class="flex-shrink-0 mr-3">
+                                                        {% if 'laptop' in device_type.type|lower %}
+                                                            <i class="fas fa-laptop text-2xl text-gray-600" title="{% trans 'Laptop' %}"></i>
+                                                        {% elif 'desktop' in device_type.type|lower %}
+                                                            <i class="fas fa-desktop text-2xl text-gray-600" title="{% trans 'Desktop' %}"></i>
+                                                        {% elif 'monitor' in device_type.type|lower %}
+                                                            <i class="fas fa-tv text-2xl text-gray-600" title="{% trans 'Monitor' %}"></i>
+                                                        {% elif 'printer' in device_type.type|lower %}
+                                                            <i class="fas fa-print text-2xl text-gray-600" title="{% trans 'Printer' %}"></i>
+                                                        {% elif 'server' in device_type.type|lower %}
+                                                            <i class="fas fa-server text-2xl text-gray-600" title="{% trans 'Server' %}"></i>
+                                                        {% elif 'ups' in device_type.type|lower %}
+                                                            <i class="fas fa-plug text-2xl text-gray-600" title="{% trans 'UPS' %}"></i>
+                                                        {% elif 'network' in device_type.type|lower %}
+                                                            <i class="fas fa-network-wired text-2xl text-gray-600" title="{% trans 'Network Device' %}"></i>
+                                                        {% else %}
+                                                            <i class="fas fa-microchip text-2xl text-gray-600" title="{% trans 'Other Device' %}"></i>
+                                                        {% endif %}
+                                                    </div>
+                                                    <!-- Device Info -->
+                                                    <div class="flex-1">
+                                                        <div class="flex justify-between items-start">
+                                                            <div>
+                                                                <h5 class="text-sm font-medium text-gray-900">{{ device_type.type }}</h5>
+                                                                <p class="text-xs text-gray-500">{% blocktrans with count=device_type.count %}{{ count }} units{% endblocktrans %}</p>
+                                                            </div>
+                                                            <div class="text-right">
+                                                                <span class="text-sm font-medium text-primary-600">{{ device_type.percentage|floatformat:1 }}%</span>
+                                                            </div>
+                                                        </div>
+                                                        <!-- Progress Bar -->
+                                                        <div class="mt-2">
+                                                            <div class="w-full bg-gray-200 rounded-full h-1.5">
+                                                                <div class="bg-primary-600 h-1.5 rounded-full" style="width: {{ device_type.percentage }}%"></div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                        {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center py-8">
+                <div class="text-gray-400 mb-4">
+                    <i class="fas fa-info-circle text-4xl"></i>
+                </div>
+                <p class="text-gray-600">{% trans "No company device statistics available." %}</p>
+            </div>
+            {% endif %}
+    </div>
+
+    <!-- Export Options -->
+    <div class="flex justify-end mt-6">
+        <a href="{% url 'inventory:generate_report_pdf' %}?type={{ report_type }}&date_from={{ date_from }}&date_to={{ date_to }}" 
+           class="btn btn-primary inline-flex items-center">
+            <i class="fas fa-file-pdf mr-2"></i>
+            {% trans "Export as PDF" %}
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Department Asset Distribution Chart
+    const departmentCtx = document.getElementById('departmentChart').getContext('2d');
+    new Chart(departmentCtx, {
+        type: 'bar',
+        data: {
+            labels: {{ department_labels|safe }},
+            datasets: [{
+                label: '{% trans "Number of Assets" %}',
+                data: {{ department_data|safe }},
+                backgroundColor: 'rgba(54, 162, 235, 0.8)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                title: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        precision: 0
+                    }
+                }
+            }
+        }
+    });
+
+    // Status Chart
+    const statusCtx = document.getElementById('statusChart').getContext('2d');
+    new Chart(statusCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Available', 'Assigned', 'Maintenance'],
+            datasets: [{
+                data: [{{ available_assets }}, {{ assigned_assets }}, {{ maintenance_assets }}],
+                backgroundColor: [
+                    'rgb(34, 197, 94, 0.8)',
+                    'rgb(79, 70, 229, 0.8)',
+                    'rgb(245, 158, 11, 0.8)'
+                ],
+                borderColor: [
+                    'rgb(34, 197, 94)',
+                    'rgb(79, 70, 229)',
+                    'rgb(245, 158, 11)'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'bottom' }
+            }
+        }
+    });
+
+    // Model Chart
+    const modelCtx = document.getElementById('modelChart').getContext('2d');
+    new Chart(modelCtx, {
+        type: 'bar',
+        data: {
+            labels: [{% for stat in model_stats %}'{{ stat.model }} ({{ stat.asset_type__display_name }})'{% if not forloop.last %},{% endif %}{% endfor %}],
+            datasets: [{
+                label: '{% trans "Device Count" %}',
+                data: [{% for stat in model_stats %}{{ stat.count }}{% if not forloop.last %},{% endif %}{% endfor %}],
+                backgroundColor: 'rgb(14, 165, 233, 0.8)',
+                borderColor: 'rgb(14, 165, 233)',
+                borderWidth: 1,
+                borderRadius: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: { stepSize: 1 },
+                    grid: {
+                        drawBorder: false,
+                        color: 'rgba(0, 0, 0, 0.05)'
+                    }
+                },
+                x: {
+                    grid: { display: false },
+                    ticks: {
+                        maxRotation: 45,
+                        minRotation: 45
+                    }
+                }
+            },
+            plugins: { legend: { display: false } }
+        }
+    });
+
+    // Asset Growth Chart
+    const growthCtx = document.getElementById('assetGrowthChart').getContext('2d');
+    new Chart(growthCtx, {
+        type: 'line',
+        data: {
+            labels: [{% for month_data in growth_data %}'{{ month_data.month }}'{% if not forloop.last %}, {% endif %}{% endfor %}],
+            datasets: [{
+                label: '{% trans "Total Assets" %}',
+                data: [{% for month_data in growth_data %}{{ month_data.total_assets }}{% if not forloop.last %}, {% endif %}{% endfor %}],
+                borderColor: '#1a56db',
+                backgroundColor: 'rgba(26, 86, 219, 0.1)',
+                fill: true,
+                tension: 0.4,
+                yAxisID: 'y'
+            }, {
+                label: '{% trans "Monthly Investment" %}',
+                data: [{% for month_data in growth_data %}{{ month_data.monthly_investment }}{% if not forloop.last %}, {% endif %}{% endfor %}],
+                borderColor: '#047857',
+                backgroundColor: 'rgba(4, 120, 87, 0.1)',
+                fill: true,
+                tension: 0.4,
+                yAxisID: 'y1'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                mode: 'index',
+                intersect: false,
+            },
+            plugins: {
+                legend: {
+                    position: 'top',
+                    labels: {
+                        usePointStyle: true,
+                        padding: 20
+                    }
+                },
+                tooltip: {
+                    mode: 'index',
+                    intersect: false,
+                    callbacks: {
+                        label: function(context) {
+                            let label = context.dataset.label || '';
+                            if (label) {
+                                label += ': ';
+                            }
+                            if (context.datasetIndex === 1) {
+                                label += '$' + context.parsed.y.toFixed(2);
+                            } else {
+                                label += context.parsed.y;
+                            }
+                            return label;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    type: 'linear',
+                    display: true,
+                    position: 'left',
+                    title: {
+                        display: true,
+                        text: '{% trans "Total Assets" %}'
+                    }
+                },
+                y1: {
+                    type: 'linear',
+                    display: true,
+                    position: 'right',
+                    title: {
+                        display: true,
+                        text: '{% trans "Monthly Investment ($)" %}'
+                    },
+                    grid: {
+                        drawOnChartArea: false
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: '{% trans "Month" %}'
+                    }
+                }
+            }
+        }
+    });
+});
+
+function toggleCompany(companyId) {
+    const content = document.getElementById(companyId);
+    const icon = document.getElementById('icon-' + companyId);
+    
+    if (content.classList.contains('hidden')) {
+        content.classList.remove('hidden');
+        icon.classList.add('rotate-180');
+    } else {
+        content.classList.add('hidden');
+        icon.classList.remove('rotate-180');
+    }
+}
+</script>
+{% endblock %} 

@@ -1,0 +1,111 @@
+{% extends 'base/base_tailwind.html' %}
+{% load i18n %}
+
+{% block title %}{% trans "My Account" %}{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50">
+    <div class="container mx-auto px-4 py-6">
+        <div class="max-w-3xl mx-auto">
+            <!-- User Menu -->
+            <div class="bg-white rounded-xl shadow-lg overflow-hidden mb-6">
+                <div class="grid grid-cols-1 md:grid-cols-4 divide-y md:divide-y-0 md:divide-x divide-gray-200">
+                    <a href="{% url 'inventory:user_account' %}" 
+                       class="group flex items-center p-4 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 {% if request.resolver_match.url_name == 'user_account' %}bg-blue-50 text-blue-700{% endif %}">
+                        <i class="fas fa-user w-5 mr-2 text-gray-400 group-hover:text-blue-500"></i>
+                        {% trans "My Account" %}
+                    </a>
+                    <a href="{% url 'inventory:user_permissions' %}" 
+                       class="group flex items-center p-4 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 {% if request.resolver_match.url_name == 'user_permissions' %}bg-blue-50 text-blue-700{% endif %}">
+                        <i class="fas fa-key w-5 mr-2 text-gray-400 group-hover:text-blue-500"></i>
+                        {% trans "Permissions" %}
+                    </a>
+                    <a href="{% url 'inventory:change_password' %}" 
+                       class="group flex items-center p-4 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 {% if request.resolver_match.url_name == 'change_password' %}bg-blue-50 text-blue-700{% endif %}">
+                        <i class="fas fa-lock w-5 mr-2 text-gray-400 group-hover:text-blue-500"></i>
+                        {% trans "Change Password" %}
+                    </a>
+                    <form method="post" action="{% url 'logout' %}" class="block">
+                        {% csrf_token %}
+                        <button type="submit" class="group flex w-full items-center p-4 text-sm text-red-600 hover:bg-red-50 hover:text-red-700">
+                            <i class="fas fa-sign-out-alt w-5 mr-2 text-red-400 group-hover:text-red-500"></i>
+                            {% trans "Logout" %}
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Profile Form -->
+            <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h2 class="text-xl font-semibold text-gray-900">{% trans "Edit Profile" %}</h2>
+                </div>
+                <div class="p-6">
+                    <form method="post" class="space-y-6">
+                        {% csrf_token %}
+                        {% for field in form %}
+                        <div class="space-y-2">
+                            <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                                {{ field.label }}
+                            </label>
+                            {{ field }}
+                            {% if field.errors %}
+                            <div class="text-red-500 text-sm mt-1">
+                                {{ field.errors }}
+                            </div>
+                            {% endif %}
+                            {% if field.help_text %}
+                            <p class="text-gray-500 text-sm mt-1">{{ field.help_text }}</p>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                        <div class="flex justify-end pt-4">
+                            <button type="submit" 
+                                    class="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-150">
+                                <i class="fas fa-save mr-2"></i>
+                                {% trans "Save Changes" %}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast Messages -->
+{% if messages %}
+<div class="fixed bottom-0 right-0 m-6 z-50">
+    {% for message in messages %}
+    <div class="{% if message.tags == 'success' %}bg-gradient-to-r from-green-500 to-green-600{% elif message.tags == 'error' %}bg-gradient-to-r from-red-500 to-red-600{% else %}bg-gradient-to-r from-blue-500 to-blue-600{% endif %} text-white px-6 py-4 rounded-xl shadow-lg mb-4 transform transition-all duration-300 hover:scale-102 animate-fade-in-up">
+        <div class="flex items-center">
+            <i class="fas {% if message.tags == 'success' %}fa-check-circle{% elif message.tags == 'error' %}fa-exclamation-circle{% else %}fa-info-circle{% endif %} mr-3"></i>
+            <p>{{ message }}</p>
+            <button class="ml-auto focus:outline-none hover:opacity-75 transition-opacity duration-150" onclick="this.parentElement.parentElement.remove()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .animate-fade-in-up {
+        animation: fadeInUp 0.3s ease-out;
+    }
+
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(1rem);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+</style>
+{% endblock %}

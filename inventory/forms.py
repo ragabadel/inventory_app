@@ -1,5 +1,70 @@
 from django import forms
+from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.models import User
+from django.utils.translation import gettext_lazy as _
 from .models import Employee, ITAsset, Department, OwnerCompany
+
+class UserRegistrationForm(UserCreationForm):
+    email = forms.EmailField(required=True)
+    first_name = forms.CharField(max_length=30, required=True)
+    last_name = forms.CharField(max_length=30, required=True)
+
+    class Meta:
+        model = User
+        fields = ('username', 'email', 'first_name', 'last_name', 'password1', 'password2')
+
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        user.email = self.cleaned_data['email']
+        user.first_name = self.cleaned_data['first_name']
+        user.last_name = self.cleaned_data['last_name']
+        if commit:
+            user.save()
+        return user
+
+class SuperUserRegistrationForm(UserCreationForm):
+    email = forms.EmailField(
+        required=True,
+        widget=forms.EmailInput(attrs={'class': 'form-control', 'placeholder': _('Email')})
+    )
+    first_name = forms.CharField(
+        required=True,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': _('First Name')})
+    )
+    last_name = forms.CharField(
+        required=True,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': _('Last Name')})
+    )
+
+    class Meta:
+        model = User
+        fields = ('username', 'email', 'first_name', 'last_name', 'password1', 'password2')
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['username'].widget.attrs.update({
+            'class': 'form-control',
+            'placeholder': _('Username')
+        })
+        self.fields['password1'].widget.attrs.update({
+            'class': 'form-control',
+            'placeholder': _('Password')
+        })
+        self.fields['password2'].widget.attrs.update({
+            'class': 'form-control',
+            'placeholder': _('Confirm Password')
+        })
+
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        user.email = self.cleaned_data['email']
+        user.first_name = self.cleaned_data['first_name']
+        user.last_name = self.cleaned_data['last_name']
+        user.is_superuser = True
+        user.is_staff = True
+        if commit:
+            user.save()
+        return user
 
 class EmployeeForm(forms.ModelForm):
     """Form for creating and updating Employee records."""
@@ -53,14 +118,17 @@ class EmployeeForm(forms.ModelForm):
             'department': forms.Select(attrs={'class': 'form-select'}),
             'position': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Enter position'
+                'placeholder': "Enter employee's role or title"
             }),
             'hire_date': forms.DateInput(attrs={
                 'class': 'form-control',
                 'type': 'date'
             }),
             'company': forms.Select(attrs={'class': 'form-select'}),
-            'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'is_active': forms.CheckboxInput(attrs={
+                'class': 'form-check-input',
+                'title': 'Check if employee is currently working, uncheck if they have left'
+            }),
         }
 
     def __init__(self, *args, **kwargs):
@@ -69,7 +137,7 @@ class EmployeeForm(forms.ModelForm):
         for field_name, field in self.fields.items():
             if not isinstance(field.widget, (forms.CheckboxInput, forms.RadioSelect)):
                 field.widget.attrs['class'] = field.widget.attrs.get('class', '') + ' form-control'
-            if field.required:
+            if field.required and field_name != 'position':  # Make position not required
                 field.widget.attrs['required'] = 'required'
         
         # Update department choices
@@ -89,6 +157,13 @@ class EmployeeForm(forms.ModelForm):
             'pattern': '^[A-Za-z0-9]+$',
             'title': 'Employee ID must contain only letters and numbers'
         })
+
+        # Update position field
+        self.fields['position'].required = False
+        self.fields['position'].help_text = "Employee's role or title within the department (optional)"
+
+        # Update is_active field
+        self.fields['is_active'].help_text = "Indicates if the employee is currently working (checked) or has left work (unchecked)"
 
     def clean_email(self):
         email = self.cleaned_data.get('email')
@@ -133,7 +208,7 @@ class EmployeeForm(forms.ModelForm):
             phone_number = phone_number.strip()
             if not phone_number.startswith('+'):
                 phone_number = '+' + phone_number
-        return phone_number or None  # Return None if empty string
+        return phone_number or ''  # Return empty string if empty or None
 
 class ITAssetForm(forms.ModelForm):
     """Form for creating and updating ITAsset records."""
@@ -249,4 +324,4 @@ class ITAssetForm(forms.ModelForm):
 
     def clean(self):
         cleaned_data = super().clean()
-        return cleaned_data 
+        return cleaned_data

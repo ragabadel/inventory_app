@@ -1,5 +1,27 @@
-{% extends '../inventory/base_tailwind.html' %}
+{% extends 'base/base_tailwind.html' %}
 {% load static %}
+{% load i18n %}
+
+{% block extra_css %}
+<style>
+    .errorlist {
+        @apply text-red-600 text-sm mt-1;
+    }
+    
+    .field-error {
+        @apply text-red-600 text-sm mt-1 font-medium;
+    }
+
+    .required-field::after {
+        content: "*";
+        @apply text-red-600 ml-1;
+    }
+
+    .error-message {
+        @apply text-red-600 text-sm mt-1 font-medium;
+    }
+</style>
+{% endblock %}
 
 {% block title %}{% if employee %}Edit Employee{% else %}Add Employee{% endif %}{% endblock %}
 
@@ -148,10 +170,11 @@
                         <!-- Position -->
                         <div class="mb-4">
                             <label for="id_position" class="block text-sm font-medium text-gray-700">
-                                Position <span class="text-red-500">*</span>
+                                Position
                             </label>
                             <div class="mt-1">
                                 {{ form.position|safe }}
+                                <p class="mt-1 text-sm text-gray-500">Employee's role within the department</p>
                                 {% if form.position.errors %}
                                     <p class="mt-1 text-sm text-red-600">{{ form.position.errors }}</p>
                                 {% endif %}
@@ -190,8 +213,9 @@
                                 <div class="flex items-center h-5">
                                     {{ form.is_active|safe }}
                                 </div>
-                                <div class="ml-3 text-sm">
-                                    <label for="id_is_active" class="font-medium text-gray-700">Active</label>
+                                <div class="ml-3">
+                                    <label for="id_is_active" class="font-medium text-gray-700">Employment Status</label>
+                                    <p class="text-sm text-gray-500">Currently employed (checked) or has left work (unchecked)</p>
                                 </div>
                             </div>
                         </div>

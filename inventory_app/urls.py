@@ -19,6 +19,7 @@ from django.urls import path, include
 from django.contrib.auth import views as auth_views
 from django.shortcuts import redirect
 from django.conf.urls.i18n import i18n_patterns
+from inventory.views import SuperUserRegistrationView
 
 def redirect_to_login(request):
     return redirect('login')
@@ -35,5 +36,6 @@ urlpatterns += i18n_patterns(
     path('admin/', admin.site.urls),
     path('inventory/', include('inventory.urls', namespace='inventory')),
     path('accounts/logout/', custom_logout, name='logout'),  # Custom logout view
+    path('accounts/register/', SuperUserRegistrationView.as_view(), name='register'),  # Add registration URL
     path('accounts/', include('django.contrib.auth.urls')),  # Add authentication URLs
 )

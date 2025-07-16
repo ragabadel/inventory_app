@@ -1,48 +1,83 @@
-{% extends '../inventory/base.html' %}
+{% extends 'base/base_tailwind.html' %}
 {% load static %}
+{% load i18n %}
 
-{% block title %}Delete Employee - {{ employee.get_full_name }}{% endblock %}
+{% block title %}{% trans "Delete Employee" %} - {{ employee.get_full_name }}{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <div class="row justify-content-center">
-        <div class="col-lg-6">
-            <div class="card shadow mb-4">
-                <div class="card-header bg-danger text-white">
-                    <h5 class="card-title mb-0">
-                        <i class="fas fa-exclamation-triangle me-2"></i>Confirm Deletion
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <p class="lead">Are you sure you want to delete the employee "{{ employee.get_full_name }}"?</p>
-                    
-                    <div class="alert alert-warning">
-                        <h6 class="alert-heading"><i class="fas fa-exclamation-circle me-2"></i>Warning</h6>
-                        <p class="mb-0">This action cannot be undone. All associated data will be permanently deleted.</p>
-                    </div>
+<div class="container mx-auto px-4 py-8">
+    <div class="max-w-2xl mx-auto">
+        <!-- Header -->
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-2xl font-semibold text-gray-800 flex items-center">
+                <i class="fas fa-user-minus text-red-600 mr-2"></i>{% trans "Delete Employee" %}
+            </h1>
+            <a href="{% url 'inventory:employee_detail' employee.pk %}" class="btn-secondary">
+                <i class="fas fa-arrow-left mr-2"></i>{% trans "Back" %}
+            </a>
+        </div>
 
-                    <div class="card mb-4">
-                        <div class="card-body">
-                            <h6 class="card-subtitle mb-2 text-muted">Employee Details</h6>
-                            <p class="mb-1"><strong>Employee ID:</strong> {{ employee.employee_id }}</p>
-                            <p class="mb-1"><strong>Department:</strong> {{ employee.department.name }}</p>
-                            <p class="mb-1"><strong>Position:</strong> {{ employee.position.name }}</p>
-                            <p class="mb-0"><strong>Email:</strong> {{ employee.email }}</p>
-                        </div>
+        <!-- Delete Confirmation Card -->
+        <div class="bg-white rounded-lg shadow-md overflow-hidden">
+            <!-- Warning Header -->
+            <div class="bg-red-50 px-6 py-4 border-b border-red-100">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-exclamation-triangle text-red-600 text-xl"></i>
                     </div>
-
-                    <form method="post">
-                        {% csrf_token %}
-                        <div class="d-flex justify-content-end gap-2">
-                            <a href="{% url 'inventory:employee_detail' employee.pk %}" class="btn btn-secondary">
-                                <i class="fas fa-times me-2"></i>Cancel
-                            </a>
-                            <button type="submit" class="btn btn-danger">
-                                <i class="fas fa-trash me-2"></i>Delete Employee
-                            </button>
-                        </div>
-                    </form>
+                    <div class="ml-3">
+                        <h3 class="text-lg font-medium text-red-800">
+                            {% trans "Confirm Deletion" %}
+                        </h3>
+                        <p class="mt-1 text-sm text-red-700">
+                            {% trans "This action cannot be undone. All associated data will be permanently deleted." %}
+                        </p>
+                    </div>
                 </div>
+            </div>
+
+            <!-- Employee Details -->
+            <div class="px-6 py-4">
+                <div class="mb-6">
+                    <h4 class="text-base font-medium text-gray-900 mb-3">{% trans "Employee Details" %}</h4>
+                    <dl class="grid grid-cols-1 gap-3">
+                        <div class="flex items-center">
+                            <dt class="text-sm font-medium text-gray-500 w-32">{% trans "Employee ID" %}:</dt>
+                            <dd class="text-sm text-gray-900">{{ employee.employee_id }}</dd>
+                        </div>
+                        <div class="flex items-center">
+                            <dt class="text-sm font-medium text-gray-500 w-32">{% trans "Full Name" %}:</dt>
+                            <dd class="text-sm text-gray-900">{{ employee.get_full_name }}</dd>
+                        </div>
+                        <div class="flex items-center">
+                            <dt class="text-sm font-medium text-gray-500 w-32">{% trans "Department" %}:</dt>
+                            <dd class="text-sm text-gray-900">{{ employee.department.name }}</dd>
+                        </div>
+                        <div class="flex items-center">
+                            <dt class="text-sm font-medium text-gray-500 w-32">{% trans "Position" %}:</dt>
+                            <dd class="text-sm text-gray-900">{{ employee.position }}</dd>
+                        </div>
+                        <div class="flex items-center">
+                            <dt class="text-sm font-medium text-gray-500 w-32">{% trans "Email" %}:</dt>
+                            <dd class="text-sm text-gray-900">{{ employee.email }}</dd>
+                        </div>
+                    </dl>
+                </div>
+
+                <!-- Confirmation Form -->
+                <form method="post" class="mt-6">
+                    {% csrf_token %}
+                    <div class="flex justify-end space-x-3">
+                        <a href="{% url 'inventory:employee_detail' employee.pk %}" 
+                           class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                            <i class="fas fa-times mr-2"></i>{% trans "Cancel" %}
+                        </a>
+                        <button type="submit" 
+                                class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                            <i class="fas fa-trash mr-2"></i>{% trans "Delete Employee" %}
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>

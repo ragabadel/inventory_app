@@ -1,0 +1,152 @@
+{% extends 'base/base_tailwind.html' %}
+{% load i18n %}
+
+{% block title %}
+    {% if form.instance.pk %}
+        {% trans "Edit Company" %}
+    {% else %}
+        {% trans "Add Company" %}
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-6">
+    <div class="flex justify-between items-center mb-6">
+        <div>
+            <h1 class="text-2xl font-semibold text-gray-800">
+                {% if form.instance.pk %}
+                    {% trans "Edit Company" %}
+                {% else %}
+                    {% trans "Add Company" %}
+                {% endif %}
+            </h1>
+            <p class="text-gray-600">
+                {% if form.instance.pk %}
+                    {% trans "Update company information" %}
+                {% else %}
+                    {% trans "Create a new company" %}
+                {% endif %}
+            </p>
+        </div>
+        <div>
+            <a href="{% url 'inventory:owner_company_list' %}" class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                </svg>
+                {% trans "Back to List" %}
+            </a>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-lg shadow-sm">
+        <div class="p-6">
+            <form method="post" class="space-y-6">
+                {% csrf_token %}
+                
+                {% if form.non_field_errors %}
+                <div class="bg-red-50 border-l-4 border-red-400 p-4 mb-6">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <svg class="h-5 w-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                        </div>
+                        <div class="ml-3">
+                            <div class="text-sm text-red-700">
+                                {% for error in form.non_field_errors %}
+                                    <p>{{ error }}</p>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                    <!-- Code Field -->
+                    <div>
+                        <label for="{{ form.code.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                            {% trans "Code" %} <span class="text-red-500">*</span>
+                        </label>
+                        <div class="mt-1">
+                        <input type="text" 
+                                   name="{{ form.code.name }}" 
+                                   id="{{ form.code.id_for_label }}" 
+                                   value="{{ form.code.value|default:'' }}"
+                                   class="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md {% if form.code.errors %}border-red-300{% endif %}"
+                               required>
+                        </div>
+                        {% if form.code.errors %}
+                        <p class="mt-2 text-sm text-red-600">
+                            {% for error in form.code.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </p>
+                        {% endif %}
+                        <p class="mt-2 text-sm text-gray-500">
+                            {% trans "A unique identifier for the company (e.g., CTP, ABC)" %}
+                        </p>
+                    </div>
+
+                    <!-- Name Field -->
+                    <div>
+                        <label for="{{ form.name.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                            {% trans "Name" %} <span class="text-red-500">*</span>
+                        </label>
+                        <div class="mt-1">
+                        <input type="text" 
+                                   name="{{ form.name.name }}" 
+                                   id="{{ form.name.id_for_label }}" 
+                                   value="{{ form.name.value|default:'' }}"
+                                   class="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md {% if form.name.errors %}border-red-300{% endif %}"
+                               required>
+                        </div>
+                        {% if form.name.errors %}
+                        <p class="mt-2 text-sm text-red-600">
+                            {% for error in form.name.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </p>
+                        {% endif %}
+                        <p class="mt-2 text-sm text-gray-500">
+                            {% trans "The full name of the company" %}
+                        </p>
+                    </div>
+                </div>
+
+                <div class="flex justify-end space-x-3 pt-6">
+                    <a href="{% url 'inventory:owner_company_list' %}" class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        {% trans "Cancel" %}
+                    </a>
+                    <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        {% if form.instance.pk %}
+                            {% trans "Update Company" %}
+                        {% else %}
+                            {% trans "Create Company" %}
+                        {% endif %}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Form validation
+(function () {
+    'use strict'
+    var forms = document.querySelectorAll('.needs-validation')
+    Array.prototype.slice.call(forms).forEach(function (form) {
+        form.addEventListener('submit', function (event) {
+            if (!form.checkValidity()) {
+                event.preventDefault()
+                event.stopPropagation()
+            }
+            form.classList.add('was-validated')
+        }, false)
+    })
+})()
+</script>
+{% endblock %} 

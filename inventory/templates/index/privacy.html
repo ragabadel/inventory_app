@@ -1,0 +1,85 @@
+{% extends 'base/base_tailwind.html' %}
+{% load i18n %}
+
+{% block title %}{% trans "Privacy Policy" %} | Inventory App{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <div class="max-w-3xl mx-auto">
+        <div class="text-center mb-12">
+            <h1 class="text-4xl font-extrabold text-gray-900 mb-4">{% trans "Privacy Policy" %}</h1>
+            <p class="text-xl text-gray-500">{% trans "Last updated:" %} {% now "F j, Y" %}</p>
+        </div>
+
+        <div class="bg-white shadow-sm rounded-lg p-8">
+            <div class="prose prose-lg max-w-none">
+                <section class="mb-12">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-4">{% trans "Information We Collect" %}</h2>
+                    <p class="text-gray-600 mb-4">{% trans "We collect information that you provide directly to us, including:" %}</p>
+                    <ul class="list-disc list-inside text-gray-600 space-y-2">
+                        <li>{% trans "Account information (name, email, username)" %}</li>
+                        <li>{% trans "Profile information" %}</li>
+                        <li>{% trans "Asset management data" %}</li>
+                        <li>{% trans "Usage information and preferences" %}</li>
+                    </ul>
+                </section>
+
+                <section class="mb-12">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-4">{% trans "How We Use Your Information" %}</h2>
+                    <p class="text-gray-600 mb-4">{% trans "We use the information we collect to:" %}</p>
+                    <ul class="list-disc list-inside text-gray-600 space-y-2">
+                        <li>{% trans "Provide and maintain our services" %}</li>
+                        <li>{% trans "Process your transactions" %}</li>
+                        <li>{% trans "Send you technical notices and support messages" %}</li>
+                        <li>{% trans "Communicate with you about products, services, and events" %}</li>
+                        <li>{% trans "Protect against fraudulent or illegal activity" %}</li>
+                    </ul>
+                </section>
+
+                <section class="mb-12">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-4">{% trans "Information Sharing" %}</h2>
+                    <p class="text-gray-600 mb-4">{% trans "We do not share your personal information with third parties except:" %}</p>
+                    <ul class="list-disc list-inside text-gray-600 space-y-2">
+                        <li>{% trans "With your consent" %}</li>
+                        <li>{% trans "To comply with legal obligations" %}</li>
+                        <li>{% trans "To protect our rights or property" %}</li>
+                    </ul>
+                </section>
+
+                <section class="mb-12">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-4">{% trans "Data Security" %}</h2>
+                    <p class="text-gray-600">
+                        {% trans "We implement appropriate technical and organizational measures to protect your personal information against unauthorized access, alteration, disclosure, or destruction." %}
+                    </p>
+                </section>
+
+                <section class="mb-12">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-4">{% trans "Your Rights" %}</h2>
+                    <p class="text-gray-600 mb-4">{% trans "You have the right to:" %}</p>
+                    <ul class="list-disc list-inside text-gray-600 space-y-2">
+                        <li>{% trans "Access your personal information" %}</li>
+                        <li>{% trans "Correct inaccurate data" %}</li>
+                        <li>{% trans "Request deletion of your data" %}</li>
+                        <li>{% trans "Object to our use of your data" %}</li>
+                    </ul>
+                </section>
+
+                <section class="mb-12">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-4">{% trans "Changes to This Policy" %}</h2>
+                    <p class="text-gray-600">
+                        {% trans "We may update our Privacy Policy from time to time. We will notify you of any changes by posting the new Privacy Policy on this page and updating the date at the top of this policy." %}
+                    </p>
+                </section>
+
+                <section>
+                    <h2 class="text-2xl font-bold text-gray-900 mb-4">{% trans "Contact Us" %}</h2>
+                    <p class="text-gray-600">
+                        {% trans "If you have any questions about this Privacy Policy, please" %}
+                        <a href="{% url 'contact' %}" class="text-blue-600 hover:text-blue-800">{% trans "contact us" %}</a>.
+                    </p>
+                </section>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

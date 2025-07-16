@@ -1,0 +1,81 @@
+{% extends 'base/base_tailwind.html' %}
+{% load i18n %}
+
+{% block title %}{% trans "Terms of Service" %} | Inventory App{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <div class="max-w-3xl mx-auto">
+        <div class="text-center mb-12">
+            <h1 class="text-4xl font-extrabold text-gray-900 mb-4">{% trans "Terms of Service" %}</h1>
+            <p class="text-xl text-gray-500">{% trans "Last updated:" %} {% now "F j, Y" %}</p>
+        </div>
+
+        <div class="bg-white shadow-sm rounded-lg p-8">
+            <div class="prose prose-lg max-w-none">
+                <section class="mb-12">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-4">{% trans "1. Acceptance of Terms" %}</h2>
+                    <p class="text-gray-600">
+                        {% trans "By accessing and using the IT Asset Management System, you agree to be bound by these Terms of Service and all applicable laws and regulations." %}
+                    </p>
+                </section>
+
+                <section class="mb-12">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-4">{% trans "2. Use License" %}</h2>
+                    <p class="text-gray-600 mb-4">
+                        {% trans "Permission is granted to temporarily use this software for personal and business purposes, subject to the following restrictions:" %}
+                    </p>
+                    <ul class="list-disc list-inside text-gray-600 space-y-2">
+                        <li>{% trans "You must not modify or copy the software" %}</li>
+                        <li>{% trans "You must not attempt to decompile or reverse engineer the software" %}</li>
+                        <li>{% trans "You must not remove any copyright or proprietary notations" %}</li>
+                        <li>{% trans "You must not transfer the software to another person or mirror it on another server" %}</li>
+                    </ul>
+                </section>
+
+                <section class="mb-12">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-4">{% trans "3. Disclaimer" %}</h2>
+                    <p class="text-gray-600">
+                        {% trans "The materials on this software are provided on an 'as is' basis. We make no warranties, expressed or implied, and hereby disclaim and negate all other warranties including, without limitation, implied warranties or conditions of merchantability, fitness for a particular purpose, or non-infringement of intellectual property or other violation of rights." %}
+                    </p>
+                </section>
+
+                <section class="mb-12">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-4">{% trans "4. Limitations" %}</h2>
+                    <p class="text-gray-600">
+                        {% trans "In no event shall we or our suppliers be liable for any damages (including, without limitation, damages for loss of data or profit, or due to business interruption) arising out of the use or inability to use the materials on our software." %}
+                    </p>
+                </section>
+
+                <section class="mb-12">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-4">{% trans "5. Accuracy of Materials" %}</h2>
+                    <p class="text-gray-600">
+                        {% trans "The materials appearing in our software could include technical, typographical, or photographic errors. We do not warrant that any of the materials on our software are accurate, complete or current." %}
+                    </p>
+                </section>
+
+                <section class="mb-12">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-4">{% trans "6. Links" %}</h2>
+                    <p class="text-gray-600">
+                        {% trans "We have not reviewed all of the sites linked to our software and are not responsible for the contents of any such linked site. The inclusion of any link does not imply endorsement by us of the site. Use of any such linked website is at the user's own risk." %}
+                    </p>
+                </section>
+
+                <section class="mb-12">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-4">{% trans "7. Modifications" %}</h2>
+                    <p class="text-gray-600">
+                        {% trans "We may revise these terms of service for our software at any time without notice. By using this software you are agreeing to be bound by the then current version of these terms of service." %}
+                    </p>
+                </section>
+
+                <section>
+                    <h2 class="text-2xl font-bold text-gray-900 mb-4">{% trans "8. Governing Law" %}</h2>
+                    <p class="text-gray-600">
+                        {% trans "These terms and conditions are governed by and construed in accordance with the laws and you irrevocably submit to the exclusive jurisdiction of the courts in that location." %}
+                    </p>
+                </section>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

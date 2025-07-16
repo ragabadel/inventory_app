@@ -87,16 +87,18 @@ class Employee(models.Model):
         help_text="Enter phone number in the format: '+999999999'"
     )
     department = models.ForeignKey(Department, on_delete=models.PROTECT, related_name='employees')
-    position = models.ForeignKey(
-        Position,
-        on_delete=models.PROTECT,
-        related_name='employees',
-        db_column='position_id',  # Explicitly set the column name
-        to_field='id'  # Explicitly set the referenced field
+    position = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        help_text="Employee's role or title within the department"
     )
     hire_date = models.DateField()
     company = models.ForeignKey(OwnerCompany, on_delete=models.PROTECT, related_name='employees')
-    is_active = models.BooleanField(default=True)
+    is_active = models.BooleanField(
+        default=True,
+        help_text="Indicates if the employee is currently working (checked) or has left work (unchecked)"
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -191,6 +193,9 @@ class ITAsset(models.Model):
         ordering = ['name']
         verbose_name = 'IT Asset'
         verbose_name_plural = 'IT Assets'
+        permissions = [
+            ('can_backup_database', 'Can backup database'),
+        ]
 
     def __str__(self):
         return f"{self.name} ({self.serial_number})"

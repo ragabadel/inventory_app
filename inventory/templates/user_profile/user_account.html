@@ -1,0 +1,153 @@
+{% extends 'base/base_tailwind.html' %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}{% trans "My Account" %}{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50 py-6">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- Page Header -->
+        <div class="bg-white shadow rounded-lg mb-6">
+            <div class="px-6 py-4">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <a href="javascript:history.back()" class="mr-4 text-gray-400 hover:text-gray-500">
+                            <i class="fas fa-arrow-left text-lg"></i>
+                        </a>
+                        <h1 class="text-2xl font-bold text-gray-900">{% trans "My Account" %}</h1>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <a href="{% url 'inventory:change_password' %}" 
+                           class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                            <i class="fas fa-key mr-2"></i>
+                            {% trans "Change Password" %}
+                        </a>
+                        <button type="submit" form="profile-form" 
+                                class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                            <i class="fas fa-save mr-2"></i>
+                            {% trans "Save Changes" %}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="bg-white shadow rounded-lg">
+            <!-- Profile Information -->
+            <div class="p-6">
+                <form id="profile-form" method="post" class="space-y-6">
+                    {% csrf_token %}
+                    
+                    {% if form.non_field_errors %}
+                    <div class="rounded-md bg-red-50 p-4">
+                        <div class="flex">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-exclamation-circle text-red-400"></i>
+                            </div>
+                            <div class="ml-3">
+                                <h3 class="text-sm font-medium text-red-800">
+                                    {% for error in form.non_field_errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </h3>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if messages %}
+                    <div class="rounded-md bg-green-50 p-4">
+                        <div class="flex">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-check-circle text-green-400"></i>
+                            </div>
+                            <div class="ml-3">
+                                <div class="text-sm text-green-800">
+                                    {% for message in messages %}
+                                        <p>{{ message }}</p>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- First Name -->
+                        <div>
+                            <label for="{{ form.first_name.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                                {% trans "First Name" %}
+                            </label>
+                            <div class="mt-1">
+                                {{ form.first_name }}
+                                {% if form.first_name.errors %}
+                                    <p class="mt-2 text-sm text-red-600">{{ form.first_name.errors.0 }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Last Name -->
+                        <div>
+                            <label for="{{ form.last_name.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                                {% trans "Last Name" %}
+                            </label>
+                            <div class="mt-1">
+                                {{ form.last_name }}
+                                {% if form.last_name.errors %}
+                                    <p class="mt-2 text-sm text-red-600">{{ form.last_name.errors.0 }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Email - Full Width -->
+                        <div class="md:col-span-2">
+                            <label for="{{ form.email.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                                {% trans "Email Address" %}
+                            </label>
+                            <div class="mt-1">
+                                {{ form.email }}
+                                {% if form.email.errors %}
+                                    <p class="mt-2 text-sm text-red-600">{{ form.email.errors.0 }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if employee_profile %}
+                    <!-- Employee Information -->
+                    <div class="mt-8 pt-6 border-t border-gray-200">
+                        <h3 class="text-lg font-medium text-gray-900 mb-4">{% trans "Employee Information" %}</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-500">{% trans "Employee ID" %}</label>
+                                <p class="mt-1 text-sm text-gray-900">{{ employee_profile.employee_id }}</p>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-500">{% trans "Department" %}</label>
+                                <p class="mt-1 text-sm text-gray-900">{{ employee_profile.department.name }}</p>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-500">{% trans "Position" %}</label>
+                                <p class="mt-1 text-sm text-gray-900">{{ employee_profile.position|default:"-" }}</p>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-500">{% trans "Hire Date" %}</label>
+                                <p class="mt-1 text-sm text-gray-900">{{ employee_profile.hire_date }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Add any custom styles here if needed */
+</style>
+{% endblock %} 

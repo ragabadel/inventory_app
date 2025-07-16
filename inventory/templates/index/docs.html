@@ -1,0 +1,140 @@
+{% extends 'base/base_tailwind.html' %}
+{% load i18n %}
+
+{% block title %}{% trans "Documentation" %} | Inventory App{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <div class="max-w-6xl mx-auto">
+        <h1 class="text-4xl font-extrabold text-gray-900 mb-8">{% trans "Documentation" %}</h1>
+        
+        <div class="flex flex-col lg:flex-row gap-8">
+            <!-- Sidebar Navigation -->
+            <div class="lg:w-64 flex-shrink-0">
+                <nav class="sticky top-8 space-y-1" aria-label="Sidebar">
+                    <a href="#getting-started"
+                        class="bg-gray-100 text-gray-900 group flex items-center px-3 py-2 text-sm font-medium rounded-md hover:bg-gray-50">
+                        {% trans "Getting Started" %}
+                    </a>
+                    <a href="#inventory-management"
+                        class="text-gray-600 hover:bg-gray-50 group flex items-center px-3 py-2 text-sm font-medium rounded-md">
+                        {% trans "Inventory Management" %}
+                    </a>
+                    <a href="#employee-management"
+                        class="text-gray-600 hover:bg-gray-50 group flex items-center px-3 py-2 text-sm font-medium rounded-md">
+                        {% trans "Employee Management" %}
+                    </a>
+                    <a href="#reports"
+                        class="text-gray-600 hover:bg-gray-50 group flex items-center px-3 py-2 text-sm font-medium rounded-md">
+                        {% trans "Reports" %}
+                    </a>
+                    <a href="#settings"
+                        class="text-gray-600 hover:bg-gray-50 group flex items-center px-3 py-2 text-sm font-medium rounded-md">
+                        {% trans "Settings" %}
+                    </a>
+                </nav>
+            </div>
+
+            <!-- Main Content -->
+            <div class="flex-1">
+                <div class="prose prose-lg max-w-none">
+                    <section id="getting-started" class="mb-16">
+                        <h2 class="text-3xl font-bold text-gray-900 mb-6">{% trans "Getting Started" %}</h2>
+                        <div class="bg-white shadow-sm rounded-lg p-6">
+                            <p class="text-gray-600 mb-6">
+                                {% trans "Welcome to the Inventory Management System documentation. This guide will help you understand and use all the features of our system effectively." %}
+                            </p>
+                            <div class="grid md:grid-cols-2 gap-6">
+                                <div class="border rounded-lg p-4">
+                                    <h3 class="text-lg font-semibold text-gray-900 mb-2">{% trans "Quick Start" %}</h3>
+                                    <ol class="list-decimal list-inside text-gray-600 space-y-2">
+                                        <li>{% trans "Create your account" %}</li>
+                                        <li>{% trans "Set up your organization" %}</li>
+                                        <li>{% trans "Add your first inventory items" %}</li>
+                                    </ol>
+                                </div>
+                                <div class="border rounded-lg p-4">
+                                    <h3 class="text-lg font-semibold text-gray-900 mb-2">{% trans "System Requirements" %}</h3>
+                                    <ul class="list-disc list-inside text-gray-600 space-y-2">
+                                        <li>{% trans "Modern web browser" %}</li>
+                                        <li>{% trans "Internet connection" %}</li>
+                                        <li>{% trans "Supported devices" %}</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section id="inventory-management" class="mb-16">
+                        <h2 class="text-3xl font-bold text-gray-900 mb-6">{% trans "Inventory Management" %}</h2>
+                        <div class="bg-white shadow-sm rounded-lg p-6">
+                            <div class="grid gap-6">
+                                <div class="border rounded-lg p-4">
+                                    <h3 class="text-lg font-semibold text-gray-900 mb-2">{% trans "Managing Items" %}</h3>
+                                    <ul class="list-disc list-inside text-gray-600 space-y-2">
+                                        <li>{% trans "Adding new items to inventory" %}</li>
+                                        <li>{% trans "Updating stock levels" %}</li>
+                                        <li>{% trans "Setting up categories" %}</li>
+                                        <li>{% trans "Managing suppliers" %}</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section id="employee-management" class="mb-16">
+                        <h2 class="text-3xl font-bold text-gray-900 mb-6">{% trans "Employee Management" %}</h2>
+                        <div class="bg-white shadow-sm rounded-lg p-6">
+                            <div class="grid gap-6">
+                                <div class="border rounded-lg p-4">
+                                    <h3 class="text-lg font-semibold text-gray-900 mb-2">{% trans "Employee Features" %}</h3>
+                                    <ul class="list-disc list-inside text-gray-600 space-y-2">
+                                        <li>{% trans "Adding new employees" %}</li>
+                                        <li>{% trans "Setting permissions" %}</li>
+                                        <li>{% trans "Managing roles" %}</li>
+                                        <li>{% trans "Activity tracking" %}</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section id="reports" class="mb-16">
+                        <h2 class="text-3xl font-bold text-gray-900 mb-6">{% trans "Reports" %}</h2>
+                        <div class="bg-white shadow-sm rounded-lg p-6">
+                            <div class="grid gap-6">
+                                <div class="border rounded-lg p-4">
+                                    <h3 class="text-lg font-semibold text-gray-900 mb-2">{% trans "Available Reports" %}</h3>
+                                    <ul class="list-disc list-inside text-gray-600 space-y-2">
+                                        <li>{% trans "Inventory status reports" %}</li>
+                                        <li>{% trans "Employee activity reports" %}</li>
+                                        <li>{% trans "Financial reports" %}</li>
+                                        <li>{% trans "Custom reports" %}</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section id="settings" class="mb-16">
+                        <h2 class="text-3xl font-bold text-gray-900 mb-6">{% trans "Settings" %}</h2>
+                        <div class="bg-white shadow-sm rounded-lg p-6">
+                            <div class="grid gap-6">
+                                <div class="border rounded-lg p-4">
+                                    <h3 class="text-lg font-semibold text-gray-900 mb-2">{% trans "System Settings" %}</h3>
+                                    <ul class="list-disc list-inside text-gray-600 space-y-2">
+                                        <li>{% trans "General settings" %}</li>
+                                        <li>{% trans "User preferences" %}</li>
+                                        <li>{% trans "Notification settings" %}</li>
+                                        <li>{% trans "Security settings" %}</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

@@ -1,0 +1,392 @@
+{% extends 'base/base_tailwind.html' %}
+{% load static %}
+{% load i18n %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IT Asset Management System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-sm fixed w-full z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+                    </svg>
+                    <span class="ml-2 text-xl font-semibold text-gray-900">IT Asset Management</span>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <a href="#pricing" class="text-gray-700 hover:text-gray-900">Pricing</a>
+                    <a href="#features" class="text-gray-700 hover:text-gray-900">Features</a>
+                    <a href="{% url 'registration:login' %}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        {% trans "Sign In" %}
+                        <svg class="ml-2 -mr-1 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14"/>
+                        </svg>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <div class="relative bg-white pt-16">
+        <div class="max-w-7xl mx-auto">
+            <div class="relative z-10 pb-8 bg-white sm:pb-16 md:pb-20 lg:max-w-2xl lg:w-full lg:pb-28 xl:pb-32">
+                <main class="mt-10 mx-auto max-w-7xl px-4 sm:mt-12 sm:px-6 md:mt-16 lg:mt-20 lg:px-8 xl:mt-28">
+                    <div class="sm:text-center lg:text-left">
+                        <h1 class="text-4xl tracking-tight font-extrabold text-gray-900 sm:text-5xl md:text-6xl">
+                            <span class="block">Manage your IT assets</span>
+                            <span class="block text-blue-600">with ease</span>
+                        </h1>
+                        <p class="mt-3 text-base text-gray-500 sm:mt-5 sm:text-lg sm:max-w-xl sm:mx-auto md:mt-5 md:text-xl lg:mx-0">
+                            Track, manage, and optimize your IT assets efficiently. Get real-time insights into your inventory, streamline asset assignments, and make data-driven decisions.
+                        </p>
+                        <div class="mt-5 sm:mt-8 sm:flex sm:justify-center lg:justify-start">
+                            <div class="rounded-md shadow">
+                                <a href="#pricing" class="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 md:py-4 md:text-lg md:px-10">
+                                    View Plans
+                                </a>
+                            </div>
+                            <div class="mt-3 sm:mt-0 sm:ml-3">
+                                <a href="#features" class="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-blue-700 bg-blue-100 hover:bg-blue-200 md:py-4 md:text-lg md:px-10">
+                                    Learn More
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </main>
+            </div>
+        </div>
+        <div class="lg:absolute lg:inset-y-0 lg:right-0 lg:w-1/2">
+            <img class="h-56 w-full object-cover sm:h-72 md:h-96 lg:w-full lg:h-full" src="https://images.unsplash.com/photo-1551434678-e076c223a692?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=2850&q=80" alt="">
+        </div>
+    </div>
+
+    <!-- Pricing Section -->
+    <div id="pricing" class="bg-gray-50 py-24">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center">
+                <h2 class="text-3xl font-extrabold text-gray-900 sm:text-4xl">
+                    Choose the right plan for your business
+                </h2>
+                <p class="mt-4 text-lg text-gray-600">
+                    Start with a 14-day free trial. No credit card required.
+                </p>
+            </div>
+
+            <div class="mt-16 grid gap-8 lg:grid-cols-3 lg:gap-x-8">
+                <!-- Basic Plan -->
+                <div class="relative bg-white rounded-2xl shadow-xl">
+                    <div class="p-8">
+                        <div class="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+                            <span class="inline-flex rounded-full bg-blue-100 px-4 py-1 text-sm font-semibold text-blue-600">
+                                Basic
+                            </span>
+                        </div>
+
+                        <p class="mt-4 text-sm text-gray-500">Best for small teams</p>
+                        <div class="mt-4 flex items-baseline text-6xl font-extrabold">
+                            $29
+                            <span class="ml-1 text-2xl font-medium text-gray-500">/month</span>
+                        </div>
+
+                        <ul role="list" class="mt-8 space-y-4">
+                            <li class="flex items-center">
+                                <svg class="h-5 w-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                </svg>
+                                <span class="ml-3 text-gray-700">Up to 50 assets</span>
+                            </li>
+                            <li class="flex items-center">
+                                <svg class="h-5 w-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                </svg>
+                                <span class="ml-3 text-gray-700">Basic reporting</span>
+                            </li>
+                            <li class="flex items-center">
+                                <svg class="h-5 w-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                </svg>
+                                <span class="ml-3 text-gray-700">5 team members</span>
+                            </li>
+                        </ul>
+
+                        <a href="{% url 'purchase:plan' %}?plan=basic" 
+                           class="mt-8 block w-full bg-blue-600 text-center py-3 text-white rounded-lg hover:bg-blue-700">
+                            {% if user.is_authenticated %}
+                                {% trans "Start free trial" %}
+                            {% else %}
+                                {% trans "Sign in to start" %}
+                            {% endif %}
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Professional Plan -->
+                <div class="relative bg-white rounded-2xl shadow-xl border-2 border-blue-500">
+                    <div class="p-8">
+                        <div class="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+                            <span class="inline-flex rounded-full bg-blue-600 px-4 py-1 text-sm font-semibold text-white">
+                                Professional
+                            </span>
+                        </div>
+
+                        <p class="mt-4 text-sm text-gray-500">Best for growing businesses</p>
+                        <div class="mt-4 flex items-baseline text-6xl font-extrabold">
+                            $79
+                            <span class="ml-1 text-2xl font-medium text-gray-500">/month</span>
+                        </div>
+
+                        <ul role="list" class="mt-8 space-y-4">
+                            <li class="flex items-center">
+                                <svg class="h-5 w-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                </svg>
+                                <span class="ml-3 text-gray-700">Up to 200 assets</span>
+                            </li>
+                            <li class="flex items-center">
+                                <svg class="h-5 w-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                </svg>
+                                <span class="ml-3 text-gray-700">Advanced reporting</span>
+                            </li>
+                            <li class="flex items-center">
+                                <svg class="h-5 w-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                </svg>
+                                <span class="ml-3 text-gray-700">20 team members</span>
+                            </li>
+                            <li class="flex items-center">
+                                <svg class="h-5 w-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                </svg>
+                                <span class="ml-3 text-gray-700">Priority support</span>
+                            </li>
+                        </ul>
+
+                        <a href="{% url 'purchase:plan' %}?plan=professional" 
+                           class="mt-8 block w-full bg-blue-600 text-center py-3 text-white rounded-lg hover:bg-blue-700">
+                            {% if user.is_authenticated %}
+                                {% trans "Start free trial" %}
+                            {% else %}
+                                {% trans "Sign in to start" %}
+                            {% endif %}
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Enterprise Plan -->
+                <div class="relative bg-white rounded-2xl shadow-xl">
+                    <div class="p-8">
+                        <div class="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+                            <span class="inline-flex rounded-full bg-blue-100 px-4 py-1 text-sm font-semibold text-blue-600">
+                                Enterprise
+                            </span>
+                        </div>
+
+                        <p class="mt-4 text-sm text-gray-500">Best for large organizations</p>
+                        <div class="mt-4 flex items-baseline text-6xl font-extrabold">
+                            $199
+                            <span class="ml-1 text-2xl font-medium text-gray-500">/month</span>
+                        </div>
+
+                        <ul role="list" class="mt-8 space-y-4">
+                            <li class="flex items-center">
+                                <svg class="h-5 w-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                </svg>
+                                <span class="ml-3 text-gray-700">Unlimited assets</span>
+                            </li>
+                            <li class="flex items-center">
+                                <svg class="h-5 w-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                </svg>
+                                <span class="ml-3 text-gray-700">Custom reporting</span>
+                            </li>
+                            <li class="flex items-center">
+                                <svg class="h-5 w-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                </svg>
+                                <span class="ml-3 text-gray-700">Unlimited team members</span>
+                            </li>
+                            <li class="flex items-center">
+                                <svg class="h-5 w-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                </svg>
+                                <span class="ml-3 text-gray-700">24/7 dedicated support</span>
+                            </li>
+                            <li class="flex items-center">
+                                <svg class="h-5 w-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                </svg>
+                                <span class="ml-3 text-gray-700">Custom integration</span>
+                            </li>
+                        </ul>
+
+                        <a href="{% url 'purchase:plan' %}?plan=enterprise" 
+                           class="mt-8 block w-full bg-blue-600 text-center py-3 text-white rounded-lg hover:bg-blue-700">
+                            {% if user.is_authenticated %}
+                                {% trans "Contact sales" %}
+                            {% else %}
+                                {% trans "Sign in to start" %}
+                            {% endif %}
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Features Section -->
+    <div id="features" class="py-24 bg-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="lg:text-center">
+                <h2 class="text-base text-blue-600 font-semibold tracking-wide uppercase">Features</h2>
+                <p class="mt-2 text-3xl leading-8 font-extrabold tracking-tight text-gray-900 sm:text-4xl">
+                    Everything you need to manage your IT assets
+                </p>
+            </div>
+
+            <div class="mt-20">
+                <dl class="space-y-10 md:space-y-0 md:grid md:grid-cols-2 md:gap-x-8 md:gap-y-10">
+                    <!-- Feature 1 -->
+                    <div class="relative">
+                        <dt>
+                            <div class="absolute flex items-center justify-center h-12 w-12 rounded-md bg-blue-500 text-white">
+                                <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                                </svg>
+                            </div>
+                            <p class="ml-16 text-lg leading-6 font-medium text-gray-900">Asset Tracking</p>
+                        </dt>
+                        <dd class="mt-2 ml-16 text-base text-gray-500">
+                            Keep track of all your IT assets in one place. Monitor their status, location, and assignment in real-time.
+                        </dd>
+                    </div>
+
+                    <!-- Feature 2 -->
+                    <div class="relative">
+                        <dt>
+                            <div class="absolute flex items-center justify-center h-12 w-12 rounded-md bg-blue-500 text-white">
+                                <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+                                </svg>
+                            </div>
+                            <p class="ml-16 text-lg leading-6 font-medium text-gray-900">Employee Management</p>
+                        </dt>
+                        <dd class="mt-2 ml-16 text-base text-gray-500">
+                            Manage employee profiles and their assigned assets efficiently with our intuitive interface.
+                        </dd>
+                    </div>
+
+                    <!-- Feature 3 -->
+                    <div class="relative">
+                        <dt>
+                            <div class="absolute flex items-center justify-center h-12 w-12 rounded-md bg-blue-500 text-white">
+                                <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                                </svg>
+                            </div>
+                            <p class="ml-16 text-lg leading-6 font-medium text-gray-900">Advanced Analytics</p>
+                        </dt>
+                        <dd class="mt-2 ml-16 text-base text-gray-500">
+                            Get detailed insights and reports about your asset utilization and make data-driven decisions.
+                        </dd>
+                    </div>
+
+                    <!-- Feature 4 -->
+                    <div class="relative">
+                        <dt>
+                            <div class="absolute flex items-center justify-center h-12 w-12 rounded-md bg-blue-500 text-white">
+                                <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+                                </svg>
+                            </div>
+                            <p class="ml-16 text-lg leading-6 font-medium text-gray-900">Smart Notifications</p>
+                        </dt>
+                        <dd class="mt-2 ml-16 text-base text-gray-500">
+                            Stay informed with automated alerts for maintenance schedules and warranty expirations.
+                        </dd>
+                    </div>
+                </dl>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-gray-50">
+        <div class="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-8">
+                <div>
+                    <h3 class="text-sm font-semibold text-gray-400 tracking-wider uppercase">Product</h3>
+                    <ul role="list" class="mt-4 space-y-4">
+                        <li>
+                            <a href="#features" class="text-base text-gray-500 hover:text-gray-900">
+                                Features
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#pricing" class="text-base text-gray-500 hover:text-gray-900">
+                                Pricing
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="text-sm font-semibold text-gray-400 tracking-wider uppercase">Support</h3>
+                    <ul role="list" class="mt-4 space-y-4">
+                        <li>
+                            <a href="{% url 'inventory:docs' %}" class="text-base text-gray-500 hover:text-gray-900">
+                                Documentation
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="text-sm font-semibold text-gray-400 tracking-wider uppercase">Company</h3>
+                    <ul role="list" class="mt-4 space-y-4">
+                        <li>
+                            <a href="{% url 'inventory:about' %}" class="text-base text-gray-500 hover:text-gray-900">
+                                About
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="text-sm font-semibold text-gray-400 tracking-wider uppercase">Legal</h3>
+                    <ul role="list" class="mt-4 space-y-4">
+                        <li>
+                            <a href="{% url 'inventory:privacy' %}" class="text-base text-gray-500 hover:text-gray-900">
+                                Privacy Policy
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{% url 'inventory:terms' %}" class="text-base text-gray-500 hover:text-gray-900">
+                                Terms of Service
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <div class="mt-8 border-t border-gray-200 pt-8">
+                <p class="text-base text-gray-400 text-center">
+                    &copy; 2024 IT Asset Management. All rights reserved.
+                </p>
+            </div>
+        </div>
+    </footer>
+</body>
+</html> 

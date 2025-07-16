@@ -12,7 +12,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from django.template.loader import render_to_string, get_template
-from django.http import HttpResponse, JsonResponse, FileResponse
+from django.http import HttpResponse, JsonResponse, FileResponse, HttpResponseBadRequest
 from django.conf import settings
 from django.db import models, connection
 from django.contrib.auth.models import User, Group, Permission
@@ -22,7 +22,7 @@ from .models import (
     Employee, ITAsset, Department, Position, AssetType, 
     OwnerCompany, AssetHistory, Notification, NotificationCategory
 )
-from .forms import EmployeeForm, ITAssetForm
+from .forms import EmployeeForm, ITAssetForm, SuperUserRegistrationForm
 
 import openpyxl
 from openpyxl import Workbook
@@ -113,72 +113,7 @@ def home(request):
     }
     return render(request, 'inventory/home.html', context)
 
-@login_required
-def employee_list(request):
-    # Get search and filter parameters
-    search_query = request.GET.get('search', '')
-    department_id = request.GET.get('department', '')
-    company_id = request.GET.get('company', '')
-    
-    # Start with all employees
-    employees = Employee.objects.all()
-    
-    # Apply search filter if provided
-    if search_query:
-        employees = employees.filter(
-            Q(first_name__icontains=search_query) |
-            Q(last_name__icontains=search_query) |
-            Q(email__icontains=search_query) |
-            Q(employee_id__icontains=search_query) |
-            Q(national_id__icontains=search_query)  # Add national_id to search
-        )
-    
-    # Apply department filter if provided
-    if department_id:
-        employees = employees.filter(department_id=department_id)
-    
-    # Apply company filter if provided
-    if company_id:
-        employees = employees.filter(company_id=company_id)
-    
-    # Get all departments for filter dropdown
-    departments = Department.objects.all()
-    
-    # Get all companies for filter dropdown
-    companies = OwnerCompany.objects.all()
-    
-    # Paginate the results
-    paginator = Paginator(employees, 10)  # Show 10 employees per page
-    page_number = request.GET.get('page', 1)
-    page_obj = paginator.get_page(page_number)
-    
-    # Get the current page number
-    current_page = page_obj.number
-    total_pages = paginator.num_pages
-    
-    # Calculate the range of page numbers to show
-    if total_pages <= 5:
-        page_range = range(1, total_pages + 1)
-    else:
-        if current_page <= 3:
-            page_range = range(1, 6)
-        elif current_page >= total_pages - 2:
-            page_range = range(total_pages - 4, total_pages + 1)
-        else:
-            page_range = range(current_page - 2, current_page + 3)
-    
-    context = {
-        'employees': page_obj,
-        'departments': departments,
-        'companies': companies,
-        'is_paginated': page_obj.has_other_pages(),
-        'page_obj': page_obj,
-        'page_range': page_range,
-        'current_page': current_page,
-        'total_pages': total_pages,
-    }
-    
-    return render(request, 'employees/employee_list.html', context)
+
 
 @login_required
 def employee_create(request):
@@ -367,6 +302,7 @@ class ITAssetListView(LoginRequiredMixin, ListView):
         context = super().get_context_data(**kwargs)
         context['asset_types'] = AssetType.objects.all()
         context['status_choices'] = ITAsset.STATUS_CHOICES
+        context['owners'] = OwnerCompany.objects.all()
         
         # Get unique manufacturers, normalized to title case
         manufacturers = ITAsset.objects.exclude(manufacturer='').values_list('manufacturer', flat=True)
@@ -451,6 +387,20 @@ class ITAssetListView(LoginRequiredMixin, ListView):
             return response
             
         return super().get(request, *args, **kwargs)
+
+class AssetListContentView(ITAssetListView):
+    template_name = 'assets/asset_list_content.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['owners'] = OwnerCompany.objects.all()
+        return context
+
+    def get(self, request, *args, **kwargs):
+        response = super().get(request, *args, **kwargs)
+        if 'HX-Request' in request.headers:
+            return response
+        return HttpResponseBadRequest('This view only serves HTMX requests')
 
 class ITAssetDetailView(LoginRequiredMixin, DetailView):
     model = ITAsset
@@ -1553,36 +1503,56 @@ class AssetTypeDeleteView(LoginRequiredMixin, DeleteView):
 # Owner Company Views
 class OwnerCompanyListView(LoginRequiredMixin, ListView):
     model = OwnerCompany
-    template_name = 'inventory/owner_company_list.html'
+    template_name = 'company/owner_company_list.html'
     context_object_name = 'companies'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = _('Owner Companies')
+        return context
 
 class OwnerCompanyCreateView(LoginRequiredMixin, CreateView):
     model = OwnerCompany
-    template_name = 'inventory/owner_company_form.html'
+    template_name = 'company/owner_company_form.html'
     fields = ['code', 'name']
     success_url = reverse_lazy('inventory:owner_company_list')
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = _('Add Company')
+        return context
+
     def form_valid(self, form):
-        messages.success(self.request, 'Owner Company created successfully.')
+        messages.success(self.request, _('Owner Company created successfully.'))
         return super().form_valid(form)
 
 class OwnerCompanyUpdateView(LoginRequiredMixin, UpdateView):
     model = OwnerCompany
-    template_name = 'inventory/owner_company_form.html'
+    template_name = 'company/owner_company_form.html'
     fields = ['code', 'name']
     success_url = reverse_lazy('inventory:owner_company_list')
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = _('Edit Company')
+        return context
+
     def form_valid(self, form):
-        messages.success(self.request, 'Owner Company updated successfully.')
+        messages.success(self.request, _('Owner Company updated successfully.'))
         return super().form_valid(form)
 
 class OwnerCompanyDeleteView(LoginRequiredMixin, DeleteView):
     model = OwnerCompany
-    template_name = 'inventory/owner_company_confirm_delete.html'
+    template_name = 'company/owner_company_confirm_delete.html'
     success_url = reverse_lazy('inventory:owner_company_list')
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = _('Delete Company')
+        return context
+
     def delete(self, request, *args, **kwargs):
-        messages.success(request, 'Owner Company deleted successfully.')
+        messages.success(request, _('Owner Company deleted successfully.'))
         return super().delete(request, *args, **kwargs)
 
 class EmployeePDFView(LoginRequiredMixin, DetailView):
@@ -1616,12 +1586,13 @@ class EmployeeListView(LoginRequiredMixin, ListView):
     paginate_by = 10
 
     def get_queryset(self):
-        queryset = super().get_queryset()
+        queryset = Employee.objects.select_related('department', 'company').all()
         
         # Get search and filter parameters
         search_query = self.request.GET.get('search', '')
         department_id = self.request.GET.get('department', '')
         company_id = self.request.GET.get('company', '')
+        status = self.request.GET.get('status', '')
         
         # Apply search filter if provided
         if search_query:
@@ -1630,7 +1601,8 @@ class EmployeeListView(LoginRequiredMixin, ListView):
                 Q(last_name__icontains=search_query) |
                 Q(email__icontains=search_query) |
                 Q(employee_id__icontains=search_query) |
-                Q(national_id__icontains=search_query)
+                Q(national_id__icontains=search_query) |  # Add national_id to search
+                Q(position__icontains=search_query)  # Add position to search
             )
         
         # Apply department filter if provided
@@ -1641,12 +1613,29 @@ class EmployeeListView(LoginRequiredMixin, ListView):
         if company_id:
             queryset = queryset.filter(company_id=company_id)
         
+        # Apply status filter if provided
+        if status:
+            is_active = status == 'active'
+            queryset = queryset.filter(is_active=is_active)
+        
         return queryset
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        
+        # Add filter options
         context['departments'] = Department.objects.all()
         context['companies'] = OwnerCompany.objects.all()
+        
+        # Get selected department and company for filter badges
+        department_id = self.request.GET.get('department', '')
+        company_id = self.request.GET.get('company', '')
+        
+        if department_id:
+            context['selected_department'] = Department.objects.filter(id=department_id).first()
+        
+        if company_id:
+            context['selected_company'] = OwnerCompany.objects.filter(id=company_id).first()
         
         # Add pagination context
         paginator = context['paginator']
@@ -1676,6 +1665,12 @@ class EmployeeListView(LoginRequiredMixin, ListView):
         })
         
         return context
+
+    def get(self, request, *args, **kwargs):
+        response = super().get(request, *args, **kwargs)
+        if request.headers.get('HX-Request'):
+            return render(request, 'employees/employee_list_content.html', self.get_context_data())
+        return response
 
 class EmployeeDetailView(LoginRequiredMixin, DetailView):
     model = Employee
@@ -1714,7 +1709,7 @@ class EmployeeDeleteView(LoginRequiredMixin, DeleteView):
 @login_required
 def owner_company_list(request):
     companies = OwnerCompany.objects.all()
-    return render(request, 'inventory/owner_company_list.html', {
+    return render(request, 'company/owner_company_list.html', {
         'companies': companies,
         'title': 'Owner Companies'
     })
@@ -1747,7 +1742,7 @@ def asset_type_detail(request, pk):
 @login_required
 def department_list(request):
     departments = Department.objects.all()
-    return render(request, 'inventory/department_list.html', {
+    return render(request, 'department/department_list.html', {
         'departments': departments,
         'title': 'Departments'
     })
@@ -1755,7 +1750,7 @@ def department_list(request):
 @login_required
 def department_detail(request, pk):
     department = get_object_or_404(Department, pk=pk)
-    return render(request, 'inventory/department_detail.html', {
+    return render(request, 'department/department_detail.html', {
         'department': department,
         'title': f'Department: {department.name}'
     })
@@ -1768,7 +1763,7 @@ def department_create(request):
             department = Department.objects.create(name=name)
             messages.success(request, f'Department "{department.name}" created successfully.')
             return redirect('inventory:department_list')
-    return render(request, 'inventory/department_form.html', {
+    return render(request, 'department/department_form.html', {
         'title': 'Create Department'
     })
 
@@ -1782,7 +1777,7 @@ def department_update(request, pk):
             department.save()
             messages.success(request, f'Department "{department.name}" updated successfully.')
             return redirect('inventory:department_list')
-    return render(request, 'inventory/department_form.html', {
+    return render(request, 'department/department_form.html', {
         'department': department,
         'title': f'Update Department: {department.name}'
     })
@@ -1800,14 +1795,14 @@ def department_delete(request, pk):
             employees = department.employees.all()
             positions = department.positions.all()
             messages.error(request, 'Cannot delete this department because it has associated employees and positions.')
-            return render(request, 'inventory/department_confirm_delete.html', {
+            return render(request, 'department/department_confirm_delete.html', {
                 'department': department,
                 'title': f'Delete Department: {department.name}',
                 'employees': employees,
                 'positions': positions,
                 'error': True
             })
-    return render(request, 'inventory/department_confirm_delete.html', {
+    return render(request, 'department/department_confirm_delete.html', {
         'department': department,
         'title': f'Delete Department: {department.name}',
         'employees': department.employees.all(),
@@ -2238,7 +2233,7 @@ def global_asset_history(request):
         'date_to': date_to,
     }
 
-    return render(request, 'inventory/global_asset_history.html', context)
+    return render(request, 'assets/global_asset_history.html', context)
 
 @login_required
 def generate_report_pdf(request):
@@ -2562,10 +2557,13 @@ class UserPermissionsView(LoginRequiredMixin, UserPassesTestMixin, TemplateView)
 
 class DatabaseBackupView(LoginRequiredMixin, UserPassesTestMixin, View):
     def test_func(self):
-        return self.request.user.is_superuser
+        return (
+            self.request.user.is_superuser or 
+            (self.request.user.is_staff and self.request.user.has_perm('inventory.can_backup_database'))
+        )
 
     def get(self, request):
-        return render(request, 'inventory/database/backup.html')
+        return render(request, 'database/backup.html')
 
     def post(self, request):
         try:
@@ -2633,7 +2631,7 @@ class DatabaseRestoreView(LoginRequiredMixin, UserPassesTestMixin, View):
                         'date': datetime.fromtimestamp(os.path.getctime(file_path))
                     })
         
-        return render(request, 'inventory/database/restore.html', {'backups': backups})
+        return render(request, 'database/restore.html', {'backups': backups})
 
     def post(self, request):
         try:
@@ -2696,3 +2694,43 @@ def asset_receipt(request, pk):
     }
     
     return render(request, 'assets/receipt_form.html', context)
+
+@login_required
+def asset_unassign(request, pk):
+    if request.method == 'POST':
+        asset = get_object_or_404(ITAsset, pk=pk)
+        employee = asset.assigned_to
+        if employee:
+            # Store employee ID before unassigning
+            employee_id = employee.id
+            # Unassign the asset
+            asset.assigned_to = None
+            asset.status = 'available'  # Update status to available
+            asset.save()
+            
+            # Add success message
+            messages.success(request, _('Asset successfully unassigned.'))
+            
+            # Redirect back to the employee detail page
+            return redirect('inventory:employee_detail', pk=employee_id)
+    
+    # If not POST or no employee, redirect to asset list
+    return redirect('inventory:asset_list')
+
+class SuperUserRegistrationView(CreateView):
+    model = User
+    form_class = SuperUserRegistrationForm
+    template_name = 'registration/register.html'
+    success_url = reverse_lazy('login')
+
+    def dispatch(self, request, *args, **kwargs):
+        # Only allow registration if there are no superusers
+        if User.objects.filter(is_superuser=True).exists():
+            messages.error(request, _('Superuser already exists. Registration is disabled.'))
+            return redirect('login')
+        return super().dispatch(request, *args, **kwargs)
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        messages.success(self.request, _('Superuser account created successfully. You can now log in.'))
+        return response

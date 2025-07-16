@@ -1,0 +1,45 @@
+{% extends 'base/base_tailwind.html' %}
+{% load i18n %}
+
+{% block title %}{% trans "About Us" %} | Inventory App{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <div class="max-w-3xl mx-auto">
+        <h1 class="text-4xl font-extrabold text-gray-900 mb-8">{% trans "About Us" %}</h1>
+        
+        <div class="prose prose-lg text-gray-500 mx-auto">
+            <p class="mb-6">
+                {% trans "Welcome to the Inventory Management System, a comprehensive solution designed to help businesses efficiently manage their inventory, assets, and resources." %}
+            </p>
+            
+            <h2 class="text-2xl font-bold text-gray-900 mt-8 mb-4">{% trans "Our Mission" %}</h2>
+            <p class="mb-6">
+                {% trans "Our mission is to provide businesses with powerful, user-friendly tools to streamline their inventory management processes, reduce costs, and improve operational efficiency." %}
+            </p>
+            
+            <h2 class="text-2xl font-bold text-gray-900 mt-8 mb-4">{% trans "Key Features" %}</h2>
+            <ul class="space-y-4 list-disc pl-5">
+                <li>{% trans "Real-time inventory tracking with automatic updates" %}</li>
+                <li>{% trans "Comprehensive employee management system" %}</li>
+                <li>{% trans "Advanced asset tracking and maintenance scheduling" %}</li>
+                <li>{% trans "Detailed reporting and analytics dashboard" %}</li>
+                <li>{% trans "Multi-language support for global operations" %}</li>
+                <li>{% trans "Secure and scalable cloud-based solution" %}</li>
+            </ul>
+            
+            <h2 class="text-2xl font-bold text-gray-900 mt-8 mb-4">{% trans "Why Choose Us?" %}</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                <div class="bg-white p-6 rounded-lg shadow-sm">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-2">{% trans "User-Friendly Interface" %}</h3>
+                    <p class="text-gray-500">{% trans "Intuitive design that makes inventory management simple and efficient." %}</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-sm">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-2">{% trans "Reliable Support" %}</h3>
+                    <p class="text-gray-500">{% trans "24/7 customer support to help you with any questions or issues." %}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 
