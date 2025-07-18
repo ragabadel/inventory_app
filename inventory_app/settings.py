@@ -27,6 +27,13 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
+# CSRF Settings
+CSRF_COOKIE_SECURE = False  # Set to True if using HTTPS
+CSRF_COOKIE_HTTPONLY = False  # Set to True if not using JavaScript to read the cookie
+CSRF_TRUSTED_ORIGINS = ['http://localhost:8000', 'http://127.0.0.1:8000']  # Add your domain
+CSRF_USE_SESSIONS = False  # Use cookie-based CSRF tokens
+CSRF_COOKIE_SAMESITE = 'Lax'  # Use 'Strict' if possible, 'Lax' is a good compromise
+
 # Application definition
 
 INSTALLED_APPS = [
@@ -148,5 +155,5 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # Authentication Settings
 LOGIN_URL = '/accounts/login/'  # URL where requests are redirected for login
 LOGIN_REDIRECT_URL = '/inventory/'  # Redirect to inventory home page after login
-LOGOUT_REDIRECT_URL = '/'  # Redirect to home page after logout
+LOGOUT_REDIRECT_URL = '/'  # Redirect to landing page after logout
 

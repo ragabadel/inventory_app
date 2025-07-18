@@ -225,6 +225,39 @@ const initDarkMode = () => {
     }
 };
 
+// Function to get CSRF token from meta tag
+function getCSRFToken() {
+    return document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+}
+
+// Add CSRF token to all AJAX requests
+document.addEventListener('DOMContentLoaded', function() {
+    // For fetch API
+    const originalFetch = window.fetch;
+    window.fetch = function() {
+        let [resource, config] = arguments;
+        if(config === undefined) {
+            config = {};
+        }
+        if(config.method && ['POST', 'PUT', 'DELETE', 'PATCH'].includes(config.method.toUpperCase())) {
+            if(config.headers === undefined) {
+                config.headers = {};
+            }
+            config.headers['X-CSRFToken'] = getCSRFToken();
+        }
+        return originalFetch(resource, config);
+    };
+
+    // For XMLHttpRequest (if using jQuery or other libraries)
+    const token = getCSRFToken();
+    if(token) {
+        document.addEventListener('ajax:beforeSend', function(e) {
+            const xhr = e.detail[0];
+            xhr.setRequestHeader('X-CSRFToken', token);
+        });
+    }
+});
+
 // Initialize on DOM Load
 document.addEventListener('DOMContentLoaded', () => {
     initDarkMode();

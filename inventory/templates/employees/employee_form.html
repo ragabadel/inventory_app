@@ -20,6 +20,18 @@
     .error-message {
         @apply text-red-600 text-sm mt-1 font-medium;
     }
+
+    .form-control {
+        @apply mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500;
+    }
+
+    .form-select {
+        @apply mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500;
+    }
+
+    .form-check-input {
+        @apply h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500;
+    }
 </style>
 {% endblock %}
 
@@ -31,9 +43,11 @@
         <h1 class="text-2xl font-semibold text-gray-800 flex items-center mb-4 md:mb-0">
             <i class="fas fa-user-plus mr-2"></i>{% if employee %}Edit Employee{% else %}Add Employee{% endif %}
         </h1>
-        <a href="{% url 'inventory:employee_list' %}" class="btn-secondary">
-            <i class="fas fa-arrow-left mr-2"></i>Back
-        </a>
+        <div class="flex space-x-3">
+            <a href="{% url 'inventory:employee_list' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left mr-2"></i>{% trans "Back to List" %}
+            </a>
+        </div>
     </div>
 
     {% if messages %}
@@ -68,10 +82,10 @@
                         <!-- Employee ID -->
                         <div class="mb-4">
                             <label for="id_employee_id" class="block text-sm font-medium text-gray-700">
-                                Employee ID <span class="text-red-500">*</span>
+                                Employee ID <span class="text-red-600">*</span>
                             </label>
                             <div class="mt-1">
-                                {{ form.employee_id|safe }}
+                                {{ form.employee_id }}
                                 {% if form.employee_id.help_text %}
                                     <p class="mt-1 text-sm text-gray-500">{{ form.employee_id.help_text }}</p>
                                 {% endif %}
@@ -84,10 +98,10 @@
                         <!-- National ID -->
                         <div class="mb-4">
                             <label for="id_national_id" class="block text-sm font-medium text-gray-700">
-                                National ID <span class="text-red-500">*</span>
+                                National ID <span class="text-red-600">*</span>
                             </label>
                             <div class="mt-1">
-                                {{ form.national_id|safe }}
+                                {{ form.national_id }}
                                 {% if form.national_id.help_text %}
                                     <p class="mt-1 text-sm text-gray-500">{{ form.national_id.help_text }}</p>
                                 {% endif %}
@@ -100,10 +114,10 @@
                         <!-- First Name -->
                         <div class="mb-4">
                             <label for="id_first_name" class="block text-sm font-medium text-gray-700">
-                                First Name <span class="text-red-500">*</span>
+                                First Name <span class="text-red-600">*</span>
                             </label>
                             <div class="mt-1">
-                                {{ form.first_name|safe }}
+                                {{ form.first_name }}
                                 {% if form.first_name.errors %}
                                     <p class="mt-1 text-sm text-red-600">{{ form.first_name.errors }}</p>
                                 {% endif %}
@@ -113,10 +127,10 @@
                         <!-- Last Name -->
                         <div class="mb-4">
                             <label for="id_last_name" class="block text-sm font-medium text-gray-700">
-                                Last Name <span class="text-red-500">*</span>
+                                Last Name <span class="text-red-600">*</span>
                             </label>
                             <div class="mt-1">
-                                {{ form.last_name|safe }}
+                                {{ form.last_name }}
                                 {% if form.last_name.errors %}
                                     <p class="mt-1 text-sm text-red-600">{{ form.last_name.errors }}</p>
                                 {% endif %}
@@ -126,10 +140,10 @@
                         <!-- Email -->
                         <div class="mb-4">
                             <label for="id_email" class="block text-sm font-medium text-gray-700">
-                                Email <span class="text-red-500">*</span>
+                                Email <span class="text-red-600">*</span>
                             </label>
                             <div class="mt-1">
-                                {{ form.email|safe }}
+                                {{ form.email }}
                                 {% if form.email.errors %}
                                     <p class="mt-1 text-sm text-red-600">{{ form.email.errors }}</p>
                                 {% endif %}
@@ -142,7 +156,7 @@
                                 Phone Number
                             </label>
                             <div class="mt-1">
-                                {{ form.phone_number|safe }}
+                                {{ form.phone_number }}
                                 {% if form.phone_number.errors %}
                                     <p class="mt-1 text-sm text-red-600">{{ form.phone_number.errors }}</p>
                                 {% endif %}
@@ -157,10 +171,10 @@
                         <!-- Department -->
                         <div class="mb-4">
                             <label for="id_department" class="block text-sm font-medium text-gray-700">
-                                Department <span class="text-red-500">*</span>
+                                Department <span class="text-red-600">*</span>
                             </label>
                             <div class="mt-1">
-                                {{ form.department|safe }}
+                                {{ form.department }}
                                 {% if form.department.errors %}
                                     <p class="mt-1 text-sm text-red-600">{{ form.department.errors }}</p>
                                 {% endif %}
@@ -170,11 +184,13 @@
                         <!-- Position -->
                         <div class="mb-4">
                             <label for="id_position" class="block text-sm font-medium text-gray-700">
-                                Position
+                                Position <span class="text-red-600">*</span>
                             </label>
                             <div class="mt-1">
-                                {{ form.position|safe }}
-                                <p class="mt-1 text-sm text-gray-500">Employee's role within the department</p>
+                                {{ form.position }}
+                                {% if form.position.help_text %}
+                                    <p class="mt-1 text-sm text-gray-500">{{ form.position.help_text }}</p>
+                                {% endif %}
                                 {% if form.position.errors %}
                                     <p class="mt-1 text-sm text-red-600">{{ form.position.errors }}</p>
                                 {% endif %}
@@ -184,10 +200,10 @@
                         <!-- Company -->
                         <div class="mb-4">
                             <label for="id_company" class="block text-sm font-medium text-gray-700">
-                                Company <span class="text-red-500">*</span>
+                                Company <span class="text-red-600">*</span>
                             </label>
                             <div class="mt-1">
-                                {{ form.company|safe }}
+                                {{ form.company }}
                                 {% if form.company.errors %}
                                     <p class="mt-1 text-sm text-red-600">{{ form.company.errors }}</p>
                                 {% endif %}
@@ -197,10 +213,10 @@
                         <!-- Hire Date -->
                         <div class="mb-4">
                             <label for="id_hire_date" class="block text-sm font-medium text-gray-700">
-                                Hire Date <span class="text-red-500">*</span>
+                                Hire Date <span class="text-red-600">*</span>
                             </label>
                             <div class="mt-1">
-                                {{ form.hire_date|safe }}
+                                {{ form.hire_date }}
                                 {% if form.hire_date.errors %}
                                     <p class="mt-1 text-sm text-red-600">{{ form.hire_date.errors }}</p>
                                 {% endif %}
@@ -211,7 +227,7 @@
                         <div class="mb-4">
                             <div class="flex items-center">
                                 <div class="flex items-center h-5">
-                                    {{ form.is_active|safe }}
+                                    {{ form.is_active }}
                                 </div>
                                 <div class="ml-3">
                                     <label for="id_is_active" class="font-medium text-gray-700">Employment Status</label>
@@ -222,9 +238,12 @@
                     </div>
                 </div>
 
-                <div class="flex justify-end mt-6">
-                    <button type="submit" class="btn-primary">
-                        <i class="fas fa-save mr-2"></i>{% if employee %}Update{% else %}Add{% endif %} Employee
+                <div class="flex justify-end space-x-3 mt-6">
+                    <a href="{% url 'inventory:employee_list' %}" class="btn btn-secondary">
+                        <i class="fas fa-times mr-2"></i>{% trans "Cancel" %}
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save mr-2"></i>{% if employee %}{% trans "Update" %}{% else %}{% trans "Add" %}{% endif %} {% trans "Employee" %}
                     </button>
                 </div>
             </form>
@@ -246,21 +265,6 @@
         const selectFields = document.querySelectorAll('select');
         selectFields.forEach(field => {
             field.classList.add('mt-1', 'block', 'w-full', 'rounded-md', 'border-gray-300', 'shadow-sm', 'focus:border-blue-500', 'focus:ring-blue-500');
-        });
-
-        // Add Tailwind classes to checkbox
-        const checkboxFields = document.querySelectorAll('input[type="checkbox"]');
-        checkboxFields.forEach(field => {
-            field.classList.add('h-4', 'w-4', 'text-blue-600', 'border-gray-300', 'rounded', 'focus:ring-blue-500');
-        });
-
-        // Add form validation
-        const form = document.querySelector('form');
-        form.addEventListener('submit', function(event) {
-            if (!form.checkValidity()) {
-                event.preventDefault();
-                event.stopPropagation();
-            }
         });
     });
 </script>

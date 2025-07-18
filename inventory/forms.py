@@ -118,7 +118,8 @@ class EmployeeForm(forms.ModelForm):
             'department': forms.Select(attrs={'class': 'form-select'}),
             'position': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': "Enter employee's role or title"
+                'placeholder': "Enter employee's role or title",
+                'required': 'required'
             }),
             'hire_date': forms.DateInput(attrs={
                 'class': 'form-control',
@@ -137,7 +138,7 @@ class EmployeeForm(forms.ModelForm):
         for field_name, field in self.fields.items():
             if not isinstance(field.widget, (forms.CheckboxInput, forms.RadioSelect)):
                 field.widget.attrs['class'] = field.widget.attrs.get('class', '') + ' form-control'
-            if field.required and field_name != 'position':  # Make position not required
+            if field.required or field_name == 'position':  # Make position required
                 field.widget.attrs['required'] = 'required'
         
         # Update department choices
@@ -159,8 +160,8 @@ class EmployeeForm(forms.ModelForm):
         })
 
         # Update position field
-        self.fields['position'].required = False
-        self.fields['position'].help_text = "Employee's role or title within the department (optional)"
+        self.fields['position'].required = True
+        self.fields['position'].help_text = "Employee's role or title within the department"
 
         # Update is_active field
         self.fields['is_active'].help_text = "Indicates if the employee is currently working (checked) or has left work (unchecked)"

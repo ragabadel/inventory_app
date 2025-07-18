@@ -55,8 +55,17 @@ class Position(models.Model):
         ordering = ['department', 'name']
 
 class OwnerCompany(models.Model):
+    COMPANY_CHOICES = [
+        ('ACD', 'ACD'),
+        ('AMAN E-Collection', 'AMAN E-Collection'),
+        ('AMAN invetement', 'AMAN invetement'),
+        ('Arcop', 'Arcop'),
+        ('CTP', 'CTP'),
+        ('MISR_ASSIST', 'Misr Assist'),
+    ]
+
     code = models.CharField(max_length=20, unique=True)
-    name = models.CharField(max_length=100)
+    name = models.CharField(max_length=100, choices=COMPANY_CHOICES)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -67,6 +76,19 @@ class OwnerCompany(models.Model):
 
     def __str__(self):
         return self.name
+
+    @property
+    def logo_path(self):
+        """Returns the static path to the company logo"""
+        logo_mapping = {
+            'ACD': 'acd-logo.png',
+            'AMAN E-Collection': 'aman-collection-logo.png',
+            'AMAN invetement': 'aman-investment-logo.png',
+            'Arcop': 'arcop-logo.png',
+            'CTP': 'ctp-logo.png',
+            'MISR_ASSIST': 'misr-assist-logo.png',
+        }
+        return f'images/company_logo/{logo_mapping.get(self.name, "default-logo.png")}'
 
 class Employee(models.Model):
     user = models.OneToOneField(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='employee_profile')

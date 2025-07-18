@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>استلام عهدة - {{ asset.name }}</title>
+    {% load static %}
     <style>
         @page {
             size: A4;
@@ -21,8 +22,31 @@
             margin: 0 auto;
         }
         .header {
-            text-align: center;
+            display: flex;
+            flex-direction: row;
+            justify-content: space-between;
+            align-items: center;
             margin-bottom: 15px;
+            position: relative;
+        }
+        .header-content {
+            text-align: center;
+            flex-grow: 1;
+        }
+        .logo-container {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            max-width: 30%;
+        }
+        .partner-logo {
+            max-height: 70px;
+            width: auto;
+            object-fit: contain;
         }
         .header h2 {
             margin: 0 0 5px 0;
@@ -103,6 +127,44 @@
             outline: none;
             border-bottom: 2px solid #000;
         }
+        .company-selector {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 100;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            background-color: #fff;
+            padding: 10px 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .company-selector select {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            direction: rtl;
+            min-width: 200px;
+            background-color: #f8f9fa;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .company-selector select:hover {
+            border-color: #aaa;
+            background-color: #fff;
+        }
+        .company-selector select:focus {
+            outline: none;
+            border-color: #666;
+            box-shadow: 0 0 0 2px rgba(0,0,0,0.1);
+        }
+        .company-selector label {
+            font-weight: bold;
+            color: #333;
+            font-size: 14px;
+        }
         @media print {
             body {
                 padding: 0;
@@ -118,15 +180,40 @@
                 border: none;
                 border-bottom: 1px solid #000;
             }
+            .partner-logo {
+                max-height: 120px; /* Larger logo for print */
+            }
+            .logo-container {
+                max-width: 35%;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
+        <div class="company-selector no-print">
+            <label for="companySelect">اختر الشركة:</label>
+            <select id="companySelect" onchange="updateCompanyLogo()">
+                <option value="">-- اختر الشركة --</option>
+                <option value="ARCORP">ARCORP</option>
+                <option value="مصنع القاهره">مصنع القاهره للمنتجات المروريه</option>
+                <option value="أمان استثمار">أمان استثمار</option>
+                <option value="أمان تحصيل">أمان تحصيل</option>
+            </select>
+        </div>
         <div class="header">
-            <h2>إقرار</h2>
-            <h3>"إستلام عهدة"</h3>
-            <p><strong>التاريخ:</strong> <span id="current-date"></span></p>
+            <div class="logo-container" id="logoContainer">
+                {% with company=asset.assigned_to.department.company %}
+                    {% if company %}
+                        <img src="{% static company.logo_path %}" alt="{{ company.name }} Logo" class="partner-logo" id="companyLogo">
+                    {% endif %}
+                {% endwith %}
+            </div>
+            <div class="header-content">
+                <h2>إقرار</h2>
+                <h3>"إستلام عهدة"</h3>
+                <p style="text-align: right;"><strong>التاريخ:</strong> <span id="current-date"></span></p>
+            </div>
         </div>
 
         <!-- بيانات المستلم -->
@@ -166,6 +253,7 @@
                     {{ asset.manufacturer }}<br>
                     {{ asset.processor }}<br>
                     {{ asset.hdd1_capacity }}<br>
+                    {{ asset.hdd2_capacity }}<br>
                     {{ asset.ram_size }}<br>
                     SN: {{ asset.serial_number }}
                 </td>
@@ -190,6 +278,13 @@
                     <div style="line-height: 2; font-size: 14px; margin-top: 10px;">
                         كما أنني أفوض الشركة في إتخاذ اللازم حيال خصم القيمة التي تُقدرها مقابل تبديد هذه العُهدة، من مُستحقاتي لـديها وذلـك فـي حالـة عـدم إعـادة تسـليم العُهـدة المُسـلمة لـي وفقـا للبيان الوارد أعلاه - كلها أو بعضها - مع تحملي كامل المسئولية المدنية والجنائية جراء ذلك.
                     </div>
+                    <div style="line-height: 2; font-size: 14px; margin-top: 10px;">
+                        <p style="text-align: center;">وهذا إقرار وتعهد مني بذلك..،</p>
+                        تم إستلام العُهدة وملحقاتها على سبيل الأمانة في تمام الساعة ............. 
+                        من يوم ...............
+                        الموافق ........
+                        /....../...........م</span>، وأتعهد بتسليمها للشركة وقت طلبها ذلك بالحالة المُسلمة لي، وفي حال الإمتناع عن ذلك لأي سبب من الأسباب؛ أعد في هذه الحالة مبدداً لما تسلمته ومرتكباً لجريمة خيانة الأمانة.
+                    </div>
                 </td>
             </tr>
             <tr>
@@ -197,8 +292,8 @@
                     <table class="inner-table">
                         <tr>
                             <td width="33%" style="text-align: center;">المُستلم:___________________</td>
-                            <td width="33%" style="text-align: center;">الرقم القومي:______________________</td>
-                            <td width="33%" style="text-align: center;">التوقيع:____________________________</td>
+                            <td width="35%" style="text-align: center;">الرقم القومي:______________________</td>
+                            <td width="33%" style="text-align: center;">التوقيع:_______________________</td>
                         </tr>
                     </table>
                 </td>
@@ -212,7 +307,11 @@
             </tr>
             <tr>
                 <td colspan="4" class="text-right">
-                    <p style="margin: 5px 0;">تم استلام العُهد في يوم: <span id="current-day"></span> الموافق: <span id="current-date-full"></span> وذلك بتمام الساعة: <span id="current-time"></span></p>
+                    <p style="margin: 5px 0;">
+                          تم استلام العُهد في يوم:__________________
+                          الموافق:_________________
+                         وذلك بتمام الساعة: ______________________
+                    </p>
                 </td>
             </tr>
             <tr>
@@ -251,7 +350,45 @@
             document.getElementById('current-time').textContent = time.trim();
         }
 
-        window.onload = updateDateTime;
+        function updateCompanyLogo() {
+            const select = document.getElementById('companySelect');
+            const logoContainer = document.getElementById('logoContainer');
+            const selectedCompany = select.value;
+            
+            if (selectedCompany) {
+                const logoMapping = {
+                    'ARCORP': 'ARCORP-logo.png',
+                    'مصنع القاهره': 'مصنع القاهره للمنتجات المروريه لوجو.png',
+                    'أمان استثمار': 'أمان استثمار لوجو.png',
+                    'أمان تحصيل': 'أمان تحصيل لوجو.png'
+                };
+                
+                const logoPath = logoMapping[selectedCompany];
+                if (logoPath) {
+                    const staticUrl = "{% get_static_prefix %}";
+                    const img = document.getElementById('companyLogo');
+                    if (img) {
+                        img.src = `${staticUrl}images/company _logo/${logoPath}`;
+                        img.alt = `${selectedCompany} Logo`;
+                    } else {
+                        logoContainer.innerHTML = `<img src="${staticUrl}images/company _logo/${logoPath}" alt="${selectedCompany} Logo" class="partner-logo" id="companyLogo">`;
+                    }
+                }
+            } else {
+                logoContainer.innerHTML = '';
+            }
+        }
+
+        // Set initial company if available
+        window.onload = function() {
+            updateDateTime();
+            {% with company=asset.assigned_to.department.company %}
+                {% if company %}
+                    const select = document.getElementById('companySelect');
+                    select.value = "{{ company.name }}";
+                {% endif %}
+            {% endwith %}
+        };
     </script>
 </body>
 </html> 

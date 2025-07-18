@@ -68,15 +68,18 @@
                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                 <div class="flex space-x-2">
                                     <a href="{% url 'inventory:employee_detail' employee.pk %}" 
-                                       class="text-blue-600 hover:text-blue-900">
+                                       class="btn btn-secondary btn-sm" 
+                                       title="{% trans 'View Details' %}">
                                         <i class="fas fa-eye"></i>
                                     </a>
                                     <a href="{% url 'inventory:employee_update' employee.pk %}" 
-                                       class="text-yellow-600 hover:text-yellow-900">
+                                       class="btn btn-primary btn-sm" 
+                                       title="{% trans 'Edit' %}">
                                         <i class="fas fa-edit"></i>
                                     </a>
                                     <a href="{% url 'inventory:employee_delete' employee.pk %}" 
-                                       class="text-red-600 hover:text-red-900">
+                                       class="btn btn-danger btn-sm" 
+                                       title="{% trans 'Delete' %}">
                                         <i class="fas fa-trash"></i>
                                     </a>
                                 </div>
@@ -98,7 +101,7 @@
                 <ul class="flex space-x-2">
                     {% if page_obj.has_previous %}
                         <li>
-                            <button hx-get="{% url 'inventory:employee_list' %}?page=1{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.department %}&department={{ request.GET.department }}{% endif %}{% if request.GET.company %}&company={{ request.GET.company }}{% endif %}" 
+                            <button hx-get="{% url 'inventory:employee_list_content' %}?page=1{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.department %}&department={{ request.GET.department }}{% endif %}{% if request.GET.company %}&company={{ request.GET.company }}{% endif %}" 
                                     hx-target="#employee-list-content"
                                     class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
                                 <span class="sr-only">First</span>
@@ -106,7 +109,7 @@
                             </button>
                         </li>
                         <li>
-                            <button hx-get="{% url 'inventory:employee_list' %}?page={{ page_obj.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.department %}&department={{ request.GET.department }}{% endif %}{% if request.GET.company %}&company={{ request.GET.company }}{% endif %}" 
+                            <button hx-get="{% url 'inventory:employee_list_content' %}?page={{ page_obj.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.department %}&department={{ request.GET.department }}{% endif %}{% if request.GET.company %}&company={{ request.GET.company }}{% endif %}" 
                                     hx-target="#employee-list-content"
                                     class="relative inline-flex items-center px-2 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
                                 <span class="sr-only">Previous</span>
@@ -117,7 +120,7 @@
 
                     {% for num in page_range %}
                         <li>
-                            <button hx-get="{% url 'inventory:employee_list' %}?page={{ num }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.department %}&department={{ request.GET.department }}{% endif %}{% if request.GET.company %}&company={{ request.GET.company }}{% endif %}" 
+                            <button hx-get="{% url 'inventory:employee_list_content' %}?page={{ num }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.department %}&department={{ request.GET.department }}{% endif %}{% if request.GET.company %}&company={{ request.GET.company }}{% endif %}" 
                                     hx-target="#employee-list-content"
                                     class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium {% if num == current_page %}text-blue-600 bg-blue-50{% else %}text-gray-700 hover:bg-gray-50{% endif %}">
                                 {{ num }}
@@ -127,7 +130,7 @@
 
                     {% if page_obj.has_next %}
                         <li>
-                            <button hx-get="{% url 'inventory:employee_list' %}?page={{ page_obj.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.department %}&department={{ request.GET.department }}{% endif %}{% if request.GET.company %}&company={{ request.GET.company }}{% endif %}" 
+                            <button hx-get="{% url 'inventory:employee_list_content' %}?page={{ page_obj.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.department %}&department={{ request.GET.department }}{% endif %}{% if request.GET.company %}&company={{ request.GET.company }}{% endif %}" 
                                     hx-target="#employee-list-content"
                                     class="relative inline-flex items-center px-2 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
                                 <span class="sr-only">Next</span>
@@ -135,7 +138,7 @@
                             </button>
                         </li>
                         <li>
-                            <button hx-get="{% url 'inventory:employee_list' %}?page={{ total_pages }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.department %}&department={{ request.GET.department }}{% endif %}{% if request.GET.company %}&company={{ request.GET.company }}{% endif %}" 
+                            <button hx-get="{% url 'inventory:employee_list_content' %}?page={{ total_pages }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.department %}&department={{ request.GET.department }}{% endif %}{% if request.GET.company %}&company={{ request.GET.company }}{% endif %}" 
                                     hx-target="#employee-list-content"
                                     class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
                                 <span class="sr-only">Last</span>

@@ -163,11 +163,6 @@
                             {{ avg_growth_rate }}%
                         </span>
                     </div>
-                    <!-- Total Investment -->
-                    <div class="text-sm">
-                        <span class="text-gray-600">{% trans "Total Investment:" %}</span>
-                        <span class="font-semibold ml-1 text-gray-900">${{ total_investment|floatformat:2 }}</span>
-                    </div>
                 </div>
             </div>
 
@@ -245,7 +240,7 @@
                 {% for company_stat in company_device_stats %}
                     <div class="card hover:shadow-lg transition-shadow duration-300" x-data="{ expanded: false }">
                         <!-- Company Header -->
-        <div class="card-body">
+                        <div class="card-body">
                             <div class="flex items-center justify-between cursor-pointer" @click="expanded = !expanded">
                                 <div class="flex items-center space-x-4">
                                     <div class="flex-shrink-0">
@@ -255,7 +250,9 @@
                                     </div>
                                     <div>
                                         <h3 class="text-lg font-medium text-gray-900">{{ company_stat.company.name }}</h3>
-                                        <p class="text-sm text-gray-500">{% trans "Total Devices" %}: {{ company_stat.total }}</p>
+                                        <div class="flex items-center space-x-4 text-sm text-gray-500">
+                                            <span>{% trans "Total Devices" %}: {{ company_stat.total }}</span>
+                                        </div>
                                     </div>
                                 </div>
                                 <button class="text-gray-400 hover:text-gray-600 transition-colors duration-200">
@@ -307,22 +304,21 @@
                                                 </div>
                                             </div>
                                             <!-- Retired -->
-                                            <div class="bg-purple-50 rounded-lg p-4">
+                                            <div class="bg-red-50 rounded-lg p-4">
                                                 <div class="flex justify-between items-center">
                                                     <div>
-                                                        <p class="text-sm text-purple-600 font-medium">{% trans "Retired" %}</p>
-                                                        <p class="text-2xl font-semibold text-purple-700">{{ company_stat.retired }}</p>
+                                                        <p class="text-sm text-red-600 font-medium">{% trans "Retired" %}</p>
+                                                        <p class="text-2xl font-semibold text-red-700">{{ company_stat.retired }}</p>
                                                     </div>
                                                     <div class="text-right">
-                                                        <p class="text-sm text-purple-600">{{ company_stat.retired_percentage|floatformat:1 }}%</p>
+                                                        <p class="text-sm text-red-600">{{ company_stat.retired_percentage|floatformat:1 }}%</p>
                                                     </div>
                                                 </div>
                                             </div>
                                         </div>
-            </div>
+                                    </div>
 
                                     <!-- Device Types -->
-                                    {% if company_stat.device_types %}
                                     <div class="mb-8">
                                         <h4 class="text-base font-medium text-gray-900 mb-4">{% trans "Device Types" %}</h4>
                                         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -372,21 +368,20 @@
                                             {% endfor %}
                                         </div>
                                     </div>
-                                    {% endif %}
                                 </div>
                             </div>
                         </div>
                     </div>
-                        {% endfor %}
+                {% endfor %}
             </div>
-            {% else %}
+        {% else %}
             <div class="text-center py-8">
                 <div class="text-gray-400 mb-4">
                     <i class="fas fa-info-circle text-4xl"></i>
                 </div>
                 <p class="text-gray-600">{% trans "No company device statistics available." %}</p>
             </div>
-            {% endif %}
+        {% endif %}
     </div>
 
     <!-- Export Options -->
@@ -404,36 +399,28 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Department Asset Distribution Chart
+    // Department Chart
     const departmentCtx = document.getElementById('departmentChart').getContext('2d');
     new Chart(departmentCtx, {
         type: 'bar',
         data: {
-            labels: {{ department_labels|safe }},
+            labels: [{% for dept in departments %}'{{ dept.name }}',{% endfor %}],
             datasets: [{
-                label: '{% trans "Number of Assets" %}',
-                data: {{ department_data|safe }},
-                backgroundColor: 'rgba(54, 162, 235, 0.8)',
-                borderColor: 'rgba(54, 162, 235, 1)',
+                label: '{% trans "Assets" %}',
+                data: [{% for dept in departments %}{{ dept.asset_count }},{% endfor %}],
+                backgroundColor: 'rgba(59, 130, 246, 0.5)',
+                borderColor: 'rgb(59, 130, 246)',
                 borderWidth: 1
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    display: false
-                },
-                title: {
-                    display: false
-                }
-            },
             scales: {
                 y: {
                     beginAtZero: true,
                     ticks: {
-                        precision: 0
+                        stepSize: 1
                     }
                 }
             }
@@ -445,18 +432,20 @@ document.addEventListener('DOMContentLoaded', function() {
     new Chart(statusCtx, {
         type: 'doughnut',
         data: {
-            labels: ['Available', 'Assigned', 'Maintenance'],
+            labels: ['{% trans "Available" %}', '{% trans "Assigned" %}', '{% trans "Maintenance" %}', '{% trans "Retired" %}'],
             datasets: [{
-                data: [{{ available_assets }}, {{ assigned_assets }}, {{ maintenance_assets }}],
+                data: [{{ available_assets }}, {{ assigned_assets }}, {{ maintenance_assets }}, {{ retired_assets }}],
                 backgroundColor: [
-                    'rgb(34, 197, 94, 0.8)',
-                    'rgb(79, 70, 229, 0.8)',
-                    'rgb(245, 158, 11, 0.8)'
+                    'rgba(34, 197, 94, 0.5)',  // green
+                    'rgba(59, 130, 246, 0.5)', // blue
+                    'rgba(234, 179, 8, 0.5)',  // yellow
+                    'rgba(239, 68, 68, 0.5)'   // red
                 ],
                 borderColor: [
                     'rgb(34, 197, 94)',
-                    'rgb(79, 70, 229)',
-                    'rgb(245, 158, 11)'
+                    'rgb(59, 130, 246)',
+                    'rgb(234, 179, 8)',
+                    'rgb(239, 68, 68)'
                 ],
                 borderWidth: 1
             }]
@@ -465,7 +454,9 @@ document.addEventListener('DOMContentLoaded', function() {
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
-                legend: { position: 'bottom' }
+                legend: {
+                    position: 'bottom'
+                }
             }
         }
     });
@@ -473,39 +464,37 @@ document.addEventListener('DOMContentLoaded', function() {
     // Model Chart
     const modelCtx = document.getElementById('modelChart').getContext('2d');
     new Chart(modelCtx, {
-        type: 'bar',
+        type: 'pie',
         data: {
-            labels: [{% for stat in model_stats %}'{{ stat.model }} ({{ stat.asset_type__display_name }})'{% if not forloop.last %},{% endif %}{% endfor %}],
+            labels: [{% for stat in model_stats %}'{{ stat.model }}',{% endfor %}],
             datasets: [{
-                label: '{% trans "Device Count" %}',
-                data: [{% for stat in model_stats %}{{ stat.count }}{% if not forloop.last %},{% endif %}{% endfor %}],
-                backgroundColor: 'rgb(14, 165, 233, 0.8)',
-                borderColor: 'rgb(14, 165, 233)',
-                borderWidth: 1,
-                borderRadius: 4
+                data: [{% for stat in model_stats %}{{ stat.count }},{% endfor %}],
+                backgroundColor: [
+                    'rgba(59, 130, 246, 0.5)',
+                    'rgba(34, 197, 94, 0.5)',
+                    'rgba(234, 179, 8, 0.5)',
+                    'rgba(239, 68, 68, 0.5)',
+                    'rgba(168, 85, 247, 0.5)'
+                ],
+                borderColor: [
+                    'rgb(59, 130, 246)',
+                    'rgb(34, 197, 94)',
+                    'rgb(234, 179, 8)',
+                    'rgb(239, 68, 68)',
+                    'rgb(168, 85, 247)'
+                ],
+                borderWidth: 1
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: { stepSize: 1 },
-                    grid: {
-                        drawBorder: false,
-                        color: 'rgba(0, 0, 0, 0.05)'
-                    }
-                },
-                x: {
-                    grid: { display: false },
-                    ticks: {
-                        maxRotation: 45,
-                        minRotation: 45
-                    }
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    display: true
                 }
-            },
-            plugins: { legend: { display: false } }
+            }
         }
     });
 
@@ -514,86 +503,37 @@ document.addEventListener('DOMContentLoaded', function() {
     new Chart(growthCtx, {
         type: 'line',
         data: {
-            labels: [{% for month_data in growth_data %}'{{ month_data.month }}'{% if not forloop.last %}, {% endif %}{% endfor %}],
+            labels: [{% for item in growth_data %}'{{ item.month }}',{% endfor %}],
             datasets: [{
                 label: '{% trans "Total Assets" %}',
-                data: [{% for month_data in growth_data %}{{ month_data.total_assets }}{% if not forloop.last %}, {% endif %}{% endfor %}],
-                borderColor: '#1a56db',
-                backgroundColor: 'rgba(26, 86, 219, 0.1)',
+                data: [{% for item in growth_data %}{{ item.total_assets }},{% endfor %}],
+                borderColor: 'rgb(59, 130, 246)',
+                backgroundColor: 'rgba(59, 130, 246, 0.1)',
                 fill: true,
-                tension: 0.4,
-                yAxisID: 'y'
+                tension: 0.4
             }, {
-                label: '{% trans "Monthly Investment" %}',
-                data: [{% for month_data in growth_data %}{{ month_data.monthly_investment }}{% if not forloop.last %}, {% endif %}{% endfor %}],
-                borderColor: '#047857',
-                backgroundColor: 'rgba(4, 120, 87, 0.1)',
+                label: '{% trans "New Assets" %}',
+                data: [{% for item in growth_data %}{{ item.new_assets }},{% endfor %}],
+                borderColor: 'rgb(34, 197, 94)',
+                backgroundColor: 'rgba(34, 197, 94, 0.1)',
                 fill: true,
-                tension: 0.4,
-                yAxisID: 'y1'
+                tension: 0.4
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            interaction: {
-                mode: 'index',
-                intersect: false,
-            },
-            plugins: {
-                legend: {
-                    position: 'top',
-                    labels: {
-                        usePointStyle: true,
-                        padding: 20
-                    }
-                },
-                tooltip: {
-                    mode: 'index',
-                    intersect: false,
-                    callbacks: {
-                        label: function(context) {
-                            let label = context.dataset.label || '';
-                            if (label) {
-                                label += ': ';
-                            }
-                            if (context.datasetIndex === 1) {
-                                label += '$' + context.parsed.y.toFixed(2);
-                            } else {
-                                label += context.parsed.y;
-                            }
-                            return label;
-                        }
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1
                     }
                 }
             },
-            scales: {
-                y: {
-                    type: 'linear',
-                    display: true,
-                    position: 'left',
-                    title: {
-                        display: true,
-                        text: '{% trans "Total Assets" %}'
-                    }
-                },
-                y1: {
-                    type: 'linear',
-                    display: true,
-                    position: 'right',
-                    title: {
-                        display: true,
-                        text: '{% trans "Monthly Investment ($)" %}'
-                    },
-                    grid: {
-                        drawOnChartArea: false
-                    }
-                },
-                x: {
-                    title: {
-                        display: true,
-                        text: '{% trans "Month" %}'
-                    }
+            plugins: {
+                legend: {
+                    position: 'bottom'
                 }
             }
         }

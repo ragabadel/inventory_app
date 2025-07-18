@@ -1,35 +1,58 @@
 {% extends 'base/base_tailwind.html' %}
+{% load static %}
+{% load i18n %}
 
-{% block title %}Delete Asset{% endblock %}
+{% block title %}{% trans "Delete Asset" %}{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card">
-                <div class="card-header bg-danger text-white">
-                    <h5 class="mb-0">
-                        <i class="fas fa-trash-alt me-2"></i>
-                        Delete Asset
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <p class="lead">Are you sure you want to delete the asset "{{ object.name }}"?</p>
-                    <p class="text-muted">This action cannot be undone.</p>
-                    
-                    <form method="post">
-                        {% csrf_token %}
-                        <div class="d-flex justify-content-end gap-2">
-                            <a href="{% url 'inventory:asset_detail' pk=object.pk %}" class="btn btn-secondary">
-                                <i class="fas fa-times me-2"></i>Cancel
-                            </a>
-                            <button type="submit" class="btn btn-danger">
-                                <i class="fas fa-trash-alt me-2"></i>Delete Asset
-                            </button>
-                        </div>
-                    </form>
+<div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+        <!-- Header -->
+        <div class="px-6 py-4 bg-red-600">
+            <h2 class="text-xl font-semibold text-white">{% trans "Delete Asset" %}</h2>
+        </div>
+
+        <!-- Content -->
+        <div class="p-6">
+            <div class="mb-6">
+                <div class="flex items-center p-4 bg-red-50 rounded-lg">
+                    <div class="flex-shrink-0">
+                        <svg class="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                        </svg>
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-sm text-red-700">
+                            {% trans "Are you sure you want to delete the asset" %} "{{ object.name }}" ({{ object.serial_number }})? {% trans "This action cannot be undone." %}
+                        </p>
+                        {% if object.assigned_to %}
+                        <p class="mt-2 text-sm text-red-700 font-semibold">
+                            {% trans "Warning: This asset is currently assigned to" %} {{ object.assigned_to.get_full_name }}.
+                        </p>
+                        {% endif %}
+                    </div>
                 </div>
             </div>
+
+            <form method="post" class="mt-6">
+                {% csrf_token %}
+                <div class="flex items-center justify-end space-x-4">
+                    <a href="{% url 'inventory:asset_list' %}" 
+                       class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                        {% trans "Cancel" %}
+                    </a>
+                    <button type="submit" 
+                            class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                        <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                        {% trans "Delete Asset" %}
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 </div>

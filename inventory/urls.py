@@ -7,6 +7,10 @@ urlpatterns = [
     path('', views.home, name='home'),
     path('landing/', views.LandingPageView.as_view(), name='landing'),
     path('contact/', views.ContactView.as_view(), name='contact'),
+    path('about/', views.AboutView.as_view(), name='about'),
+    path('privacy/', views.PrivacyView.as_view(), name='privacy'),
+    path('terms/', views.TermsView.as_view(), name='terms'),
+    path('docs/', views.DocsView.as_view(), name='docs'),
     
     # User Account Management
     path('account/', views.UserAccountView.as_view(), name='user_account'),
@@ -14,6 +18,7 @@ urlpatterns = [
     
     # Employee URLs
     path('employees/', views.EmployeeListView.as_view(), name='employee_list'),
+    path('employees/content/', views.EmployeeListContentView.as_view(), name='employee_list_content'),
     path('employees/create/', views.EmployeeCreateView.as_view(), name='employee_create'),
     path('employees/<int:pk>/', views.EmployeeDetailView.as_view(), name='employee_detail'),
     path('employees/<int:pk>/update/', views.EmployeeUpdateView.as_view(), name='employee_update'),

@@ -180,6 +180,7 @@ def asset_assign(request):
     if request.method == 'POST':
         asset_id = request.POST.get('asset')
         employee_id = request.POST.get('employee')
+        receipt_date = request.POST.get('receipt_date')
         
         try:
             asset = ITAsset.objects.get(pk=asset_id)
@@ -223,9 +224,10 @@ def asset_assign(request):
                 action_url=reverse('inventory:asset_detail', kwargs={'pk': asset.id})
             )
             
-            # Update asset status and assignment
+            # Update asset status, assignment and receipt date
             asset.assigned_to = employee
             asset.status = 'assigned'
+            asset.receipt_date = receipt_date
             asset.save()
             
             messages.success(request, f'Asset "{asset.name}" has been assigned to {employee.get_full_name()}.')
@@ -267,13 +269,14 @@ class ITAssetListView(LoginRequiredMixin, ListView):
     paginate_by = 10
 
     def get_queryset(self):
-        queryset = super().get_queryset()
+        queryset = super().get_queryset().select_related('owner', 'asset_type', 'assigned_to')
         
         # Get filter parameters
         search_query = self.request.GET.get('search', '')
         asset_type = self.request.GET.get('asset_type', '')
         status = self.request.GET.get('status', '')
         manufacturer = self.request.GET.get('manufacturer', '')
+        owner = self.request.GET.get('owner', '')
         
         # Apply search filter
         if search_query:
@@ -295,6 +298,14 @@ class ITAssetListView(LoginRequiredMixin, ListView):
         # Apply manufacturer filter
         if manufacturer:
             queryset = queryset.filter(manufacturer__iexact=manufacturer)
+            
+        # Apply owner filter
+        if owner:
+            try:
+                owner_id = int(owner)
+                queryset = queryset.filter(owner_id=owner_id)
+            except (ValueError, TypeError):
+                pass
         
         return queryset
 
@@ -317,7 +328,8 @@ class ITAssetListView(LoginRequiredMixin, ListView):
             'search': self.request.GET.get('search', ''),
             'asset_type': self.request.GET.get('asset_type', ''),
             'status': self.request.GET.get('status', ''),
-            'manufacturer': self.request.GET.get('manufacturer', '')
+            'manufacturer': self.request.GET.get('manufacturer', ''),
+            'owner': self.request.GET.get('owner', '')
         }
         
         return context
@@ -339,6 +351,7 @@ class ITAssetListView(LoginRequiredMixin, ListView):
                 'Serial Number',
                 'Model',
                 'Manufacturer',
+                'Owner Company',
                 'Status',
                 'Assigned To',
                 'Department',
@@ -355,6 +368,7 @@ class ITAssetListView(LoginRequiredMixin, ListView):
                     asset.serial_number,
                     asset.model,
                     asset.manufacturer,
+                    asset.owner.name if asset.owner else '',
                     asset.get_status_display(),
                     asset.assigned_to.get_full_name() if asset.assigned_to else '',
                     asset.assigned_to.department.name if asset.assigned_to and asset.assigned_to.department else '',
@@ -363,26 +377,13 @@ class ITAssetListView(LoginRequiredMixin, ListView):
                 ]
                 ws.append(row)
             
-            # Adjust column widths
-            for column in ws.columns:
-                max_length = 0
-                column_letter = get_column_letter(column[0].column)
-                for cell in column:
-                    try:
-                        if len(str(cell.value)) > max_length:
-                            max_length = len(str(cell.value))
-                    except:
-                        pass
-                adjusted_width = (max_length + 2)
-                ws.column_dimensions[column_letter].width = adjusted_width
-            
-            # Create response
+            # Create the response
             response = HttpResponse(
                 content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
             )
             response['Content-Disposition'] = 'attachment; filename=filtered_assets.xlsx'
             
-            # Save workbook to response
+            # Save the workbook to the response
             wb.save(response)
             return response
             
@@ -397,9 +398,14 @@ class AssetListContentView(ITAssetListView):
         return context
 
     def get(self, request, *args, **kwargs):
-        response = super().get(request, *args, **kwargs)
+        # Handle Excel export through the parent view
+        if request.GET.get('export') == 'excel':
+            return super().get(request, *args, **kwargs)
+            
+        # Only serve HTMX requests for the content template
         if 'HX-Request' in request.headers:
-            return response
+            return super().get(request, *args, **kwargs)
+            
         return HttpResponseBadRequest('This view only serves HTMX requests')
 
 class ITAssetDetailView(LoginRequiredMixin, DetailView):
@@ -1667,10 +1673,59 @@ class EmployeeListView(LoginRequiredMixin, ListView):
         return context
 
     def get(self, request, *args, **kwargs):
-        response = super().get(request, *args, **kwargs)
-        if request.headers.get('HX-Request'):
-            return render(request, 'employees/employee_list_content.html', self.get_context_data())
-        return response
+        if request.GET.get('export') == 'excel':
+            # Get the filtered queryset
+            queryset = self.get_queryset()
+            
+            # Create workbook and select active sheet
+            wb = Workbook()
+            ws = wb.active
+            ws.title = "Employees"
+            
+            # Write headers
+            headers = [
+                'Employee ID',
+                'National ID',
+                'First Name',
+                'Last Name',
+                'Email',
+                'Phone Number',
+                'Department',
+                'Position',
+                'Company',
+                'Hire Date',
+                'Status'
+            ]
+            ws.append(headers)
+            
+            # Write data
+            for employee in queryset:
+                row = [
+                    employee.employee_id,
+                    employee.national_id,
+                    employee.first_name,
+                    employee.last_name,
+                    employee.email,
+                    employee.phone_number,
+                    employee.department.get_name_display() if employee.department else '',
+                    employee.position or '',
+                    employee.company.name if employee.company else '',
+                    employee.hire_date.strftime('%Y-%m-%d') if employee.hire_date else '',
+                    'Active' if employee.is_active else 'Inactive'
+                ]
+                ws.append(row)
+            
+            # Create the response
+            response = HttpResponse(
+                content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            )
+            response['Content-Disposition'] = 'attachment; filename=employees.xlsx'
+            
+            # Save the workbook to the response
+            wb.save(response)
+            return response
+            
+        return super().get(request, *args, **kwargs)
 
 class EmployeeDetailView(LoginRequiredMixin, DetailView):
     model = Employee
@@ -2278,6 +2333,7 @@ def get_reports_data(request, date_from=None, date_to=None):
     available_assets = ITAsset.objects.filter(status='available').count()
     assigned_assets = ITAsset.objects.filter(status='assigned').count()
     maintenance_assets = ITAsset.objects.filter(status='maintenance').count()
+    retired_assets = ITAsset.objects.filter(status='retired').count()
     
     # Department statistics
     departments = Department.objects.annotate(
@@ -2294,17 +2350,89 @@ def get_reports_data(request, date_from=None, date_to=None):
     recent_activities = AssetHistory.objects.select_related(
         'asset', 'employee'
     ).order_by('-date')[:10]
+
+    # Calculate YoY growth
+    today = timezone.now()
+    one_year_ago = today - timedelta(days=365)
+    assets_one_year_ago = ITAsset.objects.filter(purchase_date__lte=one_year_ago).count()
+    current_assets = ITAsset.objects.count()
+    yoy_growth = ((current_assets - assets_one_year_ago) / assets_one_year_ago * 100) if assets_one_year_ago > 0 else 0
+
+    # Calculate 3-month average growth rate
+    three_months_ago = today - timedelta(days=90)
+    monthly_growth = ITAsset.objects.filter(
+        purchase_date__gte=three_months_ago
+    ).annotate(
+        month=TruncMonth('purchase_date')
+    ).values('month').annotate(
+        count=Count('id')
+    ).order_by('month')
+    
+    avg_growth_rate = sum(m['count'] for m in monthly_growth) / 3 if monthly_growth else 0
+
+    # Company device statistics
+    company_device_stats = []
+    
+    # Get all companies, even those without devices
+    for company in OwnerCompany.objects.all().order_by('name'):
+        # Get base queryset for this company
+        company_assets = ITAsset.objects.filter(owner=company)
+        total_devices = company_assets.count()
+        
+        # Always include the company, even if it has no devices
+        company_data = {
+            'company': company,
+            'total': total_devices,
+            'available': company_assets.filter(status='available').count(),
+            'assigned': company_assets.filter(status='assigned').count(),
+            'maintenance': company_assets.filter(status='maintenance').count(),
+            'retired': company_assets.filter(status='retired').count(),
+            'available_percentage': 0,
+            'assigned_percentage': 0,
+            'maintenance_percentage': 0,
+            'retired_percentage': 0,
+            'device_types': []
+        }
+        
+        # Calculate percentages only if there are devices
+        if total_devices > 0:
+            company_data.update({
+                'available_percentage': (company_data['available'] / total_devices * 100),
+                'assigned_percentage': (company_data['assigned'] / total_devices * 100),
+                'maintenance_percentage': (company_data['maintenance'] / total_devices * 100),
+                'retired_percentage': (company_data['retired'] / total_devices * 100),
+            })
+            
+            # Get device types distribution
+            for asset_type in AssetType.objects.all():
+                type_count = company_assets.filter(asset_type=asset_type).count()
+                if type_count > 0:
+                    type_percentage = (type_count / total_devices * 100)
+                    company_data['device_types'].append({
+                        'type': asset_type.display_name,
+                        'count': type_count,
+                        'percentage': type_percentage
+                    })
+            
+            # Sort device types by count in descending order
+            company_data['device_types'].sort(key=lambda x: x['count'], reverse=True)
+        
+        company_device_stats.append(company_data)
     
     return {
         'total_assets': total_assets,
         'available_assets': available_assets,
         'assigned_assets': assigned_assets,
         'maintenance_assets': maintenance_assets,
+        'retired_assets': retired_assets,
         'departments': departments,
         'model_stats': model_stats,
         'recent_activities': recent_activities,
         'date_from': date_from,
         'date_to': date_to,
+        'yoy_growth': round(yoy_growth, 2),
+        'avg_growth_rate': round(avg_growth_rate, 2),
+        'company_device_stats': company_device_stats,
     }
 
 @login_required
@@ -2384,10 +2512,10 @@ def reports_dashboard(request):
         'total_growth_rate': growth_data[-1]['growth_rate'] if growth_data else 0,
     })
     
-    return render(request, 'inventory/reports_dashboard.html', context)
+    return render(request, 'reports/reports_dashboard.html', context)
 
 class LandingPageView(TemplateView):
-    template_name = 'inventory/landing_page.html'
+    template_name = 'index/landing.html'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -2734,3 +2862,47 @@ class SuperUserRegistrationView(CreateView):
         response = super().form_valid(form)
         messages.success(self.request, _('Superuser account created successfully. You can now log in.'))
         return response
+
+class AboutView(TemplateView):
+    template_name = 'index/about.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = _('About Us')
+        return context
+
+class PrivacyView(TemplateView):
+    template_name = 'index/privacy.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = _('Privacy Policy')
+        return context
+
+class TermsView(TemplateView):
+    template_name = 'index/terms.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = _('Terms of Service')
+        return context
+
+class DocsView(TemplateView):
+    template_name = 'index/docs.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = _('Documentation')
+        return context
+
+class EmployeeListContentView(EmployeeListView):
+    template_name = 'employees/employee_list_content.html'
+
+    def get(self, request, *args, **kwargs):
+        # Only serve HTMX requests for the content template
+        if not request.headers.get('HX-Request'):
+            return HttpResponseBadRequest('This view only serves HTMX requests')
+            
+        self.object_list = self.get_queryset()
+        context = self.get_context_data()
+        return render(request, self.template_name, context)

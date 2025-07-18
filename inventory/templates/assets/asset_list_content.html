@@ -9,8 +9,8 @@
                 {% endblocktrans %}
             {% endif %}
         </div>
-        <a href="?{% for key, value in request.GET.items %}{% if key != 'export' %}{{ key }}={{ value }}&{% endif %}{% endfor %}export=excel" 
-           class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+        <a href="{% url 'inventory:asset_list' %}?{% for key, value in request.GET.items %}{% if key != 'export' %}{{ key }}={{ value }}&{% endif %}{% endfor %}export=excel" 
+           class="btn btn-success">
             <i class="fas fa-file-excel mr-2"></i>
             {% trans "Download Filtered Data" %}
             <span class="ml-1 text-xs">({{ page_obj.paginator.count }} items)</span>
@@ -69,11 +69,7 @@
                             {{ asset.manufacturer }}
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
-                                {% if asset.status == 'available' %}bg-green-100 text-green-800
-                                {% elif asset.status == 'assigned' %}bg-blue-100 text-blue-800
-                                {% elif asset.status == 'maintenance' %}bg-yellow-100 text-yellow-800
-                                {% else %}bg-red-100 text-red-800{% endif %}">
+                            <span class="status-badge {% if asset.status == 'available' %}status-badge-success{% elif asset.status == 'assigned' %}status-badge-info{% elif asset.status == 'maintenance' %}status-badge-warning{% else %}status-badge-danger{% endif %}">
                                 {{ asset.get_status_display }}
                             </span>
                         </td>
@@ -90,22 +86,22 @@
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                             <div class="flex space-x-2">
                                 <a href="{% url 'inventory:asset_detail' asset.pk %}" 
-                                   class="text-blue-600 hover:text-blue-900" 
+                                   class="btn btn-secondary btn-sm" 
                                    title="{% trans 'View Details' %}">
                                     <i class="fas fa-eye"></i>
                                 </a>
                                 <a href="{% url 'inventory:asset_update' asset.pk %}" 
-                                   class="text-yellow-600 hover:text-yellow-900" 
+                                   class="btn btn-primary btn-sm" 
                                    title="{% trans 'Edit' %}">
                                     <i class="fas fa-edit"></i>
                                 </a>
                                 <a href="{% url 'inventory:asset_history' asset.pk %}" 
-                                   class="text-indigo-600 hover:text-indigo-900" 
+                                   class="btn btn-secondary btn-sm" 
                                    title="{% trans 'History' %}">
                                     <i class="fas fa-history"></i>
                                 </a>
                                 <a href="{% url 'inventory:asset_delete' asset.pk %}" 
-                                   class="text-red-600 hover:text-red-900" 
+                                   class="btn btn-danger btn-sm" 
                                    title="{% trans 'Delete' %}">
                                     <i class="fas fa-trash"></i>
                                 </a>
@@ -129,17 +125,17 @@
             <div class="-mt-px flex w-0 flex-1">
                 {% if page_obj.has_previous %}
                     <button type="button"
-                            class="inline-flex items-center border-t-2 border-transparent pr-1 pt-4 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700"
+                            class="btn btn-secondary"
                             hx-get="{% url 'inventory:asset_list_content' %}?page=1{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
                             hx-target="#asset-table">
-                        <i class="fas fa-angle-double-left mr-3 h-5 w-5 text-gray-400"></i>
+                        <i class="fas fa-angle-double-left mr-2"></i>
                         {% trans "First" %}
                     </button>
                     <button type="button"
-                            class="inline-flex items-center border-t-2 border-transparent px-4 pt-4 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700"
+                            class="btn btn-secondary ml-2"
                             hx-get="{% url 'inventory:asset_list_content' %}?page={{ page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
                             hx-target="#asset-table">
-                        <i class="fas fa-angle-left mr-3 h-5 w-5 text-gray-400"></i>
+                        <i class="fas fa-angle-left mr-2"></i>
                         {% trans "Previous" %}
                     </button>
                 {% endif %}
@@ -147,7 +143,7 @@
             <div class="hidden md:-mt-px md:flex">
                 {% for i in page_range %}
                     <button type="button"
-                            class="inline-flex items-center border-t-2 px-4 pt-4 text-sm font-medium {% if i == current_page %}border-blue-500 text-blue-600{% else %}border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700{% endif %}"
+                            class="btn {% if i == current_page %}btn-primary{% else %}btn-secondary{% endif %} mx-1"
                             hx-get="{% url 'inventory:asset_list_content' %}?page={{ i }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
                             hx-target="#asset-table">
                         {{ i }}
@@ -157,18 +153,18 @@
             <div class="-mt-px flex w-0 flex-1 justify-end">
                 {% if page_obj.has_next %}
                     <button type="button"
-                            class="inline-flex items-center border-t-2 border-transparent px-4 pt-4 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700"
+                            class="btn btn-secondary mr-2"
                             hx-get="{% url 'inventory:asset_list_content' %}?page={{ page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
                             hx-target="#asset-table">
                         {% trans "Next" %}
-                        <i class="fas fa-angle-right ml-3 h-5 w-5 text-gray-400"></i>
+                        <i class="fas fa-angle-right ml-2"></i>
                     </button>
                     <button type="button"
-                            class="inline-flex items-center border-t-2 border-transparent pl-1 pt-4 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700"
+                            class="btn btn-secondary"
                             hx-get="{% url 'inventory:asset_list_content' %}?page={{ total_pages }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
                             hx-target="#asset-table">
                         {% trans "Last" %}
-                        <i class="fas fa-angle-double-right ml-3 h-5 w-5 text-gray-400"></i>
+                        <i class="fas fa-angle-double-right ml-2"></i>
                     </button>
                 {% endif %}
             </div>

@@ -19,7 +19,7 @@ from django.urls import path, include
 from django.contrib.auth import views as auth_views
 from django.shortcuts import redirect
 from django.conf.urls.i18n import i18n_patterns
-from inventory.views import SuperUserRegistrationView
+from inventory.views import SuperUserRegistrationView, LandingPageView
 
 def redirect_to_login(request):
     return redirect('login')
@@ -32,7 +32,7 @@ urlpatterns = [
 ]
 
 urlpatterns += i18n_patterns(
-    path('', redirect_to_login, name='index'),  # Redirect root URL to login
+    path('', LandingPageView.as_view(), name='index'),  # Use landing page as home
     path('admin/', admin.site.urls),
     path('inventory/', include('inventory.urls', namespace='inventory')),
     path('accounts/logout/', custom_logout, name='logout'),  # Custom logout view
