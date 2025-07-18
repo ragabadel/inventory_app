@@ -398,3 +398,62 @@ class Notification(models.Model):
 
         notification.save()
         return notification
+
+class Outlet(models.Model):
+    name = models.CharField(_('Name'), max_length=100)
+    company = models.ForeignKey(
+        OwnerCompany,
+        on_delete=models.CASCADE,
+        related_name='outlets'
+    )
+    full_address = models.TextField(_('Full Address'))
+    google_maps_url = models.URLField(
+        _('Google Maps URL'),
+        blank=True,
+        null=True
+    )
+    network_subnet = models.CharField(
+        _('Network Subnet'),
+        max_length=18,  # Format: xxx.xxx.xxx.xxx/xx
+        blank=True,
+        null=True
+    )
+    gateway_ip = models.GenericIPAddressField(
+        _('Gateway IP'),
+        protocol='IPv4',
+        blank=True,
+        null=True
+    )
+    dns_servers = models.CharField(
+        _('DNS Servers'),
+        max_length=255,  # Comma-separated list of IPs
+        blank=True,
+        null=True
+    )
+    responsible_employee = models.ForeignKey(
+        Employee,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='responsible_for_outlets',
+        verbose_name=_('Responsible Employee')
+    )
+    manager = models.ForeignKey(
+        Employee,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='managed_outlets',
+        verbose_name=_('Manager')
+    )
+    created_at = models.DateTimeField(_('Created At'), auto_now_add=True)
+    updated_at = models.DateTimeField(_('Updated At'), auto_now=True)
+
+    class Meta:
+        ordering = ['name']
+        verbose_name = _('Outlet')
+        verbose_name_plural = _('Outlets')
+
+    def __str__(self):
+        return f"{self.name} ({self.company.name})"
+
+    def get_absolute_url(self):
+        return reverse('inventory:outlet_detail', kwargs={'pk': self.pk})

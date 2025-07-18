@@ -38,4 +38,4 @@ urlpatterns += i18n_patterns(
     path('accounts/logout/', custom_logout, name='logout'),  # Custom logout view
     path('accounts/register/', SuperUserRegistrationView.as_view(), name='register'),  # Add registration URL
     path('accounts/', include('django.contrib.auth.urls')),  # Add authentication URLs
-)
+) 
