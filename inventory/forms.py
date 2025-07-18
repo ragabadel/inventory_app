@@ -2,7 +2,7 @@ from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
 from django.utils.translation import gettext_lazy as _
-from .models import Employee, ITAsset, Department, OwnerCompany
+from .models import Employee, ITAsset, Department, OwnerCompany, Outlet
 
 class UserRegistrationForm(UserCreationForm):
     email = forms.EmailField(required=True)
@@ -325,4 +325,33 @@ class ITAssetForm(forms.ModelForm):
 
     def clean(self):
         cleaned_data = super().clean()
+        return cleaned_data
+
+class AssetAssignForm(forms.Form):
+    asset = forms.ModelChoiceField(
+        queryset=ITAsset.objects.filter(status='available'),
+        widget=forms.Select(attrs={'class': 'form-select'}),
+        label=_('Asset')
+    )
+    employee = forms.ModelChoiceField(
+        queryset=Employee.objects.filter(is_active=True),
+        widget=forms.Select(attrs={'class': 'form-select'}),
+        required=False,
+        label=_('Employee')
+    )
+    outlet = forms.ModelChoiceField(
+        queryset=Outlet.objects.filter(is_active=True),
+        widget=forms.Select(attrs={'class': 'form-select'}),
+        required=False,
+        label=_('Outlet')
+    )
+
+    def clean(self):
+        cleaned_data = super().clean()
+        employee = cleaned_data.get('employee')
+        outlet = cleaned_data.get('outlet')
+        
+        if not employee and not outlet:
+            raise forms.ValidationError(_('You must assign the asset to either an employee or an outlet.'))
+        
         return cleaned_data

@@ -135,6 +135,30 @@ class Employee(models.Model):
         verbose_name = 'Employee'
         verbose_name_plural = 'Employees'
 
+class Outlet(models.Model):
+    name = models.CharField(_('Branch Name'), max_length=100)
+    company = models.ForeignKey(OwnerCompany, on_delete=models.PROTECT, related_name='outlets')
+    manager = models.ForeignKey(Employee, on_delete=models.SET_NULL, null=True, blank=True, related_name='managed_outlets')
+    address = models.TextField(_('Address'))
+    google_maps_link = models.URLField(_('Google Maps Link'), blank=True, null=True)
+    phone_number = models.CharField(_('Phone Number'), max_length=17, blank=True, null=True)
+    email = models.EmailField(_('Email'), blank=True, null=True)
+    is_active = models.BooleanField(_('Active'), default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['company', 'name']
+        verbose_name = _('Outlet')
+        verbose_name_plural = _('Outlets')
+        unique_together = ['company', 'name']
+
+    def __str__(self):
+        return f"{self.name} ({self.company.name})"
+
+    def get_absolute_url(self):
+        return reverse('inventory:outlet_detail', args=[str(self.id)])
+
 class AssetType(models.Model):
     name = models.CharField(max_length=50, unique=True)
     display_name = models.CharField(max_length=100)
@@ -168,6 +192,7 @@ class ITAsset(models.Model):
     warranty_expiry = models.DateField(null=True, blank=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='available')
     assigned_to = models.ForeignKey(Employee, on_delete=models.SET_NULL, null=True, blank=True)
+    outlet = models.ForeignKey(Outlet, on_delete=models.SET_NULL, null=True, blank=True, related_name='assets')
     notes = models.TextField(blank=True)
 
     # Network Information

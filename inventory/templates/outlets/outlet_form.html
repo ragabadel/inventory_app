@@ -1,0 +1,209 @@
+{% extends 'base/base_tailwind.html' %}
+{% load i18n %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-6">
+    <!-- Breadcrumb -->
+    <nav class="mb-6 text-gray-500 text-sm" aria-label="Breadcrumb">
+        <ol class="list-none p-0 inline-flex">
+            <li class="flex items-center">
+                <a href="{% url 'inventory:outlet_list' %}" class="hover:text-gray-700">{% trans "Outlets" %}</a>
+                <svg class="w-4 h-4 mx-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                </svg>
+            </li>
+            <li>{{ title }}</li>
+        </ol>
+    </nav>
+
+    <!-- Header -->
+    <div class="mb-6">
+        <h1 class="text-2xl font-semibold text-gray-800">{{ title }}</h1>
+        <p class="text-gray-600">{% trans "Enter the outlet details below" %}</p>
+    </div>
+
+    <!-- Form -->
+    <div class="bg-white rounded-lg shadow-sm p-6">
+            <form method="post" class="space-y-6">
+                {% csrf_token %}
+
+                {% if form.non_field_errors %}
+            <div class="rounded-md bg-red-50 p-4">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <svg class="h-5 w-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                    </div>
+                    <div class="ml-3">
+                        <h3 class="text-sm font-medium text-red-800">{% trans "Please correct the errors below" %}</h3>
+                        <div class="mt-2 text-sm text-red-700">
+                        {{ form.non_field_errors }}
+                        </div>
+                    </div>
+                </div>
+                    </div>
+                {% endif %}
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Branch Information -->
+                <div class="space-y-6">
+                    <h2 class="text-lg font-medium text-gray-900">{% trans "Branch Information" %}</h2>
+
+                    <div>
+                        <label for="{{ form.name.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                            {% trans "Branch Name" %} <span class="text-red-500">*</span>
+                        </label>
+                        <div class="mt-1">
+                            <input type="text" name="{{ form.name.name }}" id="{{ form.name.id_for_label }}" 
+                                   value="{{ form.name.value|default:'' }}"
+                                   class="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md {% if form.name.errors %}border-red-300{% endif %}"
+                                   required>
+                        </div>
+                        {% if form.name.errors %}
+                        <p class="mt-2 text-sm text-red-600">{{ form.name.errors.0 }}</p>
+                        {% endif %}
+                        {% if form.name.help_text %}
+                        <p class="mt-2 text-sm text-gray-500">{{ form.name.help_text }}</p>
+                        {% endif %}
+                    </div>
+
+                    <div>
+                        <label for="{{ form.company.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                            {% trans "Company" %} <span class="text-red-500">*</span>
+                        </label>
+                        <div class="mt-1">
+                            <select name="{{ form.company.name }}" id="{{ form.company.id_for_label }}"
+                                    class="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md {% if form.company.errors %}border-red-300{% endif %}"
+                                    required>
+                                <option value="">---------</option>
+                                {% for value, label in form.company.field.choices %}
+                                {% if value %}
+                                <option value="{{ value }}" {% if form.company.value|stringformat:"s" == value|stringformat:"s" %}selected{% endif %}>
+                                    {{ label }}
+                                </option>
+                                {% endif %}
+                                {% endfor %}
+                            </select>
+                        </div>
+                        {% if form.company.errors %}
+                        <p class="mt-2 text-sm text-red-600">{{ form.company.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+
+                    <div>
+                        <label for="{{ form.manager.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                            {% trans "Branch Manager" %}
+                        </label>
+                        <div class="mt-1">
+                            <select name="{{ form.manager.name }}" id="{{ form.manager.id_for_label }}"
+                                    class="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md {% if form.manager.errors %}border-red-300{% endif %}">
+                                <option value="">---------</option>
+                                {% for value, label in form.manager.field.choices %}
+                                {% if value %}
+                                <option value="{{ value }}" {% if form.manager.value|stringformat:"s" == value|stringformat:"s" %}selected{% endif %}>
+                                    {{ label }}
+                                </option>
+                                {% endif %}
+                                {% endfor %}
+                            </select>
+                        </div>
+                        {% if form.manager.errors %}
+                        <p class="mt-2 text-sm text-red-600">{{ form.manager.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+
+                    <div>
+                        <label for="{{ form.phone_number.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                            {% trans "Phone Number" %}
+                        </label>
+                        <div class="mt-1">
+                            <input type="tel" name="{{ form.phone_number.name }}" id="{{ form.phone_number.id_for_label }}"
+                                   value="{{ form.phone_number.value|default:'' }}"
+                                   class="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md {% if form.phone_number.errors %}border-red-300{% endif %}">
+                        </div>
+                        {% if form.phone_number.errors %}
+                        <p class="mt-2 text-sm text-red-600">{{ form.phone_number.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+
+                    <div>
+                        <label for="{{ form.email.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                            {% trans "Email" %}
+                        </label>
+                        <div class="mt-1">
+                            <input type="email" name="{{ form.email.name }}" id="{{ form.email.id_for_label }}"
+                                   value="{{ form.email.value|default:'' }}"
+                                   class="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md {% if form.email.errors %}border-red-300{% endif %}">
+                        </div>
+                        {% if form.email.errors %}
+                        <p class="mt-2 text-sm text-red-600">{{ form.email.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Location Information -->
+                <div class="space-y-6">
+                    <h2 class="text-lg font-medium text-gray-900">{% trans "Location Information" %}</h2>
+
+                    <div>
+                        <label for="{{ form.address.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                            {% trans "Address" %} <span class="text-red-500">*</span>
+                        </label>
+                        <div class="mt-1">
+                            <textarea name="{{ form.address.name }}" id="{{ form.address.id_for_label }}" rows="3"
+                                      class="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md {% if form.address.errors %}border-red-300{% endif %}"
+                                      required>{{ form.address.value|default:'' }}</textarea>
+                        </div>
+                        {% if form.address.errors %}
+                        <p class="mt-2 text-sm text-red-600">{{ form.address.errors.0 }}</p>
+                            {% endif %}
+                    </div>
+
+                    <div>
+                        <label for="{{ form.google_maps_link.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                            {% trans "Google Maps Link" %}
+                        </label>
+                        <div class="mt-1">
+                            <input type="url" name="{{ form.google_maps_link.name }}" id="{{ form.google_maps_link.id_for_label }}"
+                                   value="{{ form.google_maps_link.value|default:'' }}"
+                                   class="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md {% if form.google_maps_link.errors %}border-red-300{% endif %}"
+                                   placeholder="https://maps.google.com/...">
+                                </div>
+                        {% if form.google_maps_link.errors %}
+                        <p class="mt-2 text-sm text-red-600">{{ form.google_maps_link.errors.0 }}</p>
+                            {% endif %}
+                        <p class="mt-2 text-sm text-gray-500">{% trans "Paste the Google Maps URL for this location" %}</p>
+                    </div>
+
+                    <div class="relative flex items-start">
+                        <div class="flex items-center h-5">
+                            <input type="checkbox" name="{{ form.is_active.name }}" id="{{ form.is_active.id_for_label }}"
+                                   {% if form.is_active.value %}checked{% endif %}
+                                   class="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300 rounded">
+                        </div>
+                        <div class="ml-3 text-sm">
+                            <label for="{{ form.is_active.id_for_label }}" class="font-medium text-gray-700">{% trans "Active" %}</label>
+                            <p class="text-gray-500">{% trans "Indicate if this outlet is currently active" %}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Form Actions -->
+            <div class="flex justify-end space-x-3 pt-6 border-t border-gray-200">
+                <a href="{% url 'inventory:outlet_list' %}" 
+                   class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        {% trans "Cancel" %}
+                    </a>
+                <button type="submit"
+                        class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        {% trans "Save" %}
+                    </button>
+                </div>
+            </form>
+    </div>
+</div>
+{% endblock %} 

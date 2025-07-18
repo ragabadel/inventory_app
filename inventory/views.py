@@ -17,12 +17,15 @@ from django.conf import settings
 from django.db import models, connection
 from django.contrib.auth.models import User, Group, Permission
 from django.views.decorators.http import require_POST
+from django.contrib.auth.forms import PasswordChangeForm
+from django.contrib.auth import update_session_auth_hash
 
 from .models import (
     Employee, ITAsset, Department, Position, AssetType, 
-    OwnerCompany, AssetHistory, Notification, NotificationCategory
+    OwnerCompany, AssetHistory, Notification, NotificationCategory,
+    Outlet
 )
-from .forms import EmployeeForm, ITAssetForm, SuperUserRegistrationForm
+from .forms import EmployeeForm, ITAssetForm, SuperUserRegistrationForm, AssetAssignForm
 
 import openpyxl
 from openpyxl import Workbook
@@ -1624,6 +1627,116 @@ class OwnerCompanyDeleteView(LoginRequiredMixin, DeleteView):
         messages.success(request, _('Owner Company deleted successfully.'))
         return super().delete(request, *args, **kwargs)
 
+class OutletListView(LoginRequiredMixin, ListView):
+    model = Outlet
+    template_name = 'outlets/outlet_list.html'
+    context_object_name = 'outlets'
+    paginate_by = 10
+
+    def get_queryset(self):
+        queryset = Outlet.objects.select_related('company', 'manager').all()
+        
+        # Get search and filter parameters
+        search_query = self.request.GET.get('search', '')
+        company_id = self.request.GET.get('company', '')
+        status = self.request.GET.get('status', '')
+        
+        # Apply search filter if provided
+        if search_query:
+            queryset = queryset.filter(
+                Q(name__icontains=search_query) |
+                Q(address__icontains=search_query) |
+                Q(manager__first_name__icontains=search_query) |
+                Q(manager__last_name__icontains=search_query)
+            )
+        
+        # Apply company filter if provided
+        if company_id:
+            queryset = queryset.filter(company_id=company_id)
+        
+        # Apply status filter if provided
+        if status:
+            is_active = status == 'active'
+            queryset = queryset.filter(is_active=is_active)
+        
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = _('Outlets')
+        context['companies'] = OwnerCompany.objects.all()
+        
+        # Get selected company for filter badges
+        company_id = self.request.GET.get('company', '')
+        if company_id:
+            context['selected_company'] = OwnerCompany.objects.filter(id=company_id).first()
+        
+        return context
+
+class OutletDetailView(LoginRequiredMixin, DetailView):
+    model = Outlet
+    template_name = 'outlets/outlet_detail.html'
+    context_object_name = 'outlet'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = _('Outlet Details')
+        return context
+
+class OutletCreateView(LoginRequiredMixin, CreateView):
+    model = Outlet
+    template_name = 'outlets/outlet_form.html'
+    fields = ['name', 'company', 'manager', 'address', 'google_maps_link', 'phone_number', 'email', 'is_active']
+
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        # Only show active employees as potential managers
+        form.fields['manager'].queryset = Employee.objects.filter(is_active=True)
+        return form
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = _('Add Outlet')
+        return context
+
+    def form_valid(self, form):
+        messages.success(self.request, _('Outlet created successfully.'))
+        return super().form_valid(form)
+
+class OutletUpdateView(LoginRequiredMixin, UpdateView):
+    model = Outlet
+    template_name = 'outlets/outlet_form.html'
+    fields = ['name', 'company', 'manager', 'address', 'google_maps_link', 'phone_number', 'email', 'is_active']
+
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        # Only show active employees as potential managers
+        form.fields['manager'].queryset = Employee.objects.filter(is_active=True)
+        return form
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = _('Edit Outlet')
+        return context
+
+    def form_valid(self, form):
+        messages.success(self.request, _('Outlet updated successfully.'))
+        return super().form_valid(form)
+
+class OutletDeleteView(LoginRequiredMixin, DeleteView):
+    model = Outlet
+    template_name = 'outlets/outlet_confirm_delete.html'
+    success_url = reverse_lazy('inventory:outlet_list')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = _('Delete Outlet')
+        return context
+
+    def delete(self, request, *args, **kwargs):
+        messages.success(request, _('Outlet deleted successfully.'))
+        return super().delete(request, *args, **kwargs)
+
 class EmployeePDFView(LoginRequiredMixin, DetailView):
     model = Employee
     template_name = 'employees/employee_pdf.html'
@@ -2342,92 +2455,31 @@ class UserPermissionsView(LoginRequiredMixin, UserPassesTestMixin, TemplateView)
 
 @login_required
 def global_asset_history(request):
-    """View for displaying all asset history across the system."""
-    # Get filter parameters
-    search_query = request.GET.get('search', '')
-    action_filter = request.GET.get('action', '')
-    date_from = request.GET.get('date_from', '')
-    date_to = request.GET.get('date_to', '')
-
-    # Base queryset
-    history_queryset = AssetHistory.objects.select_related(
-        'asset', 'asset__asset_type', 'employee', 'created_by'
-    ).order_by('-date')
-
-    # Apply filters
-    if search_query:
-        history_queryset = history_queryset.filter(
-            Q(asset__name__icontains=search_query) |
-            Q(asset__serial_number__icontains=search_query) |
-            Q(employee__first_name__icontains=search_query) |
-            Q(employee__last_name__icontains=search_query) |
-            Q(notes__icontains=search_query)
-        )
-
-    if action_filter:
-        history_queryset = history_queryset.filter(action=action_filter)
-
-    if date_from:
-        history_queryset = history_queryset.filter(date__gte=date_from)
-
-    if date_to:
-        history_queryset = history_queryset.filter(date__lt=date_to)
-
-    # Paginate results
-    paginator = Paginator(history_queryset, 25)
-    page = request.GET.get('page')
-    history_entries = paginator.get_page(page)
-
-    context = {
-        'title': _('Asset History'),
-        'history_entries': history_entries,
-        'action_choices': AssetHistory.ACTION_CHOICES,
-        'selected_action': action_filter,
-        'search_query': search_query,
-        'date_from': date_from,
-        'date_to': date_to,
-    }
-
-    return render(request, 'assets/global_asset_history.html', context)
+    history = AssetHistory.objects.select_related('asset', 'employee', 'created_by').order_by('-date')
+    return render(request, 'reports/global_asset_history.html', {
+        'history': history,
+        'title': _('Global Asset History')
+    })
 
 @login_required
-def generate_report_pdf(request):
-    """Generate a PDF report based on the specified parameters."""
-    # Get report parameters
+def reports_dashboard(request):
+    """View for displaying comprehensive system reports and analytics."""
+    # Get filter parameters
     report_type = request.GET.get('type', 'full')
     date_from = request.GET.get('date_from')
     date_to = request.GET.get('date_to')
     
-    # Get the report data
-    context = get_reports_data(request, date_from, date_to)
-    
-    # Render the HTML template
-    template = get_template('inventory/reports/pdf_report.html')
-    html = template.render(context)
-    
-    # Create a file-like buffer to receive PDF data
-    buffer = BytesIO()
-    
-    # Convert HTML to PDF
-    pisa_status = pisa.CreatePDF(html, dest=buffer)
-    
-    # If error creating PDF, return error response
-    if pisa_status.err:
-        return HttpResponse('Error generating PDF', status=500)
-    
-    # Get the value of the BytesIO buffer and write it to the response
-    pdf = buffer.getvalue()
-    buffer.close()
-    
-    # Create the HTTP response
-    response = HttpResponse(content_type='application/pdf')
-    response['Content-Disposition'] = f'attachment; filename="inventory_report_{report_type}.pdf"'
-    response.write(pdf)
-    
-    return response
+    try:
+        if date_from:
+            date_from = datetime.strptime(date_from, '%Y-%m-%d')
+        if date_to:
+            date_to = datetime.strptime(date_to, '%Y-%m-%d')
+            # Include the entire day
+            date_to = date_to + timedelta(days=1)
+    except ValueError:
+        messages.error(request, _('Invalid date format'))
+        return redirect('inventory:reports_dashboard')
 
-def get_reports_data(request, date_from=None, date_to=None):
-    """Get all the data needed for reports."""
     # Asset statistics
     total_assets = ITAsset.objects.count()
     available_assets = ITAsset.objects.filter(status='available').count()
@@ -2518,47 +2570,8 @@ def get_reports_data(request, date_from=None, date_to=None):
             company_data['device_types'].sort(key=lambda x: x['count'], reverse=True)
         
         company_device_stats.append(company_data)
-    
-    return {
-        'total_assets': total_assets,
-        'available_assets': available_assets,
-        'assigned_assets': assigned_assets,
-        'maintenance_assets': maintenance_assets,
-        'retired_assets': retired_assets,
-        'departments': departments,
-        'model_stats': model_stats,
-        'recent_activities': recent_activities,
-        'date_from': date_from,
-        'date_to': date_to,
-        'yoy_growth': round(yoy_growth, 2),
-        'avg_growth_rate': round(avg_growth_rate, 2),
-        'company_device_stats': company_device_stats,
-    }
 
-@login_required
-def reports_dashboard(request):
-    """View for displaying comprehensive system reports and analytics."""
-    # Get filter parameters
-    report_type = request.GET.get('type', 'full')
-    date_from = request.GET.get('date_from')
-    date_to = request.GET.get('date_to')
-    
-    try:
-        if date_from:
-            date_from = datetime.strptime(date_from, '%Y-%m-%d')
-        if date_to:
-            date_to = datetime.strptime(date_to, '%Y-%m-%d')
-            # Include the entire day
-            date_to = date_to + timedelta(days=1)
-    except ValueError:
-        messages.error(request, _('Invalid date format'))
-        return redirect('inventory:reports_dashboard')
-
-    # Get report data
-    context = get_reports_data(request, date_from, date_to)
-    
     # Calculate Asset Growth Analysis data
-    today = timezone.now()
     twelve_months_ago = today - timedelta(days=365)
     
     # Monthly asset acquisition data
@@ -2596,9 +2609,9 @@ def reports_dashboard(request):
         trend = 'up' if last_month_growth > prev_month_growth else 'down'
     else:
         trend = 'neutral'
-    
-    # Add growth analysis data to context
-    context.update({
+
+    context = {
+        'title': _('Reports Dashboard'),
         'report_type': report_type,
         'date_from': date_from.strftime('%Y-%m-%d') if date_from else '',
         'date_to': (date_to - timedelta(days=1)).strftime('%Y-%m-%d') if date_to else '',
@@ -2607,303 +2620,163 @@ def reports_dashboard(request):
             ('warranty', _('Warranty Report')),
             ('assignments', _('Assignments Report')),
         ],
+        'total_assets': total_assets,
+        'available_assets': available_assets,
+        'assigned_assets': assigned_assets,
+        'maintenance_assets': maintenance_assets,
+        'retired_assets': retired_assets,
+        'departments': departments,
+        'model_stats': model_stats,
+        'recent_activities': recent_activities,
+        'yoy_growth': round(yoy_growth, 2),
+        'avg_growth_rate': round(avg_growth_rate, 2),
+        'company_device_stats': company_device_stats,
         'growth_data': growth_data,
         'growth_trend': trend,
         'total_growth_rate': growth_data[-1]['growth_rate'] if growth_data else 0,
-    })
+    }
     
     return render(request, 'reports/reports_dashboard.html', context)
 
-class LandingPageView(TemplateView):
-    template_name = 'index/landing.html'
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['title'] = 'IT Asset Management Solutions'
-        return context
-
-class ContactView(TemplateView):
-    template_name = 'inventory/contact.html'
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['title'] = 'Contact Us'
-        return context
-
-def get_notification_context(request):
-    """Context processor for notifications"""
-    if request.user.is_authenticated:
-        # Build the filter based on user's employee profile
-        if hasattr(request.user, 'employee_profile') and request.user.employee_profile:
-            notification_filter = Q(
-                Q(employee_profile=request.user.employee_profile) |
-                Q(employee_profile__isnull=True)
-            )
-        else:
-            notification_filter = Q(employee_profile__isnull=True)
-        
-        # Get unread notifications count
-        unread_count = Notification.objects.filter(
-            notification_filter,
-            status='unread'
-        ).count()
-        
-        # Get recent notifications for dropdown
-        notifications = Notification.objects.filter(
-            notification_filter
-        ).exclude(
-            status='archived'
-        ).select_related(
-            'category'
-        ).order_by(
-            '-status',  # This will put unread first since 'unread' > 'read'
-            '-created_at'
-        )[:10]
-        
-        return {
-            'notifications': notifications,
-            'unread_notifications_count': unread_count
-        }
-    return {
-        'notifications': [],
-        'unread_notifications_count': 0
-    }  
-
-class UserAccountView(LoginRequiredMixin, UpdateView):
-    model = User
-    template_name = 'inventory/user_account.html'
-    fields = ['first_name', 'last_name', 'email']
-    success_url = reverse_lazy('inventory:user_account')
-
-    def get_form(self, form_class=None):
-        form = super().get_form(form_class)
-        form.fields['first_name'].widget.attrs.update({'class': 'form-control'})
-        form.fields['last_name'].widget.attrs.update({'class': 'form-control'})
-        form.fields['email'].widget.attrs.update({'class': 'form-control'})
-        return form
-
-    def get_object(self):
-        return self.request.user
-
-    def form_valid(self, form):
-        messages.success(self.request, _('Your account information has been updated successfully.'))
-        return super().form_valid(form)
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['employee_profile'] = getattr(self.request.user, 'employee_profile', None)
-        return context
-
 @login_required
-def change_password(request):
-    if request.method == 'POST':
-        old_password = request.POST.get('old_password')
-        new_password = request.POST.get('new_password')
-        confirm_password = request.POST.get('confirm_password')
+def generate_report_pdf(request):
+    """Generate a PDF report based on the specified parameters."""
+    # Get report parameters
+    report_type = request.GET.get('type', 'full')
+    date_from = request.GET.get('date_from')
+    date_to = request.GET.get('date_to')
+    
+    try:
+        if date_from:
+            date_from = datetime.strptime(date_from, '%Y-%m-%d')
+        if date_to:
+            date_to = datetime.strptime(date_to, '%Y-%m-%d')
+            # Include the entire day
+            date_to = date_to + timedelta(days=1)
+    except ValueError:
+        messages.error(request, _('Invalid date format'))
+        return redirect('inventory:reports_dashboard')
 
-        if not request.user.check_password(old_password):
-            messages.error(request, _('Current password is incorrect.'))
-        elif new_password != confirm_password:
-            messages.error(request, _('New passwords do not match.'))
-        elif len(new_password) < 8:
-            messages.error(request, _('Password must be at least 8 characters long.'))
-        else:
-            request.user.set_password(new_password)
-            request.user.save()
-            messages.success(request, _('Your password has been changed successfully.'))
-            return redirect('login')
+    # Get the report data
+    context = {
+        'title': _('Asset Management Report'),
+        'report_type': report_type,
+        'date_from': date_from.strftime('%Y-%m-%d') if date_from else None,
+        'date_to': (date_to - timedelta(days=1)).strftime('%Y-%m-%d') if date_to else None,
+        'generated_at': timezone.now(),
+        'generated_by': request.user.get_full_name() or request.user.username,
+    }
 
-    return render(request, 'inventory/change_password.html')
+    # Add statistics based on report type
+    if report_type == 'full' or report_type == 'assignments':
+        # Asset statistics
+        context.update({
+            'total_assets': ITAsset.objects.count(),
+            'available_assets': ITAsset.objects.filter(status='available').count(),
+            'assigned_assets': ITAsset.objects.filter(status='assigned').count(),
+            'maintenance_assets': ITAsset.objects.filter(status='maintenance').count(),
+            'retired_assets': ITAsset.objects.filter(status='retired').count(),
+        })
 
-class UserPermissionsView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
-    template_name = 'inventory/user_permissions.html'
+        # Recent assignments
+        recent_assignments = AssetHistory.objects.filter(
+            action='assigned'
+        ).select_related(
+            'asset', 'employee'
+        ).order_by('-date')[:20]
+        context['recent_assignments'] = recent_assignments
 
-    def test_func(self):
-        return self.request.user.is_staff or self.request.user.is_superuser
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        search_query = self.request.GET.get('search', '')
-        group_filter = self.request.GET.get('group', '')
-
-        users = User.objects.all().order_by('username')
-        
-        if search_query:
-            users = users.filter(
-                Q(username__icontains=search_query) |
-                Q(first_name__icontains=search_query) |
-                Q(last_name__icontains=search_query) |
-                Q(email__icontains=search_query)
-            )
-        
-        if group_filter:
-            users = users.filter(groups__id=group_filter)
-
-        # Paginate users
-        paginator = Paginator(users, 10)
-        page = self.request.GET.get('page')
-        users = paginator.get_page(page)
+    if report_type == 'full' or report_type == 'warranty':
+        # Warranty expiry statistics
+        today = timezone.now().date()
+        thirty_days = today + timedelta(days=30)
+        ninety_days = today + timedelta(days=90)
 
         context.update({
-            'users': users,
-            'groups': Group.objects.all(),
-            'available_permissions': Permission.objects.all().order_by('content_type__app_label', 'content_type__model'),
-            'search_query': search_query,
-            'group_filter': group_filter,
+            'expired_warranty': ITAsset.objects.filter(
+                warranty_expiry__lt=today
+            ).exclude(status='retired').count(),
+            'expiring_30_days': ITAsset.objects.filter(
+                warranty_expiry__gte=today,
+                warranty_expiry__lte=thirty_days
+            ).exclude(status='retired').count(),
+            'expiring_90_days': ITAsset.objects.filter(
+                warranty_expiry__gt=thirty_days,
+                warranty_expiry__lte=ninety_days
+            ).exclude(status='retired').count(),
         })
+
+        # Assets with expiring warranty
+        expiring_assets = ITAsset.objects.filter(
+            warranty_expiry__gte=today,
+            warranty_expiry__lte=ninety_days
+        ).exclude(
+            status='retired'
+        ).order_by('warranty_expiry')
+        context['expiring_assets'] = expiring_assets
+
+    # Company statistics
+    companies = OwnerCompany.objects.all()
+    company_stats = []
+    for company in companies:
+        assets = ITAsset.objects.filter(owner=company)
+        company_stats.append({
+            'name': company.name,
+            'total_assets': assets.count(),
+            'assigned_assets': assets.filter(status='assigned').count(),
+            'available_assets': assets.filter(status='available').count(),
+            'maintenance_assets': assets.filter(status='maintenance').count(),
+            'retired_assets': assets.filter(status='retired').count(),
+        })
+    context['company_stats'] = company_stats
+
+    # Render the HTML template
+    template = get_template('reports/pdf_report.html')
+    html = template.render(context)
+    
+    # Create a file-like buffer to receive PDF data
+    buffer = BytesIO()
+    
+    # Convert HTML to PDF
+    pisa_status = pisa.CreatePDF(html, dest=buffer)
+    
+    # If error creating PDF, return error response
+    if pisa_status.err:
+        return HttpResponse('Error generating PDF', status=500)
+    
+    # Get the value of the BytesIO buffer and write it to the response
+    pdf = buffer.getvalue()
+    buffer.close()
+    
+    # Create the HTTP response
+    response = HttpResponse(content_type='application/pdf')
+    filename = f'inventory_report_{report_type}_{timezone.now().strftime("%Y%m%d_%H%M%S")}.pdf'
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    response.write(pdf)
+    
+    return response
+
+class DatabaseBackupView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
+    template_name = 'database/backup.html'
+
+    def test_func(self):
+        return self.request.user.is_staff
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = _('Database Backup')
         return context
 
-    def post(self, request, *args, **kwargs):
-        action = request.POST.get('action')
-        user_id = request.POST.get('user_id')
-        user = get_object_or_404(User, id=user_id)
+class DatabaseRestoreView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
+    template_name = 'database/restore.html'
 
-        if action == 'update_groups':
-            group_ids = request.POST.getlist('groups')
-            user.groups.set(group_ids)
-            messages.success(request, _(f'Groups updated for user {user.username}'))
-
-        elif action == 'update_permissions':
-            permission_ids = request.POST.getlist('permissions')
-            user.user_permissions.set(permission_ids)
-            messages.success(request, _(f'Permissions updated for user {user.username}'))
-
-        elif action == 'toggle_active':
-            user.is_active = not user.is_active
-            user.save()
-            status = 'activated' if user.is_active else 'deactivated'
-            messages.success(request, _(f'User {user.username} has been {status}'))
-
-        elif action == 'toggle_staff':
-            if request.user.is_superuser:
-                user.is_staff = not user.is_staff
-                user.save()
-                status = 'granted' if user.is_staff else 'removed'
-                messages.success(request, _(f'Staff status {status} for user {user.username}'))
-
-        return redirect('inventory:user_permissions')
-
-class DatabaseBackupView(LoginRequiredMixin, UserPassesTestMixin, View):
     def test_func(self):
-        return (
-            self.request.user.is_superuser or 
-            (self.request.user.is_staff and self.request.user.has_perm('inventory.can_backup_database'))
-        )
+        return self.request.user.is_staff
 
-    def get(self, request):
-        return render(request, 'database/backup.html')
-
-    def post(self, request):
-        try:
-            # Get database settings
-            db_settings = settings.DATABASES['default']
-            timestamp = timezone.now().strftime('%Y%m%d_%H%M%S')
-            backup_dir = os.path.join(settings.BASE_DIR, 'backups')
-            
-            # Create backups directory if it doesn't exist
-            if not os.path.exists(backup_dir):
-                os.makedirs(backup_dir)
-
-            # Backup filename with timestamp
-            backup_file = os.path.join(backup_dir, f'db_backup_{timestamp}.json')
-
-            # Use Django's dumpdata command with UTF-8 encoding
-            with open(backup_file, 'w', encoding='utf-8') as f:
-                management.call_command(
-                    'dumpdata',
-                    '--exclude', 'auth.permission',
-                    '--exclude', 'contenttypes',
-                    '--exclude', 'admin.logentry',
-                    '--exclude', 'sessions.session',
-                    '--indent', '2',
-                    stdout=f
-                )
-
-            # Create a zip file containing the backup
-            zip_file = os.path.join(backup_dir, f'db_backup_{timestamp}.zip')
-            with zipfile.ZipFile(zip_file, 'w', zipfile.ZIP_DEFLATED) as zf:
-                # Write the file with UTF-8 encoding
-                zf.write(backup_file, os.path.basename(backup_file))
-
-            # Read the zip file and create response
-            with open(zip_file, 'rb') as f:
-                response = HttpResponse(f.read(), content_type='application/zip')
-                response['Content-Disposition'] = f'attachment; filename=db_backup_{timestamp}.zip'
-
-            # Clean up temporary files
-            os.remove(backup_file)
-            os.remove(zip_file)
-
-            return response
-
-        except Exception as e:
-            messages.error(request, f'Backup failed: {str(e)}')
-            return redirect('inventory:database_backup')
-
-class DatabaseRestoreView(LoginRequiredMixin, UserPassesTestMixin, View):
-    def test_func(self):
-        return self.request.user.is_superuser
-
-    def get(self, request):
-        # Get list of available backups in the backups directory
-        backup_dir = os.path.join(settings.BASE_DIR, 'backups')
-        backups = []
-        
-        if os.path.exists(backup_dir):
-            for file in os.listdir(backup_dir):
-                if file.endswith('.zip'):
-                    file_path = os.path.join(backup_dir, file)
-                    backups.append({
-                        'name': file,
-                        'size': os.path.getsize(file_path),
-                        'date': datetime.fromtimestamp(os.path.getctime(file_path))
-                    })
-        
-        return render(request, 'database/restore.html', {'backups': backups})
-
-    def post(self, request):
-        try:
-            if 'backup_file' not in request.FILES:
-                messages.error(request, 'No backup file provided')
-                return redirect('inventory:database_restore')
-
-            backup_file = request.FILES['backup_file']
-            if not backup_file.name.endswith('.zip'):
-                messages.error(request, 'Invalid backup file format. Please upload a ZIP file.')
-                return redirect('inventory:database_restore')
-
-            # Create temporary directory for extraction
-            with tempfile.TemporaryDirectory() as temp_dir:
-                # Save uploaded zip file
-                zip_path = os.path.join(temp_dir, backup_file.name)
-                with open(zip_path, 'wb') as f:
-                    for chunk in backup_file.chunks():
-                        f.write(chunk)
-
-                # Extract zip file
-                with zipfile.ZipFile(zip_path, 'r') as zip_ref:
-                    zip_ref.extractall(temp_dir)
-
-                # Find the JSON file
-                json_files = [f for f in os.listdir(temp_dir) if f.endswith('.json')]
-                if not json_files:
-                    messages.error(request, 'No JSON backup file found in the archive')
-                    return redirect('inventory:database_restore')
-
-                json_path = os.path.join(temp_dir, json_files[0])
-
-                # Flush the database
-                management.call_command('flush', '--no-input')
-
-                # Load the backup data
-                management.call_command('loaddata', json_path)
-
-                messages.success(request, 'Database restored successfully')
-                return redirect('inventory:home')
-
-        except Exception as e:
-            messages.error(request, f'Restore failed: {str(e)}')
-            return redirect('inventory:database_restore')
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = _('Database Restore')
+        return context
 
 @login_required
 def asset_receipt(request, pk):
@@ -2946,22 +2819,22 @@ def asset_unassign(request, pk):
     return redirect('inventory:asset_list')
 
 class SuperUserRegistrationView(CreateView):
-    model = User
-    form_class = SuperUserRegistrationForm
     template_name = 'registration/register.html'
+    form_class = SuperUserRegistrationForm
     success_url = reverse_lazy('login')
 
-    def dispatch(self, request, *args, **kwargs):
-        # Only allow registration if there are no superusers
-        if User.objects.filter(is_superuser=True).exists():
-            messages.error(request, _('Superuser already exists. Registration is disabled.'))
-            return redirect('login')
-        return super().dispatch(request, *args, **kwargs)
-
     def form_valid(self, form):
-        response = super().form_valid(form)
-        messages.success(self.request, _('Superuser account created successfully. You can now log in.'))
-        return response
+        user = form.save(commit=False)
+        user.is_superuser = True
+        user.is_staff = True
+        user.save()
+        messages.success(self.request, _('Your account has been created successfully. Please log in.'))
+        return super().form_valid(form)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = _('Register')
+        return context
 
 class AboutView(TemplateView):
     template_name = 'index/about.html'
@@ -2969,6 +2842,14 @@ class AboutView(TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['title'] = _('About Us')
+        return context
+
+class DocsView(TemplateView):
+    template_name = 'index/docs.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = _('Documentation')
         return context
 
 class PrivacyView(TemplateView):
@@ -2987,14 +2868,6 @@ class TermsView(TemplateView):
         context['title'] = _('Terms of Service')
         return context
 
-class DocsView(TemplateView):
-    template_name = 'index/docs.html'
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['title'] = _('Documentation')
-        return context
-
 class EmployeeListContentView(EmployeeListView):
     template_name = 'employees/employee_list_content.html'
 
@@ -3006,3 +2879,132 @@ class EmployeeListContentView(EmployeeListView):
         self.object_list = self.get_queryset()
         context = self.get_context_data()
         return render(request, self.template_name, context)
+
+class OutletToggleStatusView(LoginRequiredMixin, View):
+    def post(self, request, pk):
+        outlet = get_object_or_404(Outlet, pk=pk)
+        outlet.is_active = not outlet.is_active
+        outlet.save()
+        messages.success(request, _('Outlet status updated successfully.'))
+        return redirect('inventory:outlet_detail', pk=pk)
+
+class AssetUnassignOutletView(LoginRequiredMixin, View):
+    def post(self, request, pk):
+        asset = get_object_or_404(ITAsset, pk=pk)
+        outlet = asset.outlet
+        if outlet:
+            asset.outlet = None
+            asset.save()
+            messages.success(request, _('Asset unassigned from outlet successfully.'))
+            return redirect('inventory:outlet_detail', pk=outlet.pk)
+        messages.error(request, _('Asset is not assigned to any outlet.'))
+        return redirect('inventory:asset_detail', pk=pk)
+
+class AssetAssignView(LoginRequiredMixin, View):
+    template_name = 'assets/asset_assign.html'
+
+    def get(self, request):
+        form = AssetAssignForm()
+        outlet_id = request.GET.get('outlet')
+        if outlet_id:
+            outlet = get_object_or_404(Outlet, pk=outlet_id)
+            form.fields['outlet'].initial = outlet.id
+        employee_id = request.GET.get('employee')
+        if employee_id:
+            employee = get_object_or_404(Employee, pk=employee_id)
+            form.fields['employee'].initial = employee.id
+        return render(request, self.template_name, {'form': form})
+
+    def post(self, request):
+        form = AssetAssignForm(request.POST)
+        if form.is_valid():
+            asset = form.cleaned_data['asset']
+            employee = form.cleaned_data['employee']
+            outlet = form.cleaned_data['outlet']
+            
+            # Update asset assignment
+            asset.assigned_to = employee
+            asset.outlet = outlet
+            asset.status = 'assigned'
+            asset.save()
+
+            # Create asset history entry
+            AssetHistory.objects.create(
+                asset=asset,
+                action='assigned',
+                employee=employee,
+                notes=f'Assigned to {employee.get_full_name() if employee else "N/A"}'
+                      f'{" and " + outlet.name if outlet else ""}',
+                created_by=request.user
+            )
+
+            messages.success(request, _('Asset assigned successfully.'))
+            if outlet:
+                return redirect('inventory:outlet_detail', pk=outlet.pk)
+            elif employee:
+                return redirect('inventory:employee_detail', pk=employee.pk)
+            return redirect('inventory:asset_detail', pk=asset.pk)
+        return render(request, self.template_name, {'form': form})
+
+class AssetUnassignView(LoginRequiredMixin, View):
+    def post(self, request, pk):
+        asset = get_object_or_404(ITAsset, pk=pk)
+        employee = asset.assigned_to
+        if employee:
+            asset.assigned_to = None
+            asset.status = 'available'
+            asset.save()
+            messages.success(request, _('Asset unassigned successfully.'))
+            return redirect('inventory:employee_detail', pk=employee.pk)
+        messages.error(request, _('Asset is not assigned to any employee.'))
+        return redirect('inventory:asset_detail', pk=pk)
+
+class UserAccountView(LoginRequiredMixin, TemplateView):
+    template_name = 'user_profile/user_account.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = _('Account Settings')
+        return context
+
+class UserProfileView(LoginRequiredMixin, TemplateView):
+    template_name = 'user_profile/profile.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = _('User Profile')
+        return context
+
+class LandingPageView(TemplateView):
+    template_name = 'index/landing.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = _('IT Asset Management Solutions')
+        return context
+
+class ContactView(TemplateView):
+    template_name = 'index/contact.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = _('Contact Us')
+        return context
+
+@login_required
+def change_password(request):
+    if request.method == 'POST':
+        form = PasswordChangeForm(request.user, request.POST)
+        if form.is_valid():
+            user = form.save()
+            update_session_auth_hash(request, user)  # Important to keep user logged in
+            messages.success(request, _('Your password was successfully updated!'))
+            return redirect('inventory:user_account')
+        else:
+            messages.error(request, _('Please correct the error below.'))
+    else:
+        form = PasswordChangeForm(request.user)
+    return render(request, 'user_profile/change_password.html', {
+        'form': form,
+        'title': _('Change Password')
+    })
