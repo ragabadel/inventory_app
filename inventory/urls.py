@@ -56,12 +56,9 @@ urlpatterns = [
     path('companies/<int:pk>/update/', views.OwnerCompanyUpdateView.as_view(), name='owner_company_update'),
     path('companies/<int:pk>/delete/', views.OwnerCompanyDeleteView.as_view(), name='owner_company_delete'),
 
-    # Outlet URLs
-    path('outlets/', views.OutletListView.as_view(), name='outlet_list'),
-    path('outlets/create/', views.OutletCreateView.as_view(), name='outlet_create'),
-    path('outlets/<int:pk>/', views.OutletDetailView.as_view(), name='outlet_detail'),
-    path('outlets/<int:pk>/edit/', views.OutletUpdateView.as_view(), name='outlet_edit'),
-    path('outlets/<int:pk>/delete/', views.OutletDeleteView.as_view(), name='outlet_delete'),
+    # Asset Types
+    path('asset-types/', views.asset_type_list, name='asset_type_list'),
+    path('asset-types/<int:pk>/', views.asset_type_detail, name='asset_type_detail'),
 
     # Department URLs
     path('departments/', views.department_list, name='department_list'),
@@ -96,4 +93,4 @@ urlpatterns = [
     # Database Management URLs (Superuser Only)
     path('database/backup/', views.DatabaseBackupView.as_view(), name='database_backup'),
     path('database/restore/', views.DatabaseRestoreView.as_view(), name='database_restore'),
-] 
+]
