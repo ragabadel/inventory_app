@@ -19,13 +19,17 @@ from django.contrib.auth.models import User, Group, Permission
 from django.views.decorators.http import require_POST
 from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth import update_session_auth_hash
+from django.contrib.auth import login
 
 from .models import (
     Employee, ITAsset, Department, Position, AssetType, 
     OwnerCompany, AssetHistory, Notification, NotificationCategory,
     Outlet
 )
-from .forms import EmployeeForm, ITAssetForm, SuperUserRegistrationForm, AssetAssignForm
+from .forms import (
+    EmployeeForm, ITAssetForm, SuperUserRegistrationForm,
+    AssetAssignForm, OwnerCompanyForm, UserRegistrationForm
+)
 
 import openpyxl
 from openpyxl import Workbook
@@ -280,7 +284,7 @@ class ITAssetListView(LoginRequiredMixin, ListView):
         manufacturer = self.request.GET.get('manufacturer', '')
         status = self.request.GET.get('status', '')
         owner = self.request.GET.get('owner', '')
-
+        
         if search:
             queryset = queryset.filter(
                 Q(name__icontains=search) |
@@ -1585,8 +1589,8 @@ class OwnerCompanyListView(LoginRequiredMixin, ListView):
 
 class OwnerCompanyCreateView(LoginRequiredMixin, CreateView):
     model = OwnerCompany
+    form_class = OwnerCompanyForm
     template_name = 'company/owner_company_form.html'
-    fields = ['code', 'name']
     success_url = reverse_lazy('inventory:owner_company_list')
 
     def get_context_data(self, **kwargs):
@@ -1600,8 +1604,8 @@ class OwnerCompanyCreateView(LoginRequiredMixin, CreateView):
 
 class OwnerCompanyUpdateView(LoginRequiredMixin, UpdateView):
     model = OwnerCompany
+    form_class = OwnerCompanyForm
     template_name = 'company/owner_company_form.html'
-    fields = ['code', 'name']
     success_url = reverse_lazy('inventory:owner_company_list')
 
     def get_context_data(self, **kwargs):
@@ -1854,35 +1858,30 @@ class EmployeeListView(LoginRequiredMixin, ListView):
             queryset = self.get_queryset()
             
             # Generate dynamic filename based on filters
-            filename_parts = ['assets']
+            filename_parts = ['employees']
             
-            # Add asset type to filename
-            asset_type_id = request.GET.get('asset_type')
-            if asset_type_id:
+            # Add department to filename
+            department_id = request.GET.get('department')
+            if department_id:
                 try:
-                    asset_type = AssetType.objects.get(id=asset_type_id)
-                    filename_parts.append(asset_type.name.lower())
-                except AssetType.DoesNotExist:
+                    department = Department.objects.get(id=department_id)
+                    filename_parts.append(department.name.lower())
+                except Department.DoesNotExist:
                     pass
             
-            # Add manufacturer to filename
-            manufacturer = request.GET.get('manufacturer')
-            if manufacturer:
-                filename_parts.append(manufacturer.lower())
+            # Add company to filename
+            company_id = request.GET.get('company')
+            if company_id:
+                try:
+                    company = OwnerCompany.objects.get(id=company_id)
+                    filename_parts.append(company.code.lower())
+                except OwnerCompany.DoesNotExist:
+                    pass
             
             # Add status to filename
             status = request.GET.get('status')
             if status:
                 filename_parts.append(status)
-            
-            # Add owner to filename
-            owner_id = request.GET.get('owner')
-            if owner_id:
-                try:
-                    owner = OwnerCompany.objects.get(id=owner_id)
-                    filename_parts.append(owner.code.lower())
-                except OwnerCompany.DoesNotExist:
-                    pass
             
             # Add timestamp
             filename_parts.append(timezone.now().strftime('%Y%m%d'))
@@ -1890,38 +1889,36 @@ class EmployeeListView(LoginRequiredMixin, ListView):
             # Create workbook and select active sheet
             wb = Workbook()
             ws = wb.active
-            ws.title = "Filtered Assets"
+            ws.title = "Filtered Employees"
             
             # Write headers
             headers = [
-                'Asset Name',
-                'Asset Type',
-                'Serial Number',
-                'Model',
-                'Manufacturer',
-                'Owner Company',
-                'Status',
-                'Assigned To',
+                'Employee ID',
+                'National ID',
+                'First Name',
+                'Last Name',
+                'Email',
                 'Department',
-                'Purchase Date',
-                'Warranty Expiry'
+                'Position',
+                'Company',
+                'Hire Date',
+                'Status'
             ]
             ws.append(headers)
             
             # Write data
-            for asset in queryset:
+            for employee in queryset:
                 row = [
-                    asset.name,
-                    asset.asset_type.display_name if asset.asset_type else '',
-                    asset.serial_number,
-                    asset.model,
-                    asset.manufacturer,
-                    asset.owner.name if asset.owner else '',
-                    asset.get_status_display(),
-                    asset.assigned_to.get_full_name() if asset.assigned_to else '',
-                    asset.assigned_to.department.name if asset.assigned_to and asset.assigned_to.department else '',
-                    asset.purchase_date.strftime('%Y-%m-%d') if asset.purchase_date else '',
-                    asset.warranty_expiry.strftime('%Y-%m-%d') if asset.warranty_expiry else ''
+                    employee.employee_id,
+                    employee.national_id,
+                    employee.first_name,
+                    employee.last_name,
+                    employee.email,
+                    employee.department.name if employee.department else '',
+                    employee.position,
+                    employee.company.name if employee.company else '',
+                    employee.hire_date.strftime('%Y-%m-%d') if employee.hire_date else '',
+                    'Active' if employee.is_active else 'Inactive'
                 ]
                 ws.append(row)
             
@@ -2570,7 +2567,7 @@ def reports_dashboard(request):
             company_data['device_types'].sort(key=lambda x: x['count'], reverse=True)
         
         company_device_stats.append(company_data)
-
+    
     # Calculate Asset Growth Analysis data
     twelve_months_ago = today - timedelta(days=365)
     
@@ -2609,7 +2606,7 @@ def reports_dashboard(request):
         trend = 'up' if last_month_growth > prev_month_growth else 'down'
     else:
         trend = 'neutral'
-
+    
     context = {
         'title': _('Reports Dashboard'),
         'report_type': report_type,
@@ -3008,3 +3005,25 @@ def change_password(request):
         'form': form,
         'title': _('Change Password')
     })
+
+class RegisterView(CreateView):
+    form_class = UserRegistrationForm
+    template_name = 'registration/register.html'
+    success_url = reverse_lazy('inventory:home')
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        login(self.request, self.object)  # Log in the user after registration
+        messages.success(self.request, _('Account created successfully! Welcome to Inventory Management System.'))
+        return response
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = _('Create Account')
+        return context
+
+    def dispatch(self, request, *args, **kwargs):
+        if request.user.is_authenticated:
+            messages.info(request, _('You are already logged in.'))
+            return redirect('inventory:home')
+        return super().dispatch(request, *args, **kwargs)

@@ -13,6 +13,34 @@ class UserRegistrationForm(UserCreationForm):
         model = User
         fields = ('username', 'email', 'first_name', 'last_name', 'password1', 'password2')
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Add placeholders and classes
+        self.fields['username'].widget.attrs.update({
+            'placeholder': _('Choose a username'),
+            'class': 'appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm'
+        })
+        self.fields['email'].widget.attrs.update({
+            'placeholder': _('Enter your email'),
+            'class': 'appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm'
+        })
+        self.fields['first_name'].widget.attrs.update({
+            'placeholder': _('Enter your first name'),
+            'class': 'appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm'
+        })
+        self.fields['last_name'].widget.attrs.update({
+            'placeholder': _('Enter your last name'),
+            'class': 'appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm'
+        })
+        self.fields['password1'].widget.attrs.update({
+            'placeholder': _('Choose a password'),
+            'class': 'appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm'
+        })
+        self.fields['password2'].widget.attrs.update({
+            'placeholder': _('Confirm your password'),
+            'class': 'appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm'
+        })
+
     def save(self, commit=True):
         user = super().save(commit=False)
         user.email = self.cleaned_data['email']
@@ -355,3 +383,34 @@ class AssetAssignForm(forms.Form):
             raise forms.ValidationError(_('You must assign the asset to either an employee or an outlet.'))
         
         return cleaned_data
+
+class OwnerCompanyForm(forms.ModelForm):
+    class Meta:
+        model = OwnerCompany
+        fields = ['code', 'name']
+        widgets = {
+            'code': forms.TextInput(attrs={
+                'class': 'shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md',
+                'placeholder': _('Enter company code'),
+            }),
+            'name': forms.TextInput(attrs={
+                'class': 'shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md',
+                'placeholder': _('Enter company name'),
+            }),
+        }
+        help_texts = {
+            'code': _('A unique identifier for the company (e.g., CTP, ABC)'),
+            'name': _('The full name of the company'),
+        }
+
+    def clean_code(self):
+        code = self.cleaned_data['code']
+        # Convert to uppercase and remove spaces
+        code = code.upper().strip()
+        return code
+
+    def clean_name(self):
+        name = self.cleaned_data['name']
+        # Strip whitespace and ensure proper capitalization
+        name = name.strip()
+        return name

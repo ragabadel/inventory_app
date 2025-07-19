@@ -1,213 +1,246 @@
+{% extends 'base/base_tailwind.html' %}
 {% load static %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Login to Inventory Management System">
+{% load i18n %}
+
+{% block title %}{% trans "Sign In" %}{% endblock %}
+
+{% block extra_css %}
+<!-- Update Font Awesome to latest version -->
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+
+<style>
+    .login-bg {
+        background-image: linear-gradient(to right bottom, 
+            rgba(30, 58, 138, 0.8), 
+            rgba(29, 78, 216, 0.85)), 
+            url("{% static 'images/registration_images/inventory-bg.jpg' %}");
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        background-attachment: fixed;
+    }
+
+    .glass-form {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        box-shadow: 
+            0 25px 50px -12px rgba(0, 0, 0, 0.25),
+            0 0 0 1px rgba(255, 255, 255, 0.1);
+    }
+
+    .login-animation {
+        animation: fadeIn 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(-10px) scale(0.98);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+    }
+
+    .input-group {
+        position: relative;
+    }
+
+    .input-icon {
+        position: absolute;
+        left: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #6b7280;
+        transition: all 0.3s ease;
+    }
+
+    .input-group:focus-within .input-icon {
+        color: #2563eb;
+    }
+
+    .form-input {
+        transition: all 0.3s ease;
+    }
+
+    .form-input:focus {
+        border-color: #2563eb;
+        box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+    }
+
+    .btn-gradient {
+        background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+        transition: all 0.3s ease;
+    }
+
+    .btn-gradient:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+    }
+
+    .brand-logo {
+        background: rgba(255, 255, 255, 0.9);
+        box-shadow: 
+            0 8px 16px -4px rgba(0, 0, 0, 0.1),
+            0 0 0 1px rgba(255, 255, 255, 0.5);
+        backdrop-filter: blur(8px);
+    }
+
+    .brand-text {
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+</style>
+{% endblock %}
+
+{% block body_class %}login-bg{% endblock %}
+
+{% block content %}
+<div class="min-h-screen flex items-center justify-center p-6 relative overflow-hidden">
+    <div class="absolute inset-0 z-0 opacity-50">
+        <div class="absolute inset-0 bg-gradient-to-br from-blue-900/20 to-blue-800/20 backdrop-blur-sm"></div>
+    </div>
     
-    <!-- Favicon -->
-    <link rel="icon" type="image/x-icon" href="{% static 'images/favicon.ico' %}">
-    
-    <title>Login - Inventory Management System</title>
-    
-    <!-- CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-    
-    <style>
-        :root {
-            --primary-color: #0d6efd;
-            --secondary-color: #6c757d;
-            --success-color: #198754;
-            --light-color: #f8f9fa;
-            --dark-color: #212529;
-            --card-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-        }
-        
-        body {
-            font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, var(--light-color) 0%, #ffffff 100%);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-        }
-        
-        .login-container {
-            max-width: 420px;
-            margin: 2rem auto;
-            padding: 0 1rem;
-        }
-        
-        .login-header {
-            text-align: center;
-            margin-bottom: 2rem;
-        }
-        
-        .login-header i {
-            font-size: 3rem;
-            color: var(--primary-color);
-            margin-bottom: 1rem;
-        }
-        
-        .login-header h1 {
-            font-size: 1.75rem;
-            color: var(--dark-color);
-            margin-bottom: 0.5rem;
-            font-weight: 600;
-        }
-        
-        .login-header p {
-            color: var(--secondary-color);
-            font-size: 1rem;
-        }
-        
-        .login-form {
-            background: white;
-            padding: 2rem;
-            border-radius: 1rem;
-            box-shadow: var(--card-shadow);
-        }
-        
-        .form-floating {
-            margin-bottom: 1rem;
-        }
-        
-        .form-floating label {
-            color: var(--secondary-color);
-        }
-        
-        .form-control:focus {
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
-        }
-        
-        .btn-login {
-            width: 100%;
-            padding: 0.75rem;
-            font-weight: 500;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        
-        .login-footer {
-            text-align: center;
-            margin-top: 1.5rem;
-            color: var(--secondary-color);
-            font-size: 0.875rem;
-        }
-        
-        .alert {
-            border: none;
-            border-radius: 0.5rem;
-        }
-        
-        .alert-danger {
-            background-color: #fff2f2;
-            color: #dc3545;
-        }
-        
-        .form-check-input:checked {
-            background-color: var(--primary-color);
-            border-color: var(--primary-color);
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="login-container">
-            <!-- Login Header -->
-            <div class="login-header">
-                <i class="fas fa-boxes-stacked"></i>
-                <h1>Welcome Back</h1>
-                <p>Sign in to continue to Inventory Management System</p>
+    <div class="w-full max-w-lg login-animation relative z-10">
+        <!-- Brand Logo -->
+        <div class="text-center mb-8">
+            <div class="inline-flex items-center justify-center w-20 h-20 rounded-full brand-logo mb-4">
+                <i class="fa-solid fa-boxes-stacked text-4xl text-blue-600"></i>
             </div>
+            <h1 class="text-3xl font-bold text-white mb-2 brand-text">{% trans "Inventory Management System" %}</h1>
+            <p class="text-lg text-gray-100">{% trans "Welcome back! Please sign in to continue." %}</p>
+        </div>
 
-            <!-- Login Form -->
-            <div class="login-form">
-                {% if messages %}
-                <div class="messages mb-4">
-                    {% for message in messages %}
-                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                        {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    </div>
-                    {% endfor %}
-                </div>
-                {% endif %}
-
-                {% if form.errors %}
-                <div class="alert alert-danger mb-4" role="alert">
-                    <i class="fas fa-exclamation-circle me-2"></i>
-                    {% if form.errors.items|length == 1 %}Please correct the error below.{% else %}Please correct the errors below.{% endif %}
-                </div>
-                {% endif %}
-
-                <form method="post" novalidate>
-                    {% csrf_token %}
-                    
-                    <!-- Username -->
-                    <div class="form-floating {% if form.username.errors %}is-invalid{% endif %}">
-                        <input type="text" 
-                               name="username" 
-                               class="form-control {% if form.username.errors %}is-invalid{% endif %}" 
-                               id="id_username" 
-                               placeholder="Username"
-                               required
-                               value="{{ form.username.value|default:'' }}">
-                        <label for="id_username">Username</label>
-                        {% if form.username.errors %}
-                        <div class="invalid-feedback">
-                            {{ form.username.errors|join:", " }}
-                        </div>
+        <!-- Login Form -->
+        <div class="glass-form rounded-2xl p-8 mb-6">
+            {% if messages %}
+            <div class="space-y-4 mb-6">
+                {% for message in messages %}
+                <div class="rounded-lg p-4 flex items-center {% if message.tags == 'error' %}bg-red-50 text-red-700 border-l-4 border-red-500{% else %}bg-blue-50 text-blue-700 border-l-4 border-blue-500{% endif %} transition-all duration-300">
+                    <div class="flex-shrink-0 mr-3">
+                        {% if message.tags == 'error' %}
+                        <i class="fa-solid fa-circle-exclamation text-red-400"></i>
+                        {% else %}
+                        <i class="fa-solid fa-circle-info text-blue-400"></i>
                         {% endif %}
                     </div>
+                    <p class="text-sm font-medium">{{ message }}</p>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
 
-                    <!-- Password -->
-                    <div class="form-floating {% if form.password.errors %}is-invalid{% endif %}">
-                        <input type="password" 
-                               name="password" 
-                               class="form-control {% if form.password.errors %}is-invalid{% endif %}" 
-                               id="id_password" 
-                               placeholder="Password"
+            {% if form.errors %}
+            <div class="mb-6 rounded-lg bg-red-50 p-4 border-l-4 border-red-500">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <i class="fa-solid fa-circle-exclamation text-red-400"></i>
+                    </div>
+                    <div class="ml-3">
+                        <h3 class="text-sm font-medium text-red-800">
+                            {% if form.errors.items|length == 1 %}
+                            {% trans "Please correct the error below." %}
+                            {% else %}
+                            {% trans "Please correct the errors below." %}
+                            {% endif %}
+                        </h3>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <form method="post" class="space-y-6" novalidate>
+                {% csrf_token %}
+
+                <!-- Username Field -->
+                <div class="input-group">
+                    <label for="id_username" class="block text-sm font-medium text-gray-700 mb-2">
+                        {% trans "Username" %}
+                    </label>
+                    <div class="relative">
+                        <span class="input-icon">
+                            <i class="fa-solid fa-user"></i>
+                        </span>
+                        <input type="text"
+                               id="id_username"
+                               name="username"
+                               value="{{ form.username.value|default:'' }}"
+                               class="pl-10 w-full px-4 py-3 border {% if form.username.errors %}border-red-300{% else %}border-gray-300{% endif %} rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                                required>
-                        <label for="id_password">Password</label>
-                        {% if form.password.errors %}
-                        <div class="invalid-feedback">
-                            {{ form.password.errors|join:", " }}
-                        </div>
-                        {% endif %}
                     </div>
+                    {% if form.username.errors %}
+                    <p class="mt-2 text-sm text-red-600">{{ form.username.errors|join:", " }}</p>
+                    {% endif %}
+                </div>
 
-                    <!-- Remember Me -->
-                    <div class="form-check mb-3">
-                        <input class="form-check-input" type="checkbox" name="remember" id="id_remember">
-                        <label class="form-check-label" for="id_remember">
-                            Remember me
+                <!-- Password Field -->
+                <div class="input-group">
+                    <label for="id_password" class="block text-sm font-medium text-gray-700 mb-2">
+                        {% trans "Password" %}
+                    </label>
+                    <div class="relative">
+                        <span class="input-icon">
+                            <i class="fa-solid fa-lock"></i>
+                        </span>
+                        <input type="password"
+                               id="id_password"
+                               name="password"
+                               class="pl-10 w-full px-4 py-3 border {% if form.password.errors %}border-red-300{% else %}border-gray-300{% endif %} rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                               required>
+                    </div>
+                    {% if form.password.errors %}
+                    <p class="mt-2 text-sm text-red-600">{{ form.password.errors|join:", " }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Remember Me & Forgot Password -->
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <input type="checkbox"
+                               id="id_remember"
+                               name="remember"
+                               class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded transition-colors duration-200">
+                        <label for="id_remember" class="ml-2 block text-sm text-gray-700">
+                            {% trans "Remember me" %}
                         </label>
                     </div>
+                    <div class="text-sm">
+                        <a href="#" class="font-medium text-blue-600 hover:text-blue-500 transition-colors duration-200">
+                            {% trans "Forgot password?" %}
+                        </a>
+                    </div>
+                </div>
 
-                    <!-- Submit Button -->
-                    <button type="submit" class="btn btn-primary btn-login">
-                        <i class="fas fa-sign-in-alt me-2"></i>Sign In
-                    </button>
+                <!-- Submit Button -->
+                <button type="submit"
+                        class="btn-gradient w-full flex justify-center items-center px-6 py-3 border border-transparent text-sm font-medium rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    <i class="fa-solid fa-right-to-bracket mr-2"></i>
+                    {% trans "Sign In" %}
+                </button>
 
-                    <!-- Hidden Next URL -->
-                    <input type="hidden" name="next" value="{{ next }}">
-                </form>
-            </div>
+                <!-- Register Link -->
+                <div class="text-center">
+                    <p class="text-sm text-gray-600">
+                        {% trans "Don't have an account?" %}
+                        <a href="{% url 'inventory:register' %}" class="font-medium text-blue-600 hover:text-blue-500 transition-colors duration-200">
+                            {% trans "Create one now" %}
+                        </a>
+                    </p>
+                </div>
 
-            <!-- Login Footer -->
-            <div class="login-footer">
-                <p class="mb-0">
-                    © {% now "Y" %} Inventory Management System. All rights reserved.
-                </p>
-            </div>
+                <!-- Hidden Next URL -->
+                <input type="hidden" name="next" value="{{ next }}">
+            </form>
+        </div>
+
+        <!-- Footer -->
+        <div class="text-center">
+            <p class="text-sm text-gray-200">
+                © {% now "Y" %} {% trans "Inventory Management System" %}<br>
+                {% trans "All rights reserved" %}
+            </p>
         </div>
     </div>
-
-    <!-- JavaScript -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html> 
+</div>
+{% endblock %} 

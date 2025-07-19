@@ -12,6 +12,9 @@ urlpatterns = [
     path('privacy/', views.PrivacyView.as_view(), name='privacy'),
     path('terms/', views.TermsView.as_view(), name='terms'),
     
+    # Authentication URLs
+    path('register/', views.RegisterView.as_view(), name='register'),
+    
     # User Account Management
     path('account/', views.UserAccountView.as_view(), name='user_account'),
     path('account/change-password/', views.change_password, name='change_password'),
@@ -58,7 +61,7 @@ urlpatterns = [
     path('companies/create/', views.OwnerCompanyCreateView.as_view(), name='owner_company_create'),
     path('companies/<int:pk>/update/', views.OwnerCompanyUpdateView.as_view(), name='owner_company_update'),
     path('companies/<int:pk>/delete/', views.OwnerCompanyDeleteView.as_view(), name='owner_company_delete'),
-    
+
     # Outlet URLs
     path('outlets/', views.OutletListView.as_view(), name='outlet_list'),
     path('outlets/<int:pk>/', views.OutletDetailView.as_view(), name='outlet_detail'),
@@ -66,14 +69,14 @@ urlpatterns = [
     path('outlets/<int:pk>/update/', views.OutletUpdateView.as_view(), name='outlet_update'),
     path('outlets/<int:pk>/delete/', views.OutletDeleteView.as_view(), name='outlet_delete'),
     path('outlets/<int:pk>/toggle-status/', views.OutletToggleStatusView.as_view(), name='outlet_toggle_status'),
-    
+
     # Department URLs
     path('departments/', views.department_list, name='department_list'),
     path('departments/<int:pk>/', views.department_detail, name='department_detail'),
     path('departments/create/', views.department_create, name='department_create'),
     path('departments/<int:pk>/update/', views.department_update, name='department_update'),
     path('departments/<int:pk>/delete/', views.department_delete, name='department_delete'),
-    
+
     # Notification URLs
     path('notifications/', views.NotificationListView.as_view(), name='notification_list'),
     path('notifications/<int:pk>/', views.NotificationDetailView.as_view(), name='notification_detail'),
@@ -83,14 +86,14 @@ urlpatterns = [
     path('notifications/<int:pk>/unarchive/', views.unarchive_notification, name='unarchive_notification'),
     path('notifications/mark-all-read/', views.mark_all_read, name='mark_all_read'),
     path('notifications/ajax/', views.get_notifications_ajax, name='get_notifications_ajax'),
-    
+
     # Asset History URLs
     path('asset-history/', views.global_asset_history, name='global_asset_history'),
-    
+
     # Reports URLs
     path('reports/', views.reports_dashboard, name='reports_dashboard'),
     path('reports/pdf/', views.generate_report_pdf, name='generate_report_pdf'),
-    
+
     # Database Management URLs
     path('database/backup/', views.DatabaseBackupView.as_view(), name='database_backup'),
     path('database/restore/', views.DatabaseRestoreView.as_view(), name='database_restore'),
