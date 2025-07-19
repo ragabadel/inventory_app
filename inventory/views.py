@@ -2395,7 +2395,7 @@ def get_notifications_ajax(request):
     })
 
 class UserPermissionsView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
-    template_name = 'inventory/user_permissions.html'
+    template_name = 'user_profile/user_permissions.html'
     
     def test_func(self):
         return self.request.user.is_superuser or self.request.user.groups.filter(name='Admin').exists()
@@ -2452,11 +2452,56 @@ class UserPermissionsView(LoginRequiredMixin, UserPassesTestMixin, TemplateView)
 
 @login_required
 def global_asset_history(request):
-    history = AssetHistory.objects.select_related('asset', 'employee', 'created_by').order_by('-date')
-    return render(request, 'reports/global_asset_history.html', {
-        'history': history,
+    """View for displaying comprehensive system reports and analytics."""
+    # Get filter parameters
+    search_query = request.GET.get('search', '')
+    selected_action = request.GET.get('action', '')
+    date_from = request.GET.get('date_from', '')
+    date_to = request.GET.get('date_to', '')
+
+    # Base queryset
+    history = AssetHistory.objects.select_related(
+        'asset', 
+        'asset__asset_type', 
+        'employee', 
+        'created_by'
+    ).order_by('-date')
+
+    # Apply filters
+    if search_query:
+        history = history.filter(
+            Q(asset__name__icontains=search_query) |
+            Q(asset__serial_number__icontains=search_query) |
+            Q(employee__first_name__icontains=search_query) |
+            Q(employee__last_name__icontains=search_query) |
+            Q(notes__icontains=search_query)
+        )
+
+    if selected_action:
+        history = history.filter(action=selected_action)
+
+    if date_from:
+        history = history.filter(date__gte=date_from)
+
+    if date_to:
+        history = history.filter(date__lte=date_to)
+
+    # Pagination
+    paginator = Paginator(history, 25)  # Show 25 entries per page
+    page = request.GET.get('page')
+    history_entries = paginator.get_page(page)
+
+    context = {
+        'history_entries': history_entries,
+        'action_choices': AssetHistory.ACTION_CHOICES,
+        'search_query': search_query,
+        'selected_action': selected_action,
+        'date_from': date_from,
+        'date_to': date_to,
         'title': _('Global Asset History')
-    })
+    }
+
+    return render(request, 'assets/global_asset_history.html', context)
 
 @login_required
 def reports_dashboard(request):
@@ -2764,6 +2809,44 @@ class DatabaseBackupView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
         context['title'] = _('Database Backup')
         return context
 
+    def post(self, request, *args, **kwargs):
+        try:
+            # Create a timestamp for the backup file using today's date
+            timestamp = timezone.now().strftime('%Y%m%d')
+            backup_file = f'db_backup_{timestamp}.json'
+            
+            # Create backups directory if it doesn't exist
+            backup_dir = os.path.join(settings.BASE_DIR, 'backups')
+            os.makedirs(backup_dir, exist_ok=True)
+            
+            # Full path for the backup file
+            backup_path = os.path.join(backup_dir, backup_file)
+
+            # Create database backup using dumpdata with proper encoding
+            with open(backup_path, 'w', encoding='utf-8') as f:
+                management.call_command(
+                    'dumpdata',
+                    exclude=['contenttypes', 'auth.permission', 'sessions', 'admin'],
+                    indent=2,
+                    stdout=f,
+                    use_natural_foreign_keys=True,
+                    use_natural_primary_keys=True
+                )
+
+            # Prepare the file for download
+            if os.path.exists(backup_path):
+                with open(backup_path, 'rb') as f:
+                    response = HttpResponse(f.read(), content_type='application/json; charset=utf-8')
+                    response['Content-Disposition'] = f'attachment; filename="{backup_file}"'
+                    messages.success(request, _('Database backup created successfully and saved in backups directory.'))
+                    return response
+            else:
+                messages.error(request, _('Failed to create backup file.'))
+        except Exception as e:
+            messages.error(request, _('An error occurred while creating the backup: {}').format(str(e)))
+        
+        return redirect('inventory:database_backup')
+
 class DatabaseRestoreView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
     template_name = 'database/restore.html'
 
@@ -2773,7 +2856,78 @@ class DatabaseRestoreView(LoginRequiredMixin, UserPassesTestMixin, TemplateView)
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['title'] = _('Database Restore')
+        
+        # Get list of backup files from the backups directory
+        backup_dir = os.path.join(settings.BASE_DIR, 'backups')
+        if os.path.exists(backup_dir):
+            backup_files = []
+            for file in os.listdir(backup_dir):
+                if file.startswith('db_backup_') and file.endswith('.json'):
+                    file_path = os.path.join(backup_dir, file)
+                    file_size = os.path.getsize(file_path)
+                    backup_files.append({
+                        'name': file,
+                        'path': file_path,
+                        'size': file_size,
+                        'size_formatted': self.format_size(file_size),
+                        'date': datetime.fromtimestamp(os.path.getctime(file_path))
+                    })
+            # Sort backups by date, newest first
+            backup_files.sort(key=lambda x: x['date'], reverse=True)
+            context['backups'] = backup_files
+            if backup_files:
+                context['latest_backup'] = backup_files[0]
+        
         return context
+
+    def format_size(self, size):
+        """Format file size in bytes to human readable format"""
+        for unit in ['B', 'KB', 'MB', 'GB']:
+            if size < 1024.0:
+                return f"{size:.2f} {unit}"
+            size /= 1024.0
+        return f"{size:.2f} TB"
+
+    def post(self, request, *args, **kwargs):
+        try:
+            backup_file = request.FILES.get('backup_file')
+            backup_path = request.POST.get('backup_path')
+            
+            if not backup_file and not backup_path:
+                messages.error(request, _('No backup file selected.'))
+                return redirect('inventory:database_restore')
+            
+            # If using an existing backup file
+            if backup_path:
+                if not os.path.exists(backup_path):
+                    messages.error(request, _('Selected backup file not found.'))
+                    return redirect('inventory:database_restore')
+                
+                # Load the backup file
+                with open(backup_path, 'r', encoding='utf-8') as f:
+                    management.call_command('loaddata', backup_path)
+                    messages.success(request, _('Database restored successfully from existing backup.'))
+            
+            # If uploading a new backup file
+            elif backup_file:
+                # Create a temporary file to store the upload
+                with tempfile.NamedTemporaryFile(delete=False) as temp_file:
+                    for chunk in backup_file.chunks():
+                        temp_file.write(chunk)
+                
+                try:
+                    # Attempt to restore from the uploaded file
+                    management.call_command('loaddata', temp_file.name)
+                    messages.success(request, _('Database restored successfully from uploaded file.'))
+                finally:
+                    # Clean up the temporary file
+                    os.unlink(temp_file.name)
+            
+            return redirect('inventory:database_restore')
+            
+        except Exception as e:
+            messages.error(request, _('Error restoring database: {}').format(str(e)))
+            return redirect('inventory:database_restore')
 
 @login_required
 def asset_receipt(request, pk):

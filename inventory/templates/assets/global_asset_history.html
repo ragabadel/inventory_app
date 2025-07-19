@@ -4,193 +4,190 @@
 {% block title %}{% trans "Asset History" %}{% endblock %}
 
 {% block content %}
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    <!-- Page Header -->
-    <div class="mb-8">
-        <div class="md:flex md:items-center md:justify-between">
-            <div class="flex-1 min-w-0">
-                <h1 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
-                    {% trans "Asset History" %}
-                </h1>
-                <p class="mt-1 text-sm text-gray-500">
-                    {% trans "View and track all asset activities across the system" %}
-                </p>
+<div class="min-h-screen bg-gray-50 py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- Page Header -->
+        <div class="mb-8">
+            <div class="md:flex md:items-center md:justify-between">
+                <div class="flex-1 min-w-0">
+                    <h1 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
+                        {% trans "Asset History" %}
+                    </h1>
+                    <p class="mt-2 text-sm text-gray-600">
+                        {% trans "View and track all asset activities across the system" %}
+                    </p>
+                </div>
             </div>
         </div>
-    </div>
 
-    <!-- Filters Card -->
-    <div class="bg-white shadow rounded-lg mb-6">
-        <div class="p-6">
-            <form method="get" class="grid grid-cols-1 md:grid-cols-12 gap-4">
-                <!-- Search -->
-                <div class="md:col-span-4">
-                    <label for="search" class="block text-sm font-medium text-gray-700">{% trans "Search" %}</label>
-                    <div class="mt-1">
-                        <input type="text" 
-                               class="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md" 
-                               id="search" 
-                               name="search" 
-                               value="{{ search_query }}" 
-                               placeholder="{% trans 'Search assets, employees, or notes...' %}">
+        <!-- Filters Card -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 mb-6">
+            <div class="p-6">
+                <form method="get" class="grid grid-cols-1 md:grid-cols-12 gap-4">
+                    <!-- Search -->
+                    <div class="md:col-span-4">
+                        <label for="search" class="block text-sm font-medium text-gray-700">{% trans "Search" %}</label>
+                        <div class="mt-1 relative rounded-md shadow-sm">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i class="fas fa-search text-gray-400"></i>
+                            </div>
+                            <input type="text" 
+                                   class="pl-10 focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md" 
+                                   id="search" 
+                                   name="search" 
+                                   value="{{ search_query }}" 
+                                   placeholder="{% trans 'Search assets, employees, or notes...' %}">
+                        </div>
                     </div>
-                </div>
 
-                <!-- Action Filter -->
-                <div class="md:col-span-2">
-                    <label for="action" class="block text-sm font-medium text-gray-700">{% trans "Action" %}</label>
-                    <select class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
-                            id="action" 
-                            name="action">
-                        <option value="">{% trans "All Actions" %}</option>
-                        {% for action_value, action_label in action_choices %}
-                            <option value="{{ action_value }}" {% if action_value == selected_action %}selected{% endif %}>
-                                {{ action_label }}
-                            </option>
-                        {% endfor %}
-                    </select>
-                </div>
+                    <!-- Action Filter -->
+                    <div class="md:col-span-2">
+                        <label for="action" class="block text-sm font-medium text-gray-700">{% trans "Action" %}</label>
+                        <select class="mt-1 block w-full pl-3 pr-10 py-2 text-sm border-gray-300 focus:ring-blue-500 focus:border-blue-500 rounded-md"
+                                id="action" 
+                                name="action">
+                            <option value="">{% trans "All Actions" %}</option>
+                            {% for action_value, action_label in action_choices %}
+                                <option value="{{ action_value }}" {% if action_value == selected_action %}selected{% endif %}>
+                                    {{ action_label }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
 
-                <!-- Date Range -->
-                <div class="md:col-span-2">
-                    <label for="date_from" class="block text-sm font-medium text-gray-700">{% trans "Date From" %}</label>
-                    <input type="date" 
-                           class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md" 
-                           id="date_from" 
-                           name="date_from" 
-                           value="{{ date_from }}">
-                </div>
+                    <!-- Date Range -->
+                    <div class="md:col-span-2">
+                        <label for="date_from" class="block text-sm font-medium text-gray-700">{% trans "Date From" %}</label>
+                        <input type="date" 
+                               class="mt-1 block w-full pl-3 pr-10 py-2 text-sm border-gray-300 focus:ring-blue-500 focus:border-blue-500 rounded-md" 
+                               id="date_from" 
+                               name="date_from" 
+                               value="{{ date_from }}">
+                    </div>
 
-                <div class="md:col-span-2">
-                    <label for="date_to" class="block text-sm font-medium text-gray-700">{% trans "Date To" %}</label>
-                    <input type="date" 
-                           class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md" 
-                           id="date_to" 
-                           name="date_to" 
-                           value="{{ date_to }}">
-                </div>
+                    <div class="md:col-span-2">
+                        <label for="date_to" class="block text-sm font-medium text-gray-700">{% trans "Date To" %}</label>
+                        <input type="date" 
+                               class="mt-1 block w-full pl-3 pr-10 py-2 text-sm border-gray-300 focus:ring-blue-500 focus:border-blue-500 rounded-md" 
+                               id="date_to" 
+                               name="date_to" 
+                               value="{{ date_to }}">
+                    </div>
 
-                <!-- Filter Button -->
-                <div class="md:col-span-2 flex items-end">
-                    <button type="submit" class="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                        <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/>
-                        </svg>
-                        {% trans "Apply Filters" %}
-                    </button>
-                </div>
-            </form>
+                    <!-- Filter Button -->
+                    <div class="md:col-span-2 flex items-end">
+                        <button type="submit" class="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
+                            <i class="fas fa-filter mr-2"></i>
+                            {% trans "Apply Filters" %}
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
-    </div>
 
-    <!-- History Table -->
-    <div class="bg-white shadow overflow-hidden sm:rounded-lg">
-        <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50">
-                    <tr>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{% trans "Date" %}</th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{% trans "Asset" %}</th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{% trans "Type" %}</th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{% trans "Action" %}</th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{% trans "Employee" %}</th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{% trans "Notes" %}</th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{% trans "Created By" %}</th>
-                    </tr>
-                </thead>
-                <tbody class="bg-white divide-y divide-gray-200">
-                    {% for entry in history_entries %}
-                    <tr class="hover:bg-gray-50">
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ entry.date|date:"Y-m-d H:i" }}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm">
-                            <a href="{% url 'inventory:asset_detail' entry.asset.pk %}" class="text-blue-600 hover:text-blue-900">
-                                {{ entry.asset.name }}
-                            </a>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ entry.asset.asset_type.display_name }}</td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
-                                {% if entry.action == 'received' %}bg-green-100 text-green-800
-                                {% elif entry.action == 'assigned' %}bg-blue-100 text-blue-800
-                                {% elif entry.action == 'maintenance' %}bg-yellow-100 text-yellow-800
-                                {% elif entry.action == 'returned' %}bg-indigo-100 text-indigo-800
-                                {% else %}bg-gray-100 text-gray-800{% endif %}">
-                                {{ entry.get_action_display }}
-                            </span>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm">
-                            {% if entry.employee %}
-                                <a href="{% url 'inventory:employee_detail' entry.employee.pk %}" class="text-blue-600 hover:text-blue-900">
-                                    {{ entry.employee.get_full_name }}
+        <!-- History Table -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{% trans "Date" %}</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{% trans "Asset" %}</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{% trans "Type" %}</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{% trans "Action" %}</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{% trans "Employee" %}</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{% trans "Notes" %}</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{% trans "Created By" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {% for entry in history_entries %}
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ entry.date|date:"Y-m-d H:i" }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                <a href="{% url 'inventory:asset_detail' entry.asset.pk %}" class="text-blue-600 hover:text-blue-900 hover:underline">
+                                    {{ entry.asset.name }}
                                 </a>
-                            {% else %}
-                                <span class="text-gray-500">-</span>
-                            {% endif %}
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ entry.notes|truncatechars:50 }}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {% if entry.created_by %}
-                                {{ entry.created_by.get_full_name }}
-                            {% else %}
-                                -
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="7" class="px-6 py-10 text-center">
-                            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                            </svg>
-                            <p class="mt-2 text-sm text-gray-500">{% trans "No history records found." %}</p>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ entry.asset.asset_type.display_name }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
+                                    {% if entry.action == 'received' %}bg-green-100 text-green-800
+                                    {% elif entry.action == 'assigned' %}bg-blue-100 text-blue-800
+                                    {% elif entry.action == 'maintenance' %}bg-yellow-100 text-yellow-800
+                                    {% elif entry.action == 'returned' %}bg-purple-100 text-purple-800
+                                    {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                    {{ entry.get_action_display }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                {% if entry.employee %}
+                                    <a href="{% url 'inventory:employee_detail' entry.employee.pk %}" class="text-blue-600 hover:text-blue-900 hover:underline">
+                                        {{ entry.employee.get_full_name }}
+                                    </a>
+                                {% else %}
+                                    <span class="text-gray-500">-</span>
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ entry.notes|truncatechars:50 }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {% if entry.created_by %}
+                                    {{ entry.created_by.get_full_name }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" class="px-6 py-10 text-center">
+                                <i class="fas fa-history text-gray-400 text-4xl mb-3"></i>
+                                <p class="text-sm text-gray-500">{% trans "No history records found." %}</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
 
-        <!-- Pagination -->
-        {% if history_entries.has_other_pages %}
-        <div class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
-            <div class="flex-1 flex justify-center">
-                <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="{% trans 'History pagination' %}">
-                    {% if history_entries.has_previous %}
-                    <a href="?page={{ history_entries.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_action %}&action={{ selected_action }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}"
-                       class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
-                        <span class="sr-only">{% trans "Previous" %}</span>
-                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
-                        </svg>
-                    </a>
-                    {% endif %}
-
-                    {% for num in history_entries.paginator.page_range %}
-                        {% if history_entries.number == num %}
-                        <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-blue-50 text-sm font-medium text-blue-600">
-                            {{ num }}
-                        </span>
-                        {% elif num > history_entries.number|add:'-3' and num < history_entries.number|add:'3' %}
-                        <a href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_action %}&action={{ selected_action }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}"
-                           class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
-                            {{ num }}
+            <!-- Pagination -->
+            {% if history_entries.has_other_pages %}
+            <div class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+                <div class="flex-1 flex justify-center">
+                    <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="{% trans 'History pagination' %}">
+                        {% if history_entries.has_previous %}
+                        <a href="?page={{ history_entries.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_action %}&action={{ selected_action }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}"
+                           class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                            <span class="sr-only">{% trans "Previous" %}</span>
+                            <i class="fas fa-chevron-left"></i>
                         </a>
                         {% endif %}
-                    {% endfor %}
 
-                    {% if history_entries.has_next %}
-                    <a href="?page={{ history_entries.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_action %}&action={{ selected_action }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}"
-                       class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
-                        <span class="sr-only">{% trans "Next" %}</span>
-                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-                        </svg>
-                    </a>
-                    {% endif %}
-                </nav>
+                        {% for num in history_entries.paginator.page_range %}
+                            {% if history_entries.number == num %}
+                            <span class="relative inline-flex items-center px-4 py-2 border border-blue-500 bg-blue-50 text-sm font-medium text-blue-600">
+                                {{ num }}
+                            </span>
+                            {% elif num > history_entries.number|add:'-3' and num < history_entries.number|add:'3' %}
+                            <a href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_action %}&action={{ selected_action }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}"
+                               class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
+                                {{ num }}
+                            </a>
+                            {% endif %}
+                        {% endfor %}
+
+                        {% if history_entries.has_next %}
+                        <a href="?page={{ history_entries.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_action %}&action={{ selected_action }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}"
+                           class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                            <span class="sr-only">{% trans "Next" %}</span>
+                            <i class="fas fa-chevron-right"></i>
+                        </a>
+                        {% endif %}
+                    </nav>
+                </div>
             </div>
+            {% endif %}
         </div>
-        {% endif %}
     </div>
 </div>
 {% endblock %} 

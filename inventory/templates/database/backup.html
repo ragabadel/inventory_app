@@ -1,5 +1,6 @@
 {% extends 'base/base_tailwind.html' %}
 {% load i18n %}
+{% load static %}
 
 {% block title %}{% trans "Database Backup" %}{% endblock %}
 
@@ -30,22 +31,30 @@
                     {% csrf_token %}
                     
                     <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-4">
-                        <div class="flex items-center space-x-4">
-                            <div class="flex-shrink-0">
-                                <span class="inline-flex items-center justify-center h-10 w-10 rounded-full bg-blue-100">
-                                    <i class="fas fa-database text-blue-600"></i>
-                                </span>
-                            </div>
-                            <div class="flex-1 min-w-0">
-                                <p class="text-sm text-gray-600">
-                                    {% trans "The backup will include all your data except for user sessions and system logs." %}
-                                </p>
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-4">
+                                <div class="flex-shrink-0">
+                                    <span class="inline-flex items-center justify-center h-10 w-10 rounded-full bg-blue-100">
+                                        <i class="fas fa-database text-blue-600"></i>
+                                    </span>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-sm text-gray-600">
+                                        {% trans "The backup will include all your data except for user sessions and system logs." %}
+                                    </p>
+                                </div>
                             </div>
                             <div class="flex-shrink-0">
                                 <button type="submit" 
-                                        class="inline-flex items-center px-4 py-2 border border-transparent rounded-xl shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-150">
-                                    <i class="fas fa-download mr-2"></i>
-                                    {% trans "Create Backup" %}
+                                        id="backupButton"
+                                        class="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-150">
+                                    <span class="flex items-center">
+                                        <i class="fas fa-download mr-2"></i>
+                                        <span>{% trans "Create Backup" %}</span>
+                                    </span>
+                                    <span class="hidden ml-2" id="loadingSpinner">
+                                        <i class="fas fa-circle-notch fa-spin"></i>
+                                    </span>
                                 </button>
                             </div>
                         </div>
@@ -105,7 +114,7 @@
 {% if messages %}
 <div class="fixed bottom-0 right-0 m-6 z-50">
     {% for message in messages %}
-    <div class="{% if message.tags == 'success' %}bg-gradient-to-r from-green-500 to-green-600{% elif message.tags == 'error' %}bg-gradient-to-r from-red-500 to-red-600{% else %}bg-gradient-to-r from-blue-500 to-blue-600{% endif %} text-white px-6 py-4 rounded-xl shadow-lg mb-4 transform transition-all duration-300 hover:scale-102 animate-fade-in-up">
+    <div class="{% if message.tags == 'success' %}bg-green-500{% elif message.tags == 'error' %}bg-red-500{% else %}bg-blue-500{% endif %} text-white px-6 py-4 rounded-lg shadow-lg mb-4 animate-fade-in-up">
         <div class="flex items-center">
             <i class="fas {% if message.tags == 'success' %}fa-check-circle{% elif message.tags == 'error' %}fa-exclamation-circle{% else %}fa-info-circle{% endif %} mr-3"></i>
             <p>{{ message }}</p>
@@ -118,22 +127,33 @@
 </div>
 {% endif %}
 
-{% block extra_css %}
-<style>
-    .animate-fade-in-up {
-        animation: fadeInUp 0.3s ease-out;
-    }
+<!-- Loading State JavaScript -->
+<script>
+document.querySelector('form').addEventListener('submit', function(e) {
+    const button = document.getElementById('backupButton');
+    const loadingSpinner = document.getElementById('loadingSpinner');
+    
+    // Disable button and show loading state
+    button.disabled = true;
+    button.classList.add('opacity-75');
+    loadingSpinner.classList.remove('hidden');
+});
+</script>
 
-    @keyframes fadeInUp {
-        from {
-            opacity: 0;
-            transform: translateY(1rem);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
+<style>
+.animate-fade-in-up {
+    animation: fadeInUp 0.3s ease-out;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(1rem);
     }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
 </style>
-{% endblock %}
 {% endblock %} 
