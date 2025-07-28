@@ -50,6 +50,8 @@ from io import BytesIO
 import os
 import zipfile
 from django.core import management
+from .services.permission_service import PermissionService
+from .mixins import CustomPermissionMixin, ReadOnlyMixin, NoDeleteMixin
 
 @login_required
 def home(request):
@@ -273,11 +275,12 @@ def asset_assign(request):
     
     return render(request, 'assets/asset_assign.html', context)
 
-class ITAssetListView(LoginRequiredMixin, ListView):
+class ITAssetListView(ReadOnlyMixin, ListView):
     model = ITAsset
     template_name = 'assets/asset_list.html'
     context_object_name = 'assets'
-    paginate_by = 10  # Show 10 items per page
+    paginate_by = 10
+    permission_required = 'inventory.view_itasset'
 
     def get_queryset(self):
         queryset = ITAsset.objects.select_related('asset_type', 'owner', 'assigned_to').all()
@@ -482,16 +485,18 @@ class AssetListContentView(ITAssetListView):
             
         return HttpResponseBadRequest('This view only serves HTMX requests')
 
-class ITAssetDetailView(LoginRequiredMixin, DetailView):
+class ITAssetDetailView(ReadOnlyMixin, DetailView):
     model = ITAsset
     template_name = 'assets/asset_detail.html'
     context_object_name = 'asset'
+    permission_required = 'inventory.view_itasset'
 
-class ITAssetCreateView(LoginRequiredMixin, CreateView):
+class ITAssetCreateView(CustomPermissionMixin, CreateView):
     model = ITAsset
     form_class = ITAssetForm
     template_name = 'assets/asset_form.html'
     success_url = reverse_lazy('inventory:asset_list')
+    permission_required = 'inventory.add_itasset'
 
     def form_valid(self, form):
         asset = form.save()
@@ -566,11 +571,12 @@ class ITAssetCreateView(LoginRequiredMixin, CreateView):
 
         return super().form_valid(form)
 
-class ITAssetUpdateView(LoginRequiredMixin, UpdateView):
+class ITAssetUpdateView(CustomPermissionMixin, UpdateView):
     model = ITAsset
     form_class = ITAssetForm
     template_name = 'assets/asset_form.html'
     success_url = reverse_lazy('inventory:asset_list')
+    permission_required = 'inventory.change_itasset'
 
     def form_valid(self, form):
         # Store old values before saving
@@ -973,10 +979,11 @@ class ITAssetUpdateView(LoginRequiredMixin, UpdateView):
         
         return response
 
-class ITAssetDeleteView(LoginRequiredMixin, DeleteView):
+class ITAssetDeleteView(NoDeleteMixin, DeleteView):
     model = ITAsset
     template_name = 'assets/asset_confirm_delete.html'
     success_url = reverse_lazy('inventory:asset_list')
+    permission_required = 'inventory.delete_itasset'
 
     def delete(self, request, *args, **kwargs):
         messages.success(request, 'IT Asset deleted successfully.')
@@ -1769,11 +1776,12 @@ class EmployeePDFView(LoginRequiredMixin, DetailView):
         
         return response
 
-class EmployeeListView(LoginRequiredMixin, ListView):
+class EmployeeListView(ReadOnlyMixin, ListView):
     model = Employee
     template_name = 'employees/employee_list.html'
     context_object_name = 'employees'
     paginate_by = 10
+    permission_required = 'inventory.view_employee'
 
     def get_queryset(self):
         queryset = Employee.objects.select_related('department', 'company').all()
@@ -1941,35 +1949,31 @@ class EmployeeListView(LoginRequiredMixin, ListView):
             
         return super().get(request, *args, **kwargs)
 
-class EmployeeDetailView(LoginRequiredMixin, DetailView):
+class EmployeeDetailView(ReadOnlyMixin, DetailView):
     model = Employee
     template_name = 'employees/employee_detail.html'
     context_object_name = 'employee'
+    permission_required = 'inventory.view_employee'
 
-class EmployeeCreateView(LoginRequiredMixin, CreateView):
+class EmployeeCreateView(CustomPermissionMixin, CreateView):
     model = Employee
     form_class = EmployeeForm
     template_name = 'employees/employee_form.html'
     success_url = reverse_lazy('inventory:employee_list')
+    permission_required = 'inventory.add_employee'
 
-    def form_valid(self, form):
-        messages.success(self.request, 'Employee created successfully.')
-        return super().form_valid(form)
-
-class EmployeeUpdateView(LoginRequiredMixin, UpdateView):
+class EmployeeUpdateView(CustomPermissionMixin, UpdateView):
     model = Employee
     form_class = EmployeeForm
     template_name = 'employees/employee_form.html'
     success_url = reverse_lazy('inventory:employee_list')
+    permission_required = 'inventory.change_employee'
 
-    def form_valid(self, form):
-        messages.success(self.request, 'Employee updated successfully.')
-        return super().form_valid(form)
-
-class EmployeeDeleteView(LoginRequiredMixin, DeleteView):
+class EmployeeDeleteView(NoDeleteMixin, DeleteView):
     model = Employee
     template_name = 'employees/employee_confirm_delete.html'
     success_url = reverse_lazy('inventory:employee_list')
+    permission_required = 'inventory.delete_employee'
 
     def delete(self, request, *args, **kwargs):
         messages.success(request, 'Employee deleted successfully.')
@@ -2446,6 +2450,31 @@ class UserPermissionsView(LoginRequiredMixin, UserPassesTestMixin, TemplateView)
                     messages.success(request, _(f'Staff status {status} for {user.username}'))
                 else:
                     messages.error(request, _('You do not have permission to change staff status'))
+
+            elif action == 'delete_user':
+                if not request.user.is_superuser:
+                    messages.error(request, _('Only superusers can delete users'))
+                    return redirect('inventory:user_permissions')
+                
+                if user.is_superuser:
+                    messages.error(request, _('Cannot delete superuser accounts'))
+                    return redirect('inventory:user_permissions')
+
+                if user == request.user:
+                    messages.error(request, _('Cannot delete your own account'))
+                    return redirect('inventory:user_permissions')
+                
+                # Store username before deletion
+                username = user.username
+                
+                # Delete associated records first
+                if hasattr(user, 'employee_profile'):
+                    user.employee_profile.delete()
+                
+                # Delete the user
+                user.delete()
+                
+                messages.success(request, _(f'User {username} has been deleted'))
                     
         except User.DoesNotExist:
             messages.error(request, _('User not found'))
@@ -3133,9 +3162,19 @@ class UserProfileView(LoginRequiredMixin, TemplateView):
 class LandingPageView(TemplateView):
     template_name = 'index/landing.html'
 
+    def dispatch(self, request, *args, **kwargs):
+        # Redirect authenticated users to inventory home
+        if request.user.is_authenticated:
+            return redirect('inventory:home')
+        return super().dispatch(request, *args, **kwargs)
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['title'] = _('IT Asset Management Solutions')
+        context.update({
+            'title': _('IT Asset Management Solutions'),
+            'login_url': reverse('login'),
+            'register_url': reverse('inventory:register'),
+        })
         return context
 
 class ContactView(TemplateView):
@@ -3169,72 +3208,20 @@ class RegisterView(CreateView):
     template_name = 'registration/register.html'
     success_url = reverse_lazy('inventory:home')
 
-    def get_client_ip(self):
-        x_forwarded_for = self.request.META.get('HTTP_X_FORWARDED_FOR')
-        if x_forwarded_for:
-            ip = x_forwarded_for.split(',')[0]
-        else:
-            ip = self.request.META.get('REMOTE_ADDR')
-        return ip
-
-    def check_registration_attempts(self):
-        ip = self.get_client_ip()
-        cache_key = f'registration_attempts_{ip}'
-        attempts = cache.get(cache_key, 0)
-        
-        if attempts >= 5:  # Limit to 5 attempts per hour
-            return False
-        
-        cache.set(cache_key, attempts + 1, 3600)  # 1 hour expiry
-        return True
-
     def form_valid(self, form):
-        if not self.check_registration_attempts():
-            messages.error(self.request, _('Too many registration attempts. Please try again later.'))
-            return self.form_invalid(form)
-
-        try:
-            with transaction.atomic():
-                response = super().form_valid(form)
-                
-                # Record the registration attempt
-                RegistrationAttempt.objects.create(
-                    ip_address=self.get_client_ip(),
-                    username=form.cleaned_data['username'],
-                    email=form.cleaned_data['email'],
-                    is_successful=True
-                )
-
-                # Record terms acceptance
-                UserTermsAcceptance.objects.create(
-                    user=self.object,
-                    ip_address=self.get_client_ip()
-                )
-
-                # Log in the user
-                login(self.request, self.object)
-                
-                messages.success(self.request, _('Account created successfully! Welcome to Inventory Management System.'))
-                return response
-
-        except Exception as e:
-            RegistrationAttempt.objects.create(
-                ip_address=self.get_client_ip(),
-                username=form.cleaned_data['username'],
-                email=form.cleaned_data['email'],
-                is_successful=False
-            )
-            messages.error(self.request, _('An error occurred during registration. Please try again.'))
-            return self.form_invalid(form)
-
-    def form_invalid(self, form):
-        RegistrationAttempt.objects.create(
-            ip_address=self.get_client_ip(),
-            username=form.data.get('username', ''),
-            email=form.data.get('email', ''),
-            is_successful=False
-        )
-        return super().form_invalid(form)
+        response = super().form_valid(form)
+        
+        # Add user to Read Only group
+        read_only_group = Group.objects.get(name='Read Only')
+        self.object.groups.add(read_only_group)
+        
+        # Log in the user
+        login(self.request, self.object)
+        
+        messages.success(self.request, _('Account created successfully! Welcome to Inventory Management System.'))
+        messages.info(self.request, _('You have been assigned to the Read Only group. Contact an administrator for additional permissions.'))
+        
+        return response
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

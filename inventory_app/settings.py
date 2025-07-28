@@ -10,8 +10,10 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
-from pathlib import Path
 import os
+from pathlib import Path
+from django.utils.translation import gettext_lazy as _
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -22,15 +24,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'django-insecure-c4-+lbbyo$z@or7pkcc1-*qpq4py*4xw9b$0!x&ax1k=bodgd)'
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+# Error handling settings
+HANDLER403 = 'inventory.handlers.handler403'
 
-ALLOWED_HOSTS = [
-    'localhost',
-    '127.0.0.1',
-    '172.16.1.9',
-    '192.168.20.52',
-]
+# Debug settings
+DEBUG = True
+ALLOWED_HOSTS = ['*']  # For development only, configure properly in production
 
 # CSRF Settings
 CSRF_COOKIE_SECURE = False  # Set to True if using HTTPS
@@ -54,12 +53,124 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.locale.LocaleMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'django.middleware.locale.LocaleMiddleware',
+    'inventory.middleware.SecurityMiddleware',
+    'inventory.middleware.DataMaskingMiddleware',
+]
+
+# Session settings for enhanced security
+SESSION_ENGINE = 'django.contrib.sessions.backends.db'
+SESSION_COOKIE_AGE = 3600  # 1 hour
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+SESSION_SAVE_EVERY_REQUEST = True  # Update the session on every request
+SESSION_COOKIE_SECURE = True  # Only send over HTTPS
+SESSION_COOKIE_HTTPONLY = True  # Not accessible via JavaScript
+
+# Security settings
+SECURE_BROWSER_XSS_FILTER = True
+SECURE_CONTENT_TYPE_NOSNIFF = True
+X_FRAME_OPTIONS = 'DENY'
+CSRF_COOKIE_SECURE = True
+
+# Custom settings for permission levels
+PERMISSION_LEVELS = {
+    'VIEW_ONLY': 1,
+    'BASIC_OPERATIONS': 2,
+    'FULL_ACCESS': 3,
+    'ADMINISTRATIVE': 4,
+}
+
+# Operations requiring approval
+OPERATIONS_REQUIRING_APPROVAL = [
+    'delete',
+    'bulk_update',
+    'sensitive_access',
+    'export',
+    'permission_change',
+]
+
+# Sensitive fields that should be masked
+SENSITIVE_FIELDS = [
+    'national_id',
+    'phone_number',
+    'email',
+    'mac_address_wifi',
+    'mac_address_ethernet',
+    'ip_address',
+]
+
+# Session validation settings
+SESSION_VALIDATION_INTERVAL = 300  # 5 minutes
+MAX_FAILED_LOGIN_ATTEMPTS = 5
+FAILED_LOGIN_TIMEOUT = 3600  # 1 hour
+
+# Permission Groups Configuration
+PERMISSION_GROUPS = {
+    'Read Only': {
+        'can': ['view_*'],
+        'cannot': ['add_*', 'change_*', 'delete_*'],
+        'level': 1,
+        'description': 'Can only view information, cannot make any changes'
+    },
+    'Basic User': {
+        'can': ['view_*', 'add_*', 'change_*'],
+        'cannot': [
+            'delete_*',
+            'add_user',
+            'change_user',
+            'delete_user',
+            'add_group',
+            'change_group',
+            'delete_group'
+        ],
+        'level': 2,
+        'description': 'Can view, add and edit basic information, cannot delete or manage users'
+    },
+    'Manager': {
+        'can': ['view_*', 'add_*', 'change_*', 'delete_itasset', 'delete_employee'],
+        'cannot': [
+            'add_user',
+            'change_user',
+            'delete_user',
+            'add_group',
+            'change_group',
+            'delete_group'
+        ],
+        'level': 3,
+        'description': 'Can manage assets and employees, cannot manage system users'
+    },
+    'Admin': {
+        'can': ['*'],
+        'cannot': [],
+        'level': 4,
+        'description': 'Full system access'
+    }
+}
+
+# New User Default Group
+DEFAULT_NEW_USER_GROUP = 'Read Only'
+
+# Operations that require approval
+OPERATIONS_REQUIRING_APPROVAL = [
+    'delete_user',
+    'delete_itasset',
+    'delete_employee',
+    'bulk_delete',
+    'bulk_update'
+]
+
+# Critical operations that need admin permission
+CRITICAL_OPERATIONS = [
+    'delete_user',
+    'change_permissions',
+    'add_group',
+    'change_group',
+    'delete_group'
 ]
 
 ROOT_URLCONF = 'inventory_app.urls'
@@ -121,31 +232,40 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/5.1/topics/i18n/
 
+# Authentication settings
+LOGIN_URL = 'login'  # Use URL name instead of hardcoded path
+LOGIN_REDIRECT_URL = 'inventory:home'  # Use URL name instead of hardcoded path
+LOGOUT_REDIRECT_URL = 'landing'  # Use URL name instead of hardcoded path
+
+# Default language
 LANGUAGE_CODE = 'en'
 
+# Available languages
 LANGUAGES = [
-    ('en', 'English'),
-    ('ar', 'العربية'),
-    ('de', 'Deutsch'),
+    ('en', _('English')),
+    ('ar', _('Arabic')),
 ]
 
-LOCALE_PATHS = [
-    BASE_DIR / 'locale',
-]
-
-TIME_ZONE = 'UTC'
+# i18n settings
 USE_I18N = True
 USE_L10N = True
 USE_TZ = True
+TIME_ZONE = 'UTC'
 
+# Locale paths
+LOCALE_PATHS = [
+    os.path.join(BASE_DIR, 'locale'),
+]
 
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/5.1/howto/static-files/
+# URL settings
+APPEND_SLASH = True
+PREPEND_WWW = False
 
+# Static files settings
 STATIC_URL = '/static/'
-STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_DIRS = [
-    BASE_DIR / "inventory" / "static",
+    os.path.join(BASE_DIR, 'inventory/static'),
 ]
 
 # Media files
@@ -156,11 +276,6 @@ MEDIA_ROOT = BASE_DIR / 'media'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
-# Authentication Settings
-LOGIN_URL = '/accounts/login/'  # URL where requests are redirected for login
-LOGIN_REDIRECT_URL = '/inventory/'  # Redirect to inventory home page after login
-LOGOUT_REDIRECT_URL = '/'  # Redirect to landing page after logout
 
 # Email Settings for Password Reset
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'

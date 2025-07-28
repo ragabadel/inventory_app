@@ -1,5 +1,5 @@
 from django.db import models
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, Group, Permission
 from django.utils import timezone
 from django.core.validators import RegexValidator
 from django.utils.translation import gettext_lazy as _
@@ -8,6 +8,7 @@ from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.urls import reverse
 from django.db import transaction
+from datetime import timedelta
 
 class Department(models.Model):
     DEPARTMENT_CHOICES = [
@@ -252,7 +253,10 @@ class ITAsset(models.Model):
         verbose_name = 'IT Asset'
         verbose_name_plural = 'IT Assets'
         permissions = [
-            ('can_backup_database', 'Can backup database'),
+            ('view_sensitive_data', 'Can view sensitive asset data'),
+            ('export_asset_data', 'Can export asset data'),
+            ('bulk_update_assets', 'Can perform bulk updates'),
+            ('approve_asset_changes', 'Can approve asset changes'),
         ]
 
     def __str__(self):
@@ -467,3 +471,142 @@ class UserTermsAcceptance(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - v{self.terms_version}"
+
+class ObjectPermission(models.Model):
+    """Custom permissions for object-level access control"""
+    name = models.CharField(max_length=100)
+    codename = models.CharField(max_length=100)
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, related_name='object_permissions')
+    object_id = models.PositiveIntegerField(null=True, blank=True)
+    content_object = GenericForeignKey('content_type', 'object_id')
+
+    class Meta:
+        verbose_name = 'Object Permission'
+        verbose_name_plural = 'Object Permissions'
+        unique_together = ['codename', 'content_type', 'object_id']
+
+    def __str__(self):
+        return f"{self.name} ({self.codename})"
+
+class PermissionGroup(models.Model):
+    """Custom permission groups with additional metadata and inheritance"""
+    name = models.CharField(max_length=150, unique=True)
+    description = models.TextField(blank=True)
+    parent = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='children')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    level = models.IntegerField(choices=[
+        (1, 'View Only'),
+        (2, 'Basic Operations'),
+        (3, 'Full Access'),
+        (4, 'Administrative')
+    ])
+    is_active = models.BooleanField(default=True)
+    permissions = models.ManyToManyField(Permission, blank=True)
+    object_permissions = models.ManyToManyField(ObjectPermission, blank=True)
+
+    class Meta:
+        verbose_name = 'Permission Group'
+        verbose_name_plural = 'Permission Groups'
+        ordering = ['level', 'name']
+
+    def __str__(self):
+        return f"{self.name} (Level {self.level})"
+
+    def get_all_permissions(self):
+        """Get all permissions including inherited ones"""
+        all_permissions = set(self.permissions.all())
+        all_object_permissions = set(self.object_permissions.all())
+        if self.parent:
+            all_permissions.update(self.parent.get_all_permissions())
+            all_object_permissions.update(self.parent.object_permissions.all())
+        return all_permissions, all_object_permissions
+
+class UserAccessLog(models.Model):
+    """Audit log for user access and operations"""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='access_logs')
+    action = models.CharField(max_length=50)
+    target_model = models.CharField(max_length=50)
+    target_id = models.IntegerField(null=True, blank=True)
+    details = models.JSONField(default=dict)
+    ip_address = models.GenericIPAddressField()
+    timestamp = models.DateTimeField(auto_now_add=True)
+    status = models.CharField(max_length=20, choices=[
+        ('success', 'Success'),
+        ('failure', 'Failure'),
+        ('pending', 'Pending Approval')
+    ])
+    session_id = models.CharField(max_length=100)
+
+    class Meta:
+        verbose_name = 'User Access Log'
+        verbose_name_plural = 'User Access Logs'
+        ordering = ['-timestamp']
+
+    def __str__(self):
+        return f"{self.user.username} - {self.action} - {self.timestamp}"
+
+class OperationApproval(models.Model):
+    """Workflow for operation approvals"""
+    OPERATION_TYPES = [
+        ('delete', 'Delete Operation'),
+        ('bulk_update', 'Bulk Update'),
+        ('sensitive_access', 'Sensitive Data Access'),
+        ('export', 'Data Export'),
+        ('permission_change', 'Permission Change')
+    ]
+
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected'),
+        ('cancelled', 'Cancelled')
+    ]
+
+    requester = models.ForeignKey(User, on_delete=models.CASCADE, related_name='requested_approvals')
+    approver = models.ForeignKey(User, on_delete=models.CASCADE, related_name='approval_requests', null=True, blank=True)
+    operation_type = models.CharField(max_length=50, choices=OPERATION_TYPES)
+    target_model = models.CharField(max_length=50)
+    target_ids = models.JSONField(help_text='List of IDs or data involved in the operation')
+    details = models.JSONField(default=dict)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    requested_at = models.DateTimeField(auto_now_add=True)
+    processed_at = models.DateTimeField(null=True, blank=True)
+    notes = models.TextField(blank=True)
+    ip_address = models.GenericIPAddressField()
+
+    class Meta:
+        verbose_name = 'Operation Approval'
+        verbose_name_plural = 'Operation Approvals'
+        ordering = ['-requested_at']
+
+    def __str__(self):
+        return f"{self.operation_type} by {self.requester.username} ({self.status})"
+
+class UserSession(models.Model):
+    """Enhanced session tracking for security"""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sessions')
+    session_key = models.CharField(max_length=100)
+    ip_address = models.GenericIPAddressField()
+    user_agent = models.TextField()
+    last_activity = models.DateTimeField(auto_now=True)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+    device_id = models.CharField(max_length=100, blank=True)
+    location_data = models.JSONField(default=dict)
+
+    class Meta:
+        verbose_name = 'User Session'
+        verbose_name_plural = 'User Sessions'
+        ordering = ['-last_activity']
+
+    def __str__(self):
+        return f"{self.user.username} - {self.ip_address} ({self.created_at})"
+
+    def is_valid(self):
+        return (
+            self.is_active and
+            self.expires_at > timezone.now() and
+            self.last_activity > timezone.now() - timedelta(minutes=30)
+        )

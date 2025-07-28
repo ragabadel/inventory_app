@@ -19,24 +19,50 @@ from django.urls import path, include
 from django.contrib.auth import views as auth_views
 from django.shortcuts import redirect
 from django.conf.urls.i18n import i18n_patterns
+from django.views.generic import RedirectView
 from inventory.views import SuperUserRegistrationView, LandingPageView
+from django.contrib.auth.views import LoginView
+from django.urls import reverse_lazy
 
+def redirect_to_default_language(request):
+    """Redirect root URL to default language URL"""
+    return redirect('/en/')
 
-def redirect_to_login(request):
-    return redirect('login')
+class CustomLoginView(LoginView):
+    def get_success_url(self):
+        """Return the URL to redirect to after successful login."""
+        next_url = self.request.GET.get('next')
+        if next_url:
+            # Ensure the next URL has the language prefix
+            if not next_url.startswith(f'/{self.request.LANGUAGE_CODE}/'):
+                next_url = f'/{self.request.LANGUAGE_CODE}{next_url}'
+            return next_url
+        return reverse_lazy('inventory:home')
 
-def custom_logout(request):
-    return auth_views.LogoutView.as_view(next_page='/')(request)
+    def dispatch(self, request, *args, **kwargs):
+        # If user is already authenticated, redirect to home
+        if self.request.user.is_authenticated:
+            return redirect(self.get_success_url())
+        return super().dispatch(request, *args, **kwargs)
 
 urlpatterns = [
+    path('', redirect_to_default_language),  # Redirect root to default language
     path('i18n/', include('django.conf.urls.i18n')),  # Language prefix URL
 ]
 
 urlpatterns += i18n_patterns(
-    path('', LandingPageView.as_view(), name='index'),  # Use landing page as home
+    path('', LandingPageView.as_view(), name='landing'),  # Landing page
     path('admin/', admin.site.urls),
     path('inventory/', include('inventory.urls', namespace='inventory')),
-    path('accounts/logout/', custom_logout, name='logout'),  # Custom logout view
-    path('accounts/register/', SuperUserRegistrationView.as_view(), name='register'),  # Add registration URL
-    path('accounts/', include('django.contrib.auth.urls')),  # Add authentication URLs
+    path('accounts/login/', CustomLoginView.as_view(
+        template_name='registration/login.html',
+    ), name='login'),
+    path('accounts/logout/', auth_views.LogoutView.as_view(
+        next_page='landing'
+    ), name='logout'),
+    path('accounts/register/', SuperUserRegistrationView.as_view(), name='register'),
+    path('accounts/', include('django.contrib.auth.urls')),
 )
+
+# Error handlers
+handler403 = 'inventory.handlers.handler403'
