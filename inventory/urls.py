@@ -1,5 +1,6 @@
 from django.urls import path
 from . import views
+from .views import check_username
 
 app_name = 'inventory'
 
@@ -97,4 +98,5 @@ urlpatterns = [
     # Database Management URLs
     path('database/backup/', views.DatabaseBackupView.as_view(), name='database_backup'),
     path('database/restore/', views.DatabaseRestoreView.as_view(), name='database_restore'),
+    path('check-username/', check_username, name='check_username'),
 ]

@@ -18,14 +18,14 @@
             <div class="bg-white shadow-sm rounded-lg overflow-hidden border border-red-200">
                 <div class="p-4 bg-red-50 border-b border-red-200">
                     <div class="flex items-center">
-                        <div class="flex-shrink-0">
+                    <div class="flex-shrink-0">
                             <i class="fas fa-exclamation-triangle text-red-500 text-lg"></i>
-                        </div>
+                    </div>
                         <div class="ml-3">
                             <h3 class="text-lg font-medium text-red-800">{% trans "Warning" %}</h3>
                             <p class="text-sm text-red-700">
-                                {% trans "Restoring a backup will replace all current data. This action cannot be undone." %}
-                            </p>
+                            {% trans "Restoring a backup will replace all current data. This action cannot be undone." %}
+                        </p>
                         </div>
                     </div>
                 </div>
@@ -69,11 +69,11 @@
                         </div>
                     </dl>
                 </div>
-            </div>
+                    </div>
             {% endif %}
 
             <!-- All Backups Card -->
-            {% if backups %}
+                {% if backups %}
             <div class="bg-white shadow-sm rounded-lg overflow-hidden border border-gray-200">
                 <div class="p-4 bg-gray-50 border-b border-gray-200">
                     <div class="flex items-center">
@@ -87,35 +87,35 @@
                             </p>
                         </div>
                     </div>
-                </div>
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
-                            <tr>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     {% trans "File Name" %}
                                 </th>
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     {% trans "Date Created" %}
-                                </th>
+                                    </th>
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    {% trans "Size" %}
-                                </th>
+                                        {% trans "Size" %}
+                                    </th>
                                 <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     {% trans "Actions" %}
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
-                            {% for backup in backups %}
-                            <tr class="hover:bg-gray-50">
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                {% for backup in backups %}
+                                <tr class="hover:bg-gray-50">
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                    {{ backup.name }}
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        {{ backup.name }}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                     {{ backup.date|date:"F j, Y, H:i:s" }}
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                     {{ backup.size_formatted }}
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -126,14 +126,14 @@
                                             {% trans "Restore" %}
                                         </button>
                                     </form>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
-            </div>
-            {% endif %}
+                {% endif %}
 
             <!-- Upload New Backup Card -->
             <div class="bg-white shadow-sm rounded-lg overflow-hidden border border-gray-200">
@@ -149,8 +149,8 @@
                             </p>
                         </div>
                     </div>
-                </div>
-                <div class="p-4">
+                    </div>
+                    <div class="p-4">
                     <form method="post" enctype="multipart/form-data" class="space-y-4">
                         {% csrf_token %}
                         <div>
@@ -200,20 +200,20 @@
                         <li class="flex items-start">
                             <i class="fas fa-check text-green-500 mt-1 mr-2"></i>
                             {% trans "Only use backup files created by this system" %}
-                        </li>
-                        <li class="flex items-start">
+                            </li>
+                            <li class="flex items-start">
                             <i class="fas fa-clock text-blue-500 mt-1 mr-2"></i>
                             {% trans "The restore process may take several minutes" %}
-                        </li>
-                        <li class="flex items-start">
+                            </li>
+                            <li class="flex items-start">
                             <i class="fas fa-exclamation-circle text-yellow-500 mt-1 mr-2"></i>
                             {% trans "Current data will be replaced with backup data" %}
-                        </li>
-                        <li class="flex items-start">
+                            </li>
+                            <li class="flex items-start">
                             <i class="fas fa-users text-red-500 mt-1 mr-2"></i>
                             {% trans "Ensure all users are logged out before restore" %}
-                        </li>
-                    </ul>
+                            </li>
+                        </ul>
                 </div>
             </div>
         </div>
@@ -250,7 +250,7 @@
             fileLabel.textContent = e.target.files[0].name;
         } else {
             fileLabel.textContent = '{% trans "Upload a file" %}';
-        }
+    }
     });
 
     // Drag and drop

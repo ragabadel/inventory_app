@@ -29,6 +29,7 @@ ALLOWED_HOSTS = [
     'localhost',
     '127.0.0.1',
     '172.16.1.9',
+    '192.168.20.52',
 ]
 
 # CSRF Settings
@@ -160,4 +161,13 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 LOGIN_URL = '/accounts/login/'  # URL where requests are redirected for login
 LOGIN_REDIRECT_URL = '/inventory/'  # Redirect to inventory home page after login
 LOGOUT_REDIRECT_URL = '/'  # Redirect to landing page after logout
+
+# Email Settings for Password Reset
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'  # Replace with your SMTP server
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = ''  # Add your email
+EMAIL_HOST_PASSWORD = ''  # Add your email password or app-specific password
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 

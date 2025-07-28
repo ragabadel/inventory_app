@@ -8,7 +8,7 @@
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     
-<style>
+    <style>
     :root {
         --primary-color: #3B82F6;  /* Blue-500 */
         --primary-dark: #2563EB;   /* Blue-600 */
@@ -290,8 +290,8 @@
 
     .link-secondary:hover {
         color: var(--text-primary);
-    }
-</style>
+        }
+    </style>
 {% endblock %}
 
 {% block content %}
@@ -308,14 +308,14 @@
             <p class="text-sm text-gray-600">
                 {% trans "Sign in to your account to continue" %}
             </p>
-        </div>
+            </div>
 
-        <!-- Login Form -->
+            <!-- Login Form -->
         <form class="mt-8 space-y-6" method="post" id="loginForm">
             {% csrf_token %}
             
             <!-- Error Messages -->
-            {% if form.errors %}
+                {% if form.errors %}
             <div class="rounded-md bg-red-50 p-4 error-shake">
                 <div class="flex">
                     <div class="flex-shrink-0">
@@ -334,18 +334,18 @@
                         </div>
                     </div>
                 </div>
-            </div>
-            {% endif %}
+                </div>
+                {% endif %}
 
             <div class="space-y-4">
                 <!-- Username Field -->
                 <div class="input-wrapper">
-                    <span class="input-icon">
+                        <span class="input-icon">
                         <i class="fas fa-user"></i>
-                    </span>
-                    <input type="text" 
+                        </span>
+                        <input type="text" 
                            name="username" 
-                           id="id_username"
+                               id="id_username"
                            class="input-field {% if form.username.errors %}error-input{% endif %}"
                            placeholder="{% trans 'Username' %}"
                            required
@@ -353,16 +353,16 @@
                     {% if form.username.errors %}
                     <p class="error-message">{{ form.username.errors.0 }}</p>
                     {% endif %}
-                </div>
+                    </div>
 
                 <!-- Password Field -->
                 <div class="input-wrapper">
-                    <span class="input-icon">
+                        <span class="input-icon">
                         <i class="fas fa-lock"></i>
-                    </span>
-                    <input type="password"
+                        </span>
+                        <input type="password" 
                            name="password"
-                           id="id_password"
+                               id="id_password"
                            class="input-field {% if form.password.errors %}error-input{% endif %}"
                            placeholder="{% trans 'Password' %}"
                            required
@@ -370,12 +370,12 @@
                     {% if form.password.errors %}
                     <p class="error-message">{{ form.password.errors.0 }}</p>
                     {% endif %}
-                </div>
+                    </div>
 
                 <!-- Remember Me & Forgot Password -->
                 <div class="flex items-center justify-between">
                     <div class="flex items-center">
-                        <input type="checkbox" 
+                        <input type="checkbox"
                                id="remember_me" 
                                name="remember_me" 
                                class="custom-checkbox">
@@ -390,40 +390,40 @@
                             {% trans "Forgot your password?" %}
                         </a>
                     </div>
-                </div>
-            </div>
+                    </div>
+                    </div>
 
-            <!-- Submit Button -->
+                    <!-- Submit Button -->
             <div>
-                <button type="submit" 
+                <button type="submit"
                         class="btn-primary w-full flex justify-center items-center"
                         id="loginButton">
                     <span class="normal-state">
                         <i class="fas fa-sign-in-alt mr-2"></i>
-                        {% trans "Sign In" %}
+                    {% trans "Sign In" %}
                     </span>
                     <span class="loading-state hidden">
                         <i class="fas fa-circle-notch loading-spinner mr-2"></i>
                         {% trans "Signing In..." %}
                     </span>
-                </button>
+                    </button>
             </div>
 
-            <!-- Register Link -->
+                <!-- Register Link -->
             <div class="text-center mt-6">
-                <p class="text-sm text-gray-600">
-                    {% trans "Don't have an account?" %}
+                    <p class="text-sm text-gray-600">
+                        {% trans "Don't have an account?" %}
                     <a href="{% url 'inventory:register' %}" 
                        class="link-primary ml-1">
-                        {% trans "Create one now" %}
-                    </a>
-                </p>
-            </div>
+                            {% trans "Create one now" %}
+                        </a>
+                    </p>
+                </div>
 
             {% if next %}
-            <input type="hidden" name="next" value="{{ next }}">
+                    <input type="hidden" name="next" value="{{ next }}">
             {% endif %}
-        </form>
+                </form>
     </div>
 </div>
 {% endblock %}

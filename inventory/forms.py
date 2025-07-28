@@ -3,43 +3,90 @@ from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
 from django.utils.translation import gettext_lazy as _
 from .models import Employee, ITAsset, Department, OwnerCompany, Outlet
+from django.contrib.auth.models import Group, Permission
+from django.urls import reverse_lazy
 
 class UserRegistrationForm(UserCreationForm):
     email = forms.EmailField(required=True)
     first_name = forms.CharField(max_length=30, required=True)
     last_name = forms.CharField(max_length=30, required=True)
+    terms_accepted = forms.BooleanField(
+        required=True,
+        error_messages={'required': _('You must accept the Terms and Conditions to register.')}
+    )
 
     class Meta:
         model = User
-        fields = ('username', 'email', 'first_name', 'last_name', 'password1', 'password2')
+        fields = ('username', 'email', 'first_name', 'last_name', 'password1', 'password2', 'terms_accepted')
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # Add placeholders and classes
         self.fields['username'].widget.attrs.update({
             'placeholder': _('Choose a username'),
-            'class': 'appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm'
+            'class': 'input-field',
+            'data-validation-url': reverse_lazy('inventory:check_username'),
+            'minlength': '5',
+            'pattern': '^[a-zA-Z0-9]+$'
         })
         self.fields['email'].widget.attrs.update({
             'placeholder': _('Enter your email'),
-            'class': 'appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm'
+            'class': 'input-field'
         })
         self.fields['first_name'].widget.attrs.update({
             'placeholder': _('Enter your first name'),
-            'class': 'appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm'
+            'class': 'input-field'
         })
         self.fields['last_name'].widget.attrs.update({
             'placeholder': _('Enter your last name'),
-            'class': 'appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm'
+            'class': 'input-field'
         })
         self.fields['password1'].widget.attrs.update({
             'placeholder': _('Choose a password'),
-            'class': 'appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm'
+            'class': 'input-field password-input',
+            'data-strength-meter': 'true'
         })
         self.fields['password2'].widget.attrs.update({
             'placeholder': _('Confirm your password'),
-            'class': 'appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm'
+            'class': 'input-field'
         })
+        self.fields['terms_accepted'].widget.attrs.update({
+            'class': 'terms-checkbox'
+        })
+
+    def clean_username(self):
+        username = self.cleaned_data.get('username')
+        if not username:
+            raise forms.ValidationError(_('Username is required.'))
+        if len(username) < 5:
+            raise forms.ValidationError(_('Username must be at least 5 characters long.'))
+        if not username.isalnum():
+            raise forms.ValidationError(_('Username can only contain letters and numbers.'))
+        if User.objects.filter(username=username).exists():
+            raise forms.ValidationError(_('This username is already taken.'))
+        return username
+
+    def clean_email(self):
+        email = self.cleaned_data.get('email')
+        if User.objects.filter(email=email).exists():
+            raise forms.ValidationError(_('This email is already registered.'))
+        return email
+
+    def clean_password1(self):
+        password = self.cleaned_data.get('password1')
+        if password:
+            # Custom password validation
+            if len(password) < 8:
+                raise forms.ValidationError(_('Password must be at least 8 characters long.'))
+            if not any(char.isdigit() for char in password):
+                raise forms.ValidationError(_('Password must contain at least one number.'))
+            if not any(char.isupper() for char in password):
+                raise forms.ValidationError(_('Password must contain at least one uppercase letter.'))
+            if not any(char.islower() for char in password):
+                raise forms.ValidationError(_('Password must contain at least one lowercase letter.'))
+            if not any(char in '!@#$%^&*()' for char in password):
+                raise forms.ValidationError(_('Password must contain at least one special character (!@#$%^&*()).'))
+        return password
 
     def save(self, commit=True):
         user = super().save(commit=False)
@@ -48,6 +95,19 @@ class UserRegistrationForm(UserCreationForm):
         user.last_name = self.cleaned_data['last_name']
         if commit:
             user.save()
+            # Add to default group with limited permissions
+            limited_group, created = Group.objects.get_or_create(name='Limited Access')
+            if created:
+                # Set up limited permissions for the group
+                view_permissions = Permission.objects.filter(codename__startswith='view_')
+                add_permissions = Permission.objects.filter(codename__startswith='add_')
+                change_permissions = Permission.objects.filter(codename__startswith='change_')
+                limited_group.permissions.set(
+                    list(view_permissions) + 
+                    list(add_permissions) + 
+                    list(change_permissions)
+                )
+            user.groups.add(limited_group)
         return user
 
 class SuperUserRegistrationForm(UserCreationForm):
@@ -257,12 +317,12 @@ class ITAssetForm(forms.ModelForm):
             'status',
             'assigned_to',
             'notes',
+            'delivery_letter_code',
             
             # Network Information
             'mac_address_wifi',
             'mac_address_ethernet',
             'ip_address',
-            'delivery_letter_code',
             'receipt_date',
             
             # Computer Specifications
@@ -310,12 +370,16 @@ class ITAssetForm(forms.ModelForm):
             'status': forms.Select(attrs={'class': 'form-select'}),
             'assigned_to': forms.Select(attrs={'class': 'form-select'}),
             'notes': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'delivery_letter_code': forms.TextInput(attrs={
+                'class': 'form-control',
+                'readonly': 'readonly',
+                'placeholder': 'Will be generated automatically'
+            }),
             
             # Network Information
             'mac_address_wifi': forms.TextInput(attrs={'class': 'form-control'}),
             'mac_address_ethernet': forms.TextInput(attrs={'class': 'form-control'}),
             'ip_address': forms.TextInput(attrs={'class': 'form-control'}),
-            'delivery_letter_code': forms.TextInput(attrs={'class': 'form-control'}),
             'receipt_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
             
             # Computer Specifications
@@ -350,6 +414,11 @@ class ITAssetForm(forms.ModelForm):
             'ups_battery_replacement_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
             'ups_manufacturer': forms.TextInput(attrs={'class': 'form-control'}),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['delivery_letter_code'].widget.attrs['readonly'] = True
+        self.fields['delivery_letter_code'].help_text = 'This code will be generated automatically when the asset is saved.'
 
     def clean(self):
         cleaned_data = super().clean()

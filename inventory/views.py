@@ -16,10 +16,14 @@ from django.http import HttpResponse, JsonResponse, FileResponse, HttpResponseBa
 from django.conf import settings
 from django.db import models, connection
 from django.contrib.auth.models import User, Group, Permission
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_POST, require_http_methods
 from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth import login
+from django.core.cache import cache
+from django.http import JsonResponse
+from .models import RegistrationAttempt, UserTermsAcceptance
+from django.db import transaction
 
 from .models import (
     Employee, ITAsset, Department, Position, AssetType, 
@@ -3165,11 +3169,72 @@ class RegisterView(CreateView):
     template_name = 'registration/register.html'
     success_url = reverse_lazy('inventory:home')
 
+    def get_client_ip(self):
+        x_forwarded_for = self.request.META.get('HTTP_X_FORWARDED_FOR')
+        if x_forwarded_for:
+            ip = x_forwarded_for.split(',')[0]
+        else:
+            ip = self.request.META.get('REMOTE_ADDR')
+        return ip
+
+    def check_registration_attempts(self):
+        ip = self.get_client_ip()
+        cache_key = f'registration_attempts_{ip}'
+        attempts = cache.get(cache_key, 0)
+        
+        if attempts >= 5:  # Limit to 5 attempts per hour
+            return False
+        
+        cache.set(cache_key, attempts + 1, 3600)  # 1 hour expiry
+        return True
+
     def form_valid(self, form):
-        response = super().form_valid(form)
-        login(self.request, self.object)  # Log in the user after registration
-        messages.success(self.request, _('Account created successfully! Welcome to Inventory Management System.'))
-        return response
+        if not self.check_registration_attempts():
+            messages.error(self.request, _('Too many registration attempts. Please try again later.'))
+            return self.form_invalid(form)
+
+        try:
+            with transaction.atomic():
+                response = super().form_valid(form)
+                
+                # Record the registration attempt
+                RegistrationAttempt.objects.create(
+                    ip_address=self.get_client_ip(),
+                    username=form.cleaned_data['username'],
+                    email=form.cleaned_data['email'],
+                    is_successful=True
+                )
+
+                # Record terms acceptance
+                UserTermsAcceptance.objects.create(
+                    user=self.object,
+                    ip_address=self.get_client_ip()
+                )
+
+                # Log in the user
+                login(self.request, self.object)
+                
+                messages.success(self.request, _('Account created successfully! Welcome to Inventory Management System.'))
+                return response
+
+        except Exception as e:
+            RegistrationAttempt.objects.create(
+                ip_address=self.get_client_ip(),
+                username=form.cleaned_data['username'],
+                email=form.cleaned_data['email'],
+                is_successful=False
+            )
+            messages.error(self.request, _('An error occurred during registration. Please try again.'))
+            return self.form_invalid(form)
+
+    def form_invalid(self, form):
+        RegistrationAttempt.objects.create(
+            ip_address=self.get_client_ip(),
+            username=form.data.get('username', ''),
+            email=form.data.get('email', ''),
+            is_successful=False
+        )
+        return super().form_invalid(form)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -3181,3 +3246,13 @@ class RegisterView(CreateView):
             messages.info(request, _('You are already logged in.'))
             return redirect('inventory:home')
         return super().dispatch(request, *args, **kwargs)
+
+@require_http_methods(['GET'])
+def check_username(request):
+    """AJAX view to check username availability"""
+    username = request.GET.get('username', '')
+    exists = User.objects.filter(username=username).exists()
+    return JsonResponse({
+        'available': not exists,
+        'message': _('Username is available') if not exists else _('Username is already taken')
+    })

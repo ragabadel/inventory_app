@@ -7,6 +7,7 @@ from django.conf import settings
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.urls import reverse
+from django.db import transaction
 
 class Department(models.Model):
     DEPARTMENT_CHOICES = [
@@ -158,6 +159,31 @@ class AssetType(models.Model):
     def __str__(self):
         return self.display_name
 
+class CompanySequence(models.Model):
+    company = models.OneToOneField(OwnerCompany, on_delete=models.CASCADE, related_name='sequence')
+    last_number = models.IntegerField(default=0)
+
+    class Meta:
+        verbose_name = 'Company Sequence'
+        verbose_name_plural = 'Company Sequences'
+
+    def __str__(self):
+        return f"Sequence for {self.company.code}"
+
+    def get_next_number(self):
+        """Get next number in sequence and increment"""
+        with transaction.atomic():
+            self.last_number += 1
+            self.save()
+            return self.last_number
+
+    @classmethod
+    def get_next_delivery_code(cls, company):
+        """Generate next delivery code for a company"""
+        sequence, created = cls.objects.get_or_create(company=company)
+        next_number = sequence.get_next_number()
+        return f"{company.code}-{str(next_number).zfill(3)}"
+
 class ITAsset(models.Model):
     STATUS_CHOICES = [
         ('available', 'Available'),
@@ -186,7 +212,7 @@ class ITAsset(models.Model):
     ip_address = models.CharField(max_length=15, blank=True, verbose_name='IP Address')
 
     # Delivery Information
-    delivery_letter_code = models.CharField(max_length=50, blank=True)
+    delivery_letter_code = models.CharField(max_length=50, null=True, blank=True, unique=True)
     receipt_date = models.DateField(null=True, blank=True)
 
     # Computer Specifications (for laptops and desktops)
@@ -231,6 +257,11 @@ class ITAsset(models.Model):
 
     def __str__(self):
         return f"{self.name} ({self.serial_number})"
+
+    def save(self, *args, **kwargs):
+        if not self.delivery_letter_code and self.owner:
+            self.delivery_letter_code = CompanySequence.get_next_delivery_code(self.owner)
+        super().save(*args, **kwargs)
 
 class AssetHistory(models.Model):
     ACTION_CHOICES = [
@@ -408,3 +439,31 @@ class Notification(models.Model):
 
         notification.save()
         return notification
+
+class RegistrationAttempt(models.Model):
+    ip_address = models.GenericIPAddressField()
+    username = models.CharField(max_length=150)
+    email = models.EmailField()
+    attempt_time = models.DateTimeField(auto_now_add=True)
+    is_successful = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ['-attempt_time']
+        verbose_name = 'Registration Attempt'
+        verbose_name_plural = 'Registration Attempts'
+
+    def __str__(self):
+        return f"{self.username} - {self.attempt_time}"
+
+class UserTermsAcceptance(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='terms_acceptance')
+    terms_version = models.CharField(max_length=10, default='1.0')
+    accepted_at = models.DateTimeField(auto_now_add=True)
+    ip_address = models.GenericIPAddressField()
+
+    class Meta:
+        verbose_name = 'User Terms Acceptance'
+        verbose_name_plural = 'User Terms Acceptances'
+
+    def __str__(self):
+        return f"{self.user.username} - v{self.terms_version}"

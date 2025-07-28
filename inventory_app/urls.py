@@ -21,6 +21,7 @@ from django.shortcuts import redirect
 from django.conf.urls.i18n import i18n_patterns
 from inventory.views import SuperUserRegistrationView, LandingPageView
 
+
 def redirect_to_login(request):
     return redirect('login')
 

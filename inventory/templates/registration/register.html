@@ -174,6 +174,48 @@
         border-color: #DC2626;
         box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
     }
+
+    /* Password Strength Meter */
+    .password-strength-meter {
+        height: 4px;
+        background-color: #edf2f7;
+        border-radius: 2px;
+        margin-top: 0.5rem;
+    }
+
+    .password-strength-meter div {
+        height: 100%;
+        border-radius: 2px;
+        transition: width 0.3s ease;
+    }
+
+    .strength-weak { background-color: #f56565; width: 25%; }
+    .strength-fair { background-color: #ed8936; width: 50%; }
+    .strength-good { background-color: #48bb78; width: 75%; }
+    .strength-strong { background-color: #38a169; width: 100%; }
+
+    /* Real-time Validation */
+    .validation-message {
+        font-size: 0.875rem;
+        margin-top: 0.25rem;
+    }
+
+    .validation-success {
+        color: #38a169;
+    }
+
+    .validation-error {
+        color: #e53e3e;
+    }
+
+    /* Terms and Conditions */
+    .terms-section {
+        margin-top: 1.5rem;
+        padding: 1rem;
+        background-color: #f7fafc;
+        border-radius: 0.5rem;
+        border: 1px solid #e2e8f0;
+    }
 </style>
 {% endblock %}
 
@@ -217,7 +259,7 @@
             {% endif %}
 
             <div class="space-y-4">
-                <!-- Username Field -->
+                <!-- Username Field with Real-time Validation -->
                 <div class="input-wrapper">
                     <label for="{{ form.username.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
                         {% trans "Username" %} <span class="required-star">*</span>
@@ -226,7 +268,11 @@
                            name="{{ form.username.name }}" 
                            id="{{ form.username.id_for_label }}"
                            class="input-field {% if form.username.errors %}error-input{% endif %}"
-                           required>
+                           required
+                           data-validation-url="{% url 'inventory:check_username' %}"
+                           minlength="5"
+                           pattern="^[a-zA-Z0-9]+$">
+                    <div class="validation-message" id="username-validation"></div>
                     {% if form.username.errors %}
                     <p class="error-message">{{ form.username.errors.0 }}</p>
                     {% endif %}
@@ -247,7 +293,37 @@
                     {% endif %}
                 </div>
 
-                <!-- Password Field -->
+                <!-- First Name Field -->
+                <div class="input-wrapper">
+                    <label for="{{ form.first_name.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                        {% trans "First Name" %} <span class="required-star">*</span>
+                    </label>
+                    <input type="text" 
+                           name="{{ form.first_name.name }}" 
+                           id="{{ form.first_name.id_for_label }}"
+                           class="input-field {% if form.first_name.errors %}error-input{% endif %}"
+                           required>
+                    {% if form.first_name.errors %}
+                    <p class="error-message">{{ form.first_name.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Last Name Field -->
+                <div class="input-wrapper">
+                    <label for="{{ form.last_name.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                        {% trans "Last Name" %} <span class="required-star">*</span>
+                    </label>
+                    <input type="text" 
+                           name="{{ form.last_name.name }}" 
+                           id="{{ form.last_name.id_for_label }}"
+                           class="input-field {% if form.last_name.errors %}error-input{% endif %}"
+                           required>
+                    {% if form.last_name.errors %}
+                    <p class="error-message">{{ form.last_name.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Password Field with Strength Meter -->
                 <div class="input-wrapper">
                     <label for="{{ form.password1.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
                         {% trans "Password" %} <span class="required-star">*</span>
@@ -255,14 +331,23 @@
                     <input type="password" 
                            name="{{ form.password1.name }}" 
                            id="{{ form.password1.id_for_label }}"
-                           class="input-field {% if form.password1.errors %}error-input{% endif %}"
+                           class="input-field password-input {% if form.password1.errors %}error-input{% endif %}"
                            required>
+                    <div class="password-strength-meter">
+                        <div id="strength-meter-bar"></div>
+                    </div>
+                    <div class="validation-message" id="password-requirements">
+                        <ul class="text-sm space-y-1">
+                            <li id="req-length"><i class="fas fa-circle text-xs"></i> {% trans "At least 8 characters" %}</li>
+                            <li id="req-number"><i class="fas fa-circle text-xs"></i> {% trans "Contains a number" %}</li>
+                            <li id="req-uppercase"><i class="fas fa-circle text-xs"></i> {% trans "Contains uppercase letter" %}</li>
+                            <li id="req-lowercase"><i class="fas fa-circle text-xs"></i> {% trans "Contains lowercase letter" %}</li>
+                            <li id="req-special"><i class="fas fa-circle text-xs"></i> {% trans "Contains special character" %}</li>
+                        </ul>
+                    </div>
                     {% if form.password1.errors %}
                     <p class="error-message">{{ form.password1.errors.0 }}</p>
                     {% endif %}
-                    <p class="mt-1 text-sm text-gray-500">
-                        {% trans "Password must be at least 8 characters long." %}
-                    </p>
                 </div>
 
                 <!-- Confirm Password Field -->
@@ -275,8 +360,34 @@
                            id="{{ form.password2.id_for_label }}"
                            class="input-field {% if form.password2.errors %}error-input{% endif %}"
                            required>
+                    <div class="validation-message" id="password-match"></div>
                     {% if form.password2.errors %}
                     <p class="error-message">{{ form.password2.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Terms and Conditions -->
+                <div class="terms-section">
+                    <div class="flex items-start">
+                        <div class="flex items-center h-5">
+                            <input type="checkbox" 
+                                   name="{{ form.terms_accepted.name }}" 
+                                   id="{{ form.terms_accepted.id_for_label }}"
+                                   class="terms-checkbox h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                                   required>
+                        </div>
+                        <div class="ml-3 text-sm">
+                            <label for="{{ form.terms_accepted.id_for_label }}" class="font-medium text-gray-700">
+                                {% trans "I accept the" %} 
+                                <a href="{% url 'inventory:terms' %}" class="text-blue-600 hover:text-blue-800" target="_blank">
+                                    {% trans "Terms and Conditions" %}
+                                </a>
+                            </label>
+                            <p class="text-gray-500">{% trans "By creating an account, you agree to our terms of service." %}</p>
+                        </div>
+                    </div>
+                    {% if form.terms_accepted.errors %}
+                    <p class="error-message mt-2">{{ form.terms_accepted.errors.0 }}</p>
                     {% endif %}
                 </div>
             </div>
@@ -291,7 +402,7 @@
                         {% trans "Create Account" %}
                     </span>
                     <span class="loading-state hidden">
-                        <i class="fas fa-circle-notch loading-spinner mr-2"></i>
+                        <i class="fas fa-circle-notch fa-spin mr-2"></i>
                         {% trans "Creating Account..." %}
                     </span>
                 </button>
@@ -313,14 +424,97 @@
 
 {% block extra_js %}
 <script>
-document.getElementById('registerForm').addEventListener('submit', function() {
-    const button = document.getElementById('registerButton');
-    const normalState = button.querySelector('.normal-state');
-    const loadingState = button.querySelector('.loading-state');
-    
-    normalState.classList.add('hidden');
-    loadingState.classList.remove('hidden');
-    button.disabled = true;
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('registerForm');
+    const usernameInput = document.getElementById('{{ form.username.id_for_label }}');
+    const passwordInput = document.getElementById('{{ form.password1.id_for_label }}');
+    const confirmPasswordInput = document.getElementById('{{ form.password2.id_for_label }}');
+    const strengthMeterBar = document.getElementById('strength-meter-bar');
+    const submitButton = document.getElementById('registerButton');
+
+    // Username validation
+    let usernameTimeout;
+    usernameInput.addEventListener('input', function() {
+        clearTimeout(usernameTimeout);
+        const validationMessage = document.getElementById('username-validation');
+        
+        usernameTimeout = setTimeout(function() {
+            const username = usernameInput.value;
+            if (username.length >= 5 && /^[a-zA-Z0-9]+$/.test(username)) {
+                fetch(`${usernameInput.dataset.validationUrl}?username=${username}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        validationMessage.textContent = data.message;
+                        validationMessage.className = `validation-message ${data.available ? 'validation-success' : 'validation-error'}`;
+                    });
+            } else {
+                validationMessage.textContent = '{% trans "Username must be at least 5 characters and contain only letters and numbers" %}';
+                validationMessage.className = 'validation-message validation-error';
+            }
+        }, 500);
+    });
+
+    // Password strength meter
+    function checkPasswordStrength(password) {
+        let strength = 0;
+        const requirements = {
+            length: password.length >= 8,
+            number: /\d/.test(password),
+            uppercase: /[A-Z]/.test(password),
+            lowercase: /[a-z]/.test(password),
+            special: /[!@#$%^&*()]/.test(password)
+        };
+
+        // Update requirement indicators
+        document.getElementById('req-length').className = requirements.length ? 'text-green-600' : 'text-red-600';
+        document.getElementById('req-number').className = requirements.number ? 'text-green-600' : 'text-red-600';
+        document.getElementById('req-uppercase').className = requirements.uppercase ? 'text-green-600' : 'text-red-600';
+        document.getElementById('req-lowercase').className = requirements.lowercase ? 'text-green-600' : 'text-red-600';
+        document.getElementById('req-special').className = requirements.special ? 'text-green-600' : 'text-red-600';
+
+        // Calculate strength
+        strength += requirements.length ? 1 : 0;
+        strength += requirements.number ? 1 : 0;
+        strength += requirements.uppercase ? 1 : 0;
+        strength += requirements.lowercase ? 1 : 0;
+        strength += requirements.special ? 1 : 0;
+
+        return strength;
+    }
+
+    passwordInput.addEventListener('input', function() {
+        const strength = checkPasswordStrength(this.value);
+        strengthMeterBar.className = '';
+        
+        if (strength === 0) strengthMeterBar.className = '';
+        else if (strength <= 2) strengthMeterBar.className = 'strength-weak';
+        else if (strength <= 3) strengthMeterBar.className = 'strength-fair';
+        else if (strength <= 4) strengthMeterBar.className = 'strength-good';
+        else strengthMeterBar.className = 'strength-strong';
+    });
+
+    // Password match validation
+    confirmPasswordInput.addEventListener('input', function() {
+        const matchMessage = document.getElementById('password-match');
+        if (this.value === passwordInput.value) {
+            matchMessage.textContent = '{% trans "Passwords match" %}';
+            matchMessage.className = 'validation-message validation-success';
+        } else {
+            matchMessage.textContent = '{% trans "Passwords do not match" %}';
+            matchMessage.className = 'validation-message validation-error';
+        }
+    });
+
+    // Form submission
+    form.addEventListener('submit', function() {
+        const button = document.getElementById('registerButton');
+        const normalState = button.querySelector('.normal-state');
+        const loadingState = button.querySelector('.loading-state');
+        
+        normalState.classList.add('hidden');
+        loadingState.classList.remove('hidden');
+        button.disabled = true;
+    });
 });
 </script>
 {% endblock %} 

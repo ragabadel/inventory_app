@@ -61,9 +61,6 @@
                             </label>
                             <div class="mt-1">
                                 {{ form.delivery_letter_code }}
-                                {% if form.delivery_letter_code.help_text %}
-                                    <p class="mt-1 text-sm text-gray-500">{{ form.delivery_letter_code.help_text }}</p>
-                                {% endif %}
                                 {% if form.delivery_letter_code.errors %}
                                     <p class="mt-1 text-sm text-red-600">{{ form.delivery_letter_code.errors }}</p>
                                 {% endif %}
@@ -492,14 +489,6 @@ document.addEventListener('DOMContentLoaded', function() {
         field.classList.add('h-4', 'w-4', 'text-blue-600', 'border-gray-300', 'rounded', 'focus:ring-blue-500');
     });
 
-    // Function to format company code
-    function formatCompanyCode(code) {
-        if (code.length === 3) {
-            return code + '-001';
-        }
-        return code;
-    }
-
     // Function to show/hide sections based on asset type
     function updateSections(assetType) {
         const networkSection = document.getElementById('networkSection');
@@ -518,7 +507,8 @@ document.addEventListener('DOMContentLoaded', function() {
             // Network information for devices that need network connectivity
             const networkDevices = [
                 'computer', 'desktop', 'laptop', 'dvr', 'firewall', 
-                'ip phone', 'nvr', 'router', 'time attendance', 'access point'
+                'ip phone', 'nvr', 'router', 'time attendance', 'access point',
+                'printer'
             ];
             
             // Computer specifications for computers and laptops
@@ -550,20 +540,6 @@ document.addEventListener('DOMContentLoaded', function() {
         assetTypeSelect.addEventListener('change', function() {
             const selectedOption = this.options[this.selectedIndex];
             updateSections(selectedOption.text);
-        });
-    }
-
-    // Handle owner company input
-    const ownerInput = document.querySelector('#{{ form.owner.id_for_label }}');
-    if (ownerInput) {
-        ownerInput.addEventListener('change', function() {
-            const selectedOption = this.options[this.selectedIndex];
-            if (selectedOption) {
-                const code = selectedOption.text.split(' ')[0]; // Get the code part
-                if (code.length === 3) {
-                    selectedOption.text = formatCompanyCode(code) + selectedOption.text.substring(3);
-                }
-            }
         });
     }
 });
