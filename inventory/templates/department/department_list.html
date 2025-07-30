@@ -39,7 +39,7 @@
                     {% for department in departments %}
                     <tr class="hover:bg-gray-50">
                         <td class="px-6 py-4 whitespace-nowrap">
-                            <a href="{% url 'inventory:department_detail' department.pk %}" class="text-blue-600 hover:text-blue-800 font-medium">
+                            <a  class="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
                                 {{ department.name }}
                             </a>
                         </td>
