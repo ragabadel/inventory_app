@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'social_django',  # Add social auth
     'inventory',  # Use the proper app config
 ]
 
@@ -188,6 +189,8 @@ TEMPLATES = [
                 'django.contrib.messages.context_processors.messages',
                 'inventory.context_processors.notification_context',
                 'inventory.context_processors.superuser_check',
+                'social_django.context_processors.backends',
+                'social_django.context_processors.login_redirect',
             ],
         },
     },
@@ -286,3 +289,9 @@ EMAIL_HOST_USER = ''  # Add your email
 EMAIL_HOST_PASSWORD = ''  # Add your email password or app-specific password
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
+# Social Auth settings
+AUTHENTICATION_BACKENDS = (
+    'social_core.backends.google.GoogleOAuth2',
+    'social_core.backends.github.GithubOAuth2',
+    'django.contrib.auth.backends.ModelBackend',
+)
