@@ -2844,8 +2844,8 @@ class DatabaseBackupView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
 
     def post(self, request, *args, **kwargs):
         try:
-            # Create a timestamp for the backup file using today's date
-            timestamp = timezone.now().strftime('%Y%m%d')
+            # Create a timestamp for the backup file using today's date and time
+            timestamp = timezone.now().strftime('%Y%m%d_%H%M%S')
             backup_file = f'db_backup_{timestamp}.json'
             
             # Create backups directory if it doesn't exist
@@ -2866,13 +2866,10 @@ class DatabaseBackupView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
                     use_natural_primary_keys=True
                 )
 
-            # Prepare the file for download
+            # Check if file was created successfully
             if os.path.exists(backup_path):
-                with open(backup_path, 'rb') as f:
-                    response = HttpResponse(f.read(), content_type='application/json; charset=utf-8')
-                    response['Content-Disposition'] = f'attachment; filename="{backup_file}"'
-                    messages.success(request, _('Database backup created successfully and saved in backups directory.'))
-                    return response
+                messages.success(request, _('Database backup created successfully and saved in backups directory.'))
+                return redirect('inventory:database_backup')
             else:
                 messages.error(request, _('Failed to create backup file.'))
         except Exception as e:
