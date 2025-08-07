@@ -3615,7 +3615,7 @@
   "model": "auth.user",
   "fields": {
     "password": "pbkdf2_sha256$1000000$BD2kLp3DSELkOtNTjxAuVC$ZIZH7O3acRFFbKl42PIU6agXaE6DJ4PGwEHro2GuFmY=",
-    "last_login": "2025-08-04T12:06:14.015Z",
+    "last_login": "2025-08-07T09:16:18.271Z",
     "is_superuser": true,
     "username": "admin",
     "first_name": "",
@@ -3841,6 +3841,16 @@
     "description": "",
     "created_at": "2025-07-19T09:27:26.584Z",
     "updated_at": "2025-07-19T09:27:26.584Z"
+  }
+},
+{
+  "model": "inventory.department",
+  "pk": 15,
+  "fields": {
+    "name": "IT",
+    "description": "",
+    "created_at": "2025-08-06T07:56:05.422Z",
+    "updated_at": "2025-08-06T07:56:05.422Z"
   }
 },
 {
@@ -4402,6 +4412,17 @@
     "description": "",
     "created_at": "2025-07-19T09:27:26.507Z",
     "updated_at": "2025-07-19T09:27:26.507Z"
+  }
+},
+{
+  "model": "inventory.position",
+  "pk": 143,
+  "fields": {
+    "name": "Software Engineer",
+    "department": 15,
+    "description": "",
+    "created_at": "2025-08-06T07:56:05.432Z",
+    "updated_at": "2025-08-06T07:56:05.432Z"
   }
 },
 {
@@ -5262,6 +5283,46 @@
     "is_active": true,
     "created_at": "2025-07-28T09:59:20.712Z",
     "updated_at": "2025-07-28T09:59:20.712Z"
+  }
+},
+{
+  "model": "inventory.employee",
+  "pk": 174,
+  "fields": {
+    "user": null,
+    "employee_id": "171700117",
+    "national_id": "28505140101397",
+    "first_name": "Mohamed",
+    "last_name": "Nagi Imam",
+    "email": "Mohamed.Nagi@ctp-eg.com",
+    "phone_number": "",
+    "department": 6,
+    "position": "Senior Planning& Operations Excellence Manager",
+    "hire_date": "2025-08-03",
+    "company": 4,
+    "is_active": true,
+    "created_at": "2025-08-05T08:03:02.698Z",
+    "updated_at": "2025-08-05T08:03:02.698Z"
+  }
+},
+{
+  "model": "inventory.employee",
+  "pk": 175,
+  "fields": {
+    "user": null,
+    "employee_id": "1234567899",
+    "national_id": "28609251304254",
+    "first_name": "Mohamed",
+    "last_name": "Reda",
+    "email": "Mohamed.Reda@ctp-eg.com",
+    "phone_number": "+01116443333",
+    "department": 6,
+    "position": "EPMO Director",
+    "hire_date": "2025-08-03",
+    "company": 2,
+    "is_active": true,
+    "created_at": "2025-08-05T12:41:17.219Z",
+    "updated_at": "2025-08-05T12:41:17.219Z"
   }
 },
 {
@@ -9157,8 +9218,8 @@
     "owner": 2,
     "purchase_date": "2025-06-01",
     "warranty_expiry": "2025-04-27",
-    "status": "available",
-    "assigned_to": null,
+    "status": "assigned",
+    "assigned_to": 175,
     "outlet": null,
     "notes": "",
     "mac_address_wifi": "F8:63:3F:9B:3E:8A",
@@ -9196,16 +9257,16 @@
   "model": "inventory.itasset",
   "pk": 193,
   "fields": {
-    "name": "DESKTOP-GK6G65C",
+    "name": "ACD-PDC-lap-01",
     "asset_type": 1,
     "serial_number": "479Q1N2",
     "model": "Precision 7520",
     "manufacturer": "Dell",
-    "owner": 2,
+    "owner": 4,
     "purchase_date": "2025-06-01",
     "warranty_expiry": "2025-04-27",
-    "status": "available",
-    "assigned_to": null,
+    "status": "assigned",
+    "assigned_to": 174,
     "outlet": null,
     "notes": "",
     "mac_address_wifi": "C6:18:15:18:D5:3B",
@@ -9214,9 +9275,9 @@
     "delivery_letter_code": "TEMP-193",
     "receipt_date": null,
     "processor": "Intel(R) Core(TM) i7-6820HQ CPU @ 2.70GHz",
-    "ram_size": "32GB ddr4",
+    "ram_size": "16GB ddr4",
     "hdd1_capacity": "512GB ssd",
-    "hdd2_capacity": "512GB",
+    "hdd2_capacity": "1TB",
     "operating_system": "Windows 10",
     "os_version": "21H2",
     "screen_size": null,
@@ -9488,7 +9549,7 @@
     "warranty_expiry": null,
     "status": "assigned",
     "assigned_to": null,
-    "outlet": 2,
+    "outlet": null,
     "notes": "",
     "mac_address_wifi": "",
     "mac_address_ethernet": "",
@@ -9768,8 +9829,8 @@
     "owner": 4,
     "purchase_date": "2025-07-21",
     "warranty_expiry": null,
-    "status": "available",
-    "assigned_to": null,
+    "status": "assigned",
+    "assigned_to": 174,
     "outlet": null,
     "notes": "",
     "mac_address_wifi": "",
@@ -9815,8 +9876,8 @@
     "owner": 2,
     "purchase_date": "2025-07-21",
     "warranty_expiry": null,
-    "status": "available",
-    "assigned_to": null,
+    "status": "assigned",
+    "assigned_to": 175,
     "outlet": null,
     "notes": "",
     "mac_address_wifi": "",
@@ -10520,8 +10581,8 @@
     "owner": 2,
     "purchase_date": "2025-08-03",
     "warranty_expiry": null,
-    "status": "available",
-    "assigned_to": null,
+    "status": "assigned",
+    "assigned_to": 174,
     "outlet": null,
     "notes": "N Elegance Meinaili 1901 USB Charging Backpack 15.6 inch Laptop Business Waterproof Multifunctional Travel Bag, Unisex",
     "mac_address_wifi": "",
@@ -10614,8 +10675,8 @@
     "owner": 2,
     "purchase_date": "2025-08-03",
     "warranty_expiry": null,
-    "status": "available",
-    "assigned_to": null,
+    "status": "assigned",
+    "assigned_to": 148,
     "outlet": null,
     "notes": "",
     "mac_address_wifi": "",
@@ -10849,8 +10910,8 @@
     "owner": 2,
     "purchase_date": "2025-08-03",
     "warranty_expiry": null,
-    "status": "available",
-    "assigned_to": null,
+    "status": "assigned",
+    "assigned_to": 151,
     "outlet": null,
     "notes": "N Elegance Meinaili 1901 USB Charging Backpack 15.6 inch Laptop Business Waterproof Multifunctional Travel Bag, Unisex",
     "mac_address_wifi": "",
@@ -10896,8 +10957,8 @@
     "owner": 2,
     "purchase_date": "2025-08-03",
     "warranty_expiry": null,
-    "status": "available",
-    "assigned_to": null,
+    "status": "assigned",
+    "assigned_to": 175,
     "outlet": null,
     "notes": "N Elegance Meinaili 1905 USB Charging Backpack 15.6 inch Laptop Business Waterproof Multifunctional Travel Bag By ATA Stores, Unisex",
     "mac_address_wifi": "",
@@ -13493,6 +13554,160 @@
     "employee": 121,
     "date": "2025-08-04T11:50:11.875Z",
     "notes": "Assigned to Ragab Adel Ragab Ali",
+    "created_by": [
+      "admin"
+    ]
+  }
+},
+{
+  "model": "inventory.assethistory",
+  "pk": 187,
+  "fields": {
+    "asset": 194,
+    "action": "assigned",
+    "employee": 174,
+    "date": "2025-08-05T08:04:42.994Z",
+    "notes": "Assigned to Mohamed Nagi Imam",
+    "created_by": [
+      "admin"
+    ]
+  }
+},
+{
+  "model": "inventory.assethistory",
+  "pk": 188,
+  "fields": {
+    "asset": 193,
+    "action": "assigned",
+    "employee": 174,
+    "date": "2025-08-05T08:05:59.683Z",
+    "notes": "Device assigned to Mohamed Nagi Imam",
+    "created_by": [
+      "admin"
+    ]
+  }
+},
+{
+  "model": "inventory.assethistory",
+  "pk": 189,
+  "fields": {
+    "asset": 193,
+    "action": "assigned",
+    "employee": 174,
+    "date": "2025-08-05T08:06:27.104Z",
+    "notes": "Asset status changed from available to assigned",
+    "created_by": [
+      "admin"
+    ]
+  }
+},
+{
+  "model": "inventory.assethistory",
+  "pk": 190,
+  "fields": {
+    "asset": 193,
+    "action": "modified",
+    "employee": 174,
+    "date": "2025-08-05T08:07:52.914Z",
+    "notes": "Device modified:\nName: DESKTOP-GK6G65C → ACD-PDC-lap-01\nRAM Size: 32GB ddr4 → 16GB ddr4\nSecondary HDD Capacity: 512GB → 1TB",
+    "created_by": [
+      "admin"
+    ]
+  }
+},
+{
+  "model": "inventory.assethistory",
+  "pk": 191,
+  "fields": {
+    "asset": 205,
+    "action": "assigned",
+    "employee": 174,
+    "date": "2025-08-05T08:09:29.346Z",
+    "notes": "Assigned to Mohamed Nagi Imam",
+    "created_by": [
+      "admin"
+    ]
+  }
+},
+{
+  "model": "inventory.assethistory",
+  "pk": 192,
+  "fields": {
+    "asset": 224,
+    "action": "assigned",
+    "employee": 174,
+    "date": "2025-08-05T08:09:41.376Z",
+    "notes": "Assigned to Mohamed Nagi Imam",
+    "created_by": [
+      "admin"
+    ]
+  }
+},
+{
+  "model": "inventory.assethistory",
+  "pk": 193,
+  "fields": {
+    "asset": 226,
+    "action": "assigned",
+    "employee": 148,
+    "date": "2025-08-05T08:42:59.564Z",
+    "notes": "Assigned to Saeed Mohamed",
+    "created_by": [
+      "admin"
+    ]
+  }
+},
+{
+  "model": "inventory.assethistory",
+  "pk": 194,
+  "fields": {
+    "asset": 192,
+    "action": "assigned",
+    "employee": 175,
+    "date": "2025-08-05T12:41:48.574Z",
+    "notes": "Assigned to Mohamed Reda",
+    "created_by": [
+      "admin"
+    ]
+  }
+},
+{
+  "model": "inventory.assethistory",
+  "pk": 195,
+  "fields": {
+    "asset": 206,
+    "action": "assigned",
+    "employee": 175,
+    "date": "2025-08-05T12:47:55.465Z",
+    "notes": "Assigned to Mohamed Reda",
+    "created_by": [
+      "admin"
+    ]
+  }
+},
+{
+  "model": "inventory.assethistory",
+  "pk": 196,
+  "fields": {
+    "asset": 232,
+    "action": "assigned",
+    "employee": 175,
+    "date": "2025-08-05T12:48:02.997Z",
+    "notes": "Assigned to Mohamed Reda",
+    "created_by": [
+      "admin"
+    ]
+  }
+},
+{
+  "model": "inventory.assethistory",
+  "pk": 197,
+  "fields": {
+    "asset": 231,
+    "action": "assigned",
+    "employee": 151,
+    "date": "2025-08-06T11:29:09.347Z",
+    "notes": "Assigned to Mahmoud Magdy Mohamed",
     "created_by": [
       "admin"
     ]
@@ -16656,6 +16871,94 @@
     "action_url": "/en/inventory/assets/192/",
     "created_at": "2025-07-31T08:59:54.652Z",
     "read_at": "2025-08-04T12:04:31.808Z",
+    "archived_at": null,
+    "expires_at": null
+  }
+},
+{
+  "model": "inventory.notification",
+  "pk": 147,
+  "fields": {
+    "title": "New Device Assigned: DESKTOP-GK6G65C",
+    "message": "A new device has been assigned to you:\nDevice: DESKTOP-GK6G65C\nSerial Number: 479Q1N2\nModel: Precision 7520\nManufacturer: Dell\nAsset Type: Laptop\n\nPrevious Owner: None\n\nPlease verify the device and its accessories.\nContact IT support if you need any assistance setting up your device.",
+    "status": "unread",
+    "priority": "high",
+    "content_type": [
+      "inventory",
+      "itasset"
+    ],
+    "object_id": 193,
+    "category": 1,
+    "employee_profile": 174,
+    "action_url": "/en/inventory/assets/193/",
+    "created_at": "2025-08-05T08:05:59.672Z",
+    "read_at": null,
+    "archived_at": null,
+    "expires_at": null
+  }
+},
+{
+  "model": "inventory.notification",
+  "pk": 148,
+  "fields": {
+    "title": "Device Assigned: DESKTOP-GK6G65C",
+    "message": "Device has been assigned:\nDevice: DESKTOP-GK6G65C\nSerial Number: 479Q1N2\nAssigned To: Mohamed Nagi Imam\nDepartment: Production\nPrevious Owner: None\nAction Required: Schedule device setup and orientation if needed.",
+    "status": "read",
+    "priority": "medium",
+    "content_type": [
+      "inventory",
+      "itasset"
+    ],
+    "object_id": 193,
+    "category": 1,
+    "employee_profile": null,
+    "action_url": "/en/inventory/assets/193/",
+    "created_at": "2025-08-05T08:05:59.680Z",
+    "read_at": "2025-08-05T09:30:13.616Z",
+    "archived_at": null,
+    "expires_at": null
+  }
+},
+{
+  "model": "inventory.notification",
+  "pk": 149,
+  "fields": {
+    "title": "Your Device Has Been Modified: ACD-PDC-lap-01",
+    "message": "Your assigned device has been modified:\nDevice: ACD-PDC-lap-01\nSerial Number: 479Q1N2\nChanges Made:\n• Name: DESKTOP-GK6G65C → ACD-PDC-lap-01\n• RAM Size: 32GB ddr4 → 16GB ddr4\n• Secondary HDD Capacity: 512GB → 1TB\n\nPlease review these changes and report any issues to IT support.",
+    "status": "unread",
+    "priority": "medium",
+    "content_type": [
+      "inventory",
+      "itasset"
+    ],
+    "object_id": 193,
+    "category": 6,
+    "employee_profile": 174,
+    "action_url": "/en/inventory/assets/193/",
+    "created_at": "2025-08-05T08:07:52.907Z",
+    "read_at": null,
+    "archived_at": null,
+    "expires_at": null
+  }
+},
+{
+  "model": "inventory.notification",
+  "pk": 150,
+  "fields": {
+    "title": "Device Modified: ACD-PDC-lap-01",
+    "message": "Device has been modified:\nDevice: ACD-PDC-lap-01\nSerial Number: 479Q1N2\nModified by: admin\nChanges Made:\n• Name: DESKTOP-GK6G65C → ACD-PDC-lap-01\n• RAM Size: 32GB ddr4 → 16GB ddr4\n• Secondary HDD Capacity: 512GB → 1TB",
+    "status": "read",
+    "priority": "medium",
+    "content_type": [
+      "inventory",
+      "itasset"
+    ],
+    "object_id": 193,
+    "category": 6,
+    "employee_profile": null,
+    "action_url": "/en/inventory/assets/193/",
+    "created_at": "2025-08-05T08:07:52.912Z",
+    "read_at": "2025-08-05T09:30:13.616Z",
     "archived_at": null,
     "expires_at": null
   }
