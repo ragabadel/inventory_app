@@ -2539,21 +2539,9 @@ def global_asset_history(request):
 @login_required
 def reports_dashboard(request):
     """View for displaying comprehensive system reports and analytics."""
-    # Get filter parameters
-    report_type = request.GET.get('type', 'full')
-    date_from = request.GET.get('date_from')
-    date_to = request.GET.get('date_to')
-    
-    try:
-        if date_from:
-            date_from = datetime.strptime(date_from, '%Y-%m-%d')
-        if date_to:
-            date_to = datetime.strptime(date_to, '%Y-%m-%d')
-            # Include the entire day
-            date_to = date_to + timedelta(days=1)
-    except ValueError:
-        messages.error(request, _('Invalid date format'))
-        return redirect('inventory:reports_dashboard')
+    # Get total counts
+    total_companies = OwnerCompany.objects.count()
+    total_outlets = Outlet.objects.count()
 
     # Asset statistics
     total_assets = ITAsset.objects.count()
@@ -2577,25 +2565,6 @@ def reports_dashboard(request):
     recent_activities = AssetHistory.objects.select_related(
         'asset', 'employee'
     ).order_by('-date')[:10]
-
-    # Calculate YoY growth
-    today = timezone.now()
-    one_year_ago = today - timedelta(days=365)
-    assets_one_year_ago = ITAsset.objects.filter(purchase_date__lte=one_year_ago).count()
-    current_assets = ITAsset.objects.count()
-    yoy_growth = ((current_assets - assets_one_year_ago) / assets_one_year_ago * 100) if assets_one_year_ago > 0 else 0
-
-    # Calculate 3-month average growth rate
-    three_months_ago = today - timedelta(days=90)
-    monthly_growth = ITAsset.objects.filter(
-        purchase_date__gte=three_months_ago
-    ).annotate(
-        month=TruncMonth('purchase_date')
-    ).values('month').annotate(
-        count=Count('id')
-    ).order_by('month')
-    
-    avg_growth_rate = sum(m['count'] for m in monthly_growth) / 3 if monthly_growth else 0
 
     # Company device statistics
     company_device_stats = []
@@ -2645,56 +2614,54 @@ def reports_dashboard(request):
             company_data['device_types'].sort(key=lambda x: x['count'], reverse=True)
         
         company_device_stats.append(company_data)
-    
-    # Calculate Asset Growth Analysis data
-    twelve_months_ago = today - timedelta(days=365)
-    
-    # Monthly asset acquisition data
-    monthly_acquisitions = ITAsset.objects.filter(
-        purchase_date__gte=twelve_months_ago
-    ).annotate(
-        month=TruncMonth('purchase_date')
-    ).values('month').annotate(
-        new_assets=Count('id')
-    ).order_by('month')
-    
-    # Calculate growth rates
-    growth_data = []
-    previous_count = ITAsset.objects.filter(purchase_date__lt=twelve_months_ago).count()
-    
-    for acquisition in monthly_acquisitions:
-        current_count = previous_count + acquisition['new_assets']
-        if previous_count > 0:
-            growth_rate = ((current_count - previous_count) / previous_count) * 100
-        else:
-            growth_rate = 100 if current_count > 0 else 0
+
+    # Outlet statistics
+    outlet_stats = []
+    for outlet in Outlet.objects.all().order_by('name'):
+        outlet_assets = ITAsset.objects.filter(outlet=outlet)
+        total_outlet_assets = outlet_assets.count()
+        
+        outlet_data = {
+            'outlet': outlet,
+            'total': total_outlet_assets,
+            'available': outlet_assets.filter(status='available').count(),
+            'assigned': outlet_assets.filter(status='assigned').count(),
+            'maintenance': outlet_assets.filter(status='maintenance').count(),
+            'retired': outlet_assets.filter(status='retired').count(),
+            'available_percentage': 0,
+            'assigned_percentage': 0,
+            'maintenance_percentage': 0,
+            'retired_percentage': 0,
+            'device_types': []
+        }
+        
+        if total_outlet_assets > 0:
+            outlet_data.update({
+                'available_percentage': (outlet_data['available'] / total_outlet_assets * 100),
+                'assigned_percentage': (outlet_data['assigned'] / total_outlet_assets * 100),
+                'maintenance_percentage': (outlet_data['maintenance'] / total_outlet_assets * 100),
+                'retired_percentage': (outlet_data['retired'] / total_outlet_assets * 100),
+            })
             
-        growth_data.append({
-            'month': acquisition['month'].strftime('%B %Y'),
-            'new_assets': acquisition['new_assets'],
-            'total_assets': current_count,
-            'growth_rate': round(growth_rate, 2)
-        })
-        previous_count = current_count
-    
-    # Calculate trend indicators
-    if len(growth_data) >= 2:
-        last_month_growth = growth_data[-1]['growth_rate']
-        prev_month_growth = growth_data[-2]['growth_rate']
-        trend = 'up' if last_month_growth > prev_month_growth else 'down'
-    else:
-        trend = 'neutral'
+            # Get device types distribution for outlet
+            for asset_type in AssetType.objects.all():
+                type_count = outlet_assets.filter(asset_type=asset_type).count()
+                if type_count > 0:
+                    type_percentage = (type_count / total_outlet_assets * 100)
+                    outlet_data['device_types'].append({
+                        'type': asset_type.display_name,
+                        'count': type_count,
+                        'percentage': type_percentage
+                    })
+            
+            outlet_data['device_types'].sort(key=lambda x: x['count'], reverse=True)
+        
+        outlet_stats.append(outlet_data)
     
     context = {
         'title': _('Reports Dashboard'),
-        'report_type': report_type,
-        'date_from': date_from.strftime('%Y-%m-%d') if date_from else '',
-        'date_to': (date_to - timedelta(days=1)).strftime('%Y-%m-%d') if date_to else '',
-        'report_types': [
-            ('full', _('Full Report')),
-            ('warranty', _('Warranty Report')),
-            ('assignments', _('Assignments Report')),
-        ],
+        'total_companies': total_companies,
+        'total_outlets': total_outlets,
         'total_assets': total_assets,
         'available_assets': available_assets,
         'assigned_assets': assigned_assets,
@@ -2703,12 +2670,8 @@ def reports_dashboard(request):
         'departments': departments,
         'model_stats': model_stats,
         'recent_activities': recent_activities,
-        'yoy_growth': round(yoy_growth, 2),
-        'avg_growth_rate': round(avg_growth_rate, 2),
         'company_device_stats': company_device_stats,
-        'growth_data': growth_data,
-        'growth_trend': trend,
-        'total_growth_rate': growth_data[-1]['growth_rate'] if growth_data else 0,
+        'outlet_stats': outlet_stats,
     }
     
     return render(request, 'reports/reports_dashboard.html', context)

@@ -1,111 +1,186 @@
 {% extends 'base/base_tailwind.html' %}
 {% load i18n %}
 {% load static %}
+{% load inventory_tags %}
 
 {% block title %}{% trans "Reports Dashboard" %}{% endblock %}
 
 {% block extra_css %}
 <link href="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.css" rel="stylesheet">
+<style>
+    @keyframes progressAnimation {
+        from { width: 0%; }
+        to { width: var(--progress-width); }
+    }
+
+    @keyframes fadeInScale {
+        0% {
+            opacity: 0;
+            transform: scale(0.95);
+        }
+        100% {
+            opacity: 1;
+            transform: scale(1);
+        }
+    }
+
+    .animate-progress-bar {
+        animation: progressAnimation 1s ease-out forwards;
+    }
+
+    .animate-fade-in-scale {
+        animation: fadeInScale 0.3s ease-out forwards;
+    }
+
+    .progress-bar-container {
+        position: relative;
+        overflow: hidden;
+        transition: all 0.3s ease;
+    }
+
+    .progress-bar-container:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+
+    .stats-card {
+        transition: all 0.3s ease;
+    }
+
+    .stats-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    }
+</style>
 {% endblock %}
 
 {% block content %}
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-    <!-- Filters -->
-    <div class="card mb-6">
-        <div class="card-body">
-            <form method="get" id="report-filters">
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div class="form-group">
-                        <label for="type" class="form-label">{% trans "Report Type" %}</label>
-                        <select name="type" id="type" class="form-input">
-                            {% for value, label in report_types %}
-                            <option value="{{ value }}" {% if report_type == value %}selected{% endif %}>{{ label }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="date_from" class="form-label">{% trans "Date From" %}</label>
-                        <input type="date" name="date_from" id="date_from" class="form-input" value="{{ date_from }}">
-                    </div>
-                    <div class="form-group">
-                        <label for="date_to" class="form-label">{% trans "Date To" %}</label>
-                        <input type="date" name="date_to" id="date_to" class="form-input" value="{{ date_to }}">
-                    </div>
-                    <div class="form-group flex items-end">
-                        <button type="submit" class="btn btn-primary w-full inline-flex items-center justify-center">
-                            <i class="fas fa-filter mr-2"></i>
-                            {% trans "Apply Filters" %}
-                        </button>
-                    </div>
-                </div>
-            </form>
-        </div>
-    </div>
 
- 
+
     <!-- Stats Grid -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-        <!-- Total Assets -->
-        <div class="card transform transition-transform duration-300 hover:-translate-y-1">
-            <div class="card-body flex items-center">
-                <div class="flex-shrink-0 w-14 h-14 rounded-lg bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center mr-4 shadow-lg">
-                    <i class="fas fa-laptop text-2xl text-white"></i>
+    <div class="space-y-4 mb-6">
+        <!-- First Row -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" x-data="{ shown: false }" x-intersect="shown = true">
+            <!-- Total Companies -->
+            <div class="card transform transition-all duration-500 hover:-translate-y-1 hover:shadow-lg"
+                 :class="{ 'opacity-0 translate-y-4': !shown, 'opacity-100 translate-y-0': shown }"
+                 style="transition-delay: 100ms;">
+                <div class="card-body flex items-center">
+                    <div class="flex-shrink-0 w-14 h-14 rounded-lg bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center mr-4 shadow-lg">
+                        <i class="fas fa-building text-2xl text-white"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-medium text-gray-500">{% trans "Total Companies" %}</h3>
+                        <div class="text-2xl font-semibold text-gray-900" x-data="{ number: 0 }" 
+                             x-intersect="$nextTick(() => { number = {{ total_companies }} })"
+                             x-text="number"></div>
+                    </div>
                 </div>
-                <div>
-                    <h3 class="text-sm font-medium text-gray-500">{% trans "Total Assets" %}</h3>
-                    <div class="text-2xl font-semibold text-gray-900">{{ total_assets }}</div>
+            </div>
+
+            <!-- Total Outlets -->
+            <div class="card transform transition-all duration-500 hover:-translate-y-1 hover:shadow-lg"
+                 :class="{ 'opacity-0 translate-y-4': !shown, 'opacity-100 translate-y-0': shown }"
+                 style="transition-delay: 200ms;">
+                <div class="card-body flex items-center">
+                    <div class="flex-shrink-0 w-14 h-14 rounded-full bg-purple-50 flex items-center justify-center mr-4 transform transition-transform duration-300 hover:scale-110">
+                        <i class="fas fa-store text-xl text-purple-600"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-medium text-gray-500">{% trans "Total Outlets" %}</h3>
+                        <div class="text-2xl font-semibold text-gray-900" x-data="{ number: 0 }" 
+                             x-intersect="$nextTick(() => { number = {{ total_outlets }} })"
+                             x-text="number"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Total Assets -->
+            <div class="card transform transition-all duration-500 hover:-translate-y-1 hover:shadow-lg"
+                 :class="{ 'opacity-0 translate-y-4': !shown, 'opacity-100 translate-y-0': shown }"
+                 style="transition-delay: 300ms;">
+                <div class="card-body flex items-center">
+                    <div class="flex-shrink-0 w-14 h-14 rounded-lg bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center mr-4 shadow-lg">
+                        <i class="fas fa-laptop text-2xl text-white"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-medium text-gray-500">{% trans "Total Assets" %}</h3>
+                        <div class="text-2xl font-semibold text-gray-900" x-data="{ number: 0 }" 
+                             x-intersect="$nextTick(() => { number = {{ total_assets }} })"
+                             x-text="number"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Available Assets -->
+            <div class="card transform transition-all duration-500 hover:-translate-y-1 hover:shadow-lg"
+                 :class="{ 'opacity-0 translate-y-4': !shown, 'opacity-100 translate-y-0': shown }"
+                 style="transition-delay: 400ms;">
+                <div class="card-body flex items-center">
+                    <div class="flex-shrink-0 w-14 h-14 rounded-lg bg-gradient-to-br from-success-500 to-success-700 flex items-center justify-center mr-4 shadow-lg">
+                        <i class="fas fa-check-circle text-2xl text-white"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-medium text-gray-500">{% trans "Available Assets" %}</h3>
+                        <div class="text-2xl font-semibold text-gray-900" x-data="{ number: 0 }" 
+                             x-intersect="$nextTick(() => { number = {{ available_assets }} })"
+                             x-text="number"></div>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- Available Assets -->
-        <div class="card transform transition-transform duration-300 hover:-translate-y-1">
-            <div class="card-body flex items-center">
-                <div class="flex-shrink-0 w-14 h-14 rounded-lg bg-gradient-to-br from-success-500 to-success-700 flex items-center justify-center mr-4 shadow-lg">
-                    <i class="fas fa-check-circle text-2xl text-white"></i>
-                </div>
-                <div>
-                    <h3 class="text-sm font-medium text-gray-500">{% trans "Available Assets" %}</h3>
-                    <div class="text-2xl font-semibold text-gray-900">{{ available_assets }}</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Assigned Assets -->
-        <div class="card transform transition-transform duration-300 hover:-translate-y-1">
-            <div class="card-body flex items-center">
-                <div class="flex-shrink-0 w-14 h-14 rounded-lg bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center mr-4 shadow-lg">
-                    <i class="fas fa-user-check text-2xl text-white"></i>
-                </div>
-                <div>
-                    <h3 class="text-sm font-medium text-gray-500">{% trans "Assigned Assets" %}</h3>
-                    <div class="text-2xl font-semibold text-gray-900">{{ assigned_assets }}</div>
+        <!-- Second Row -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" x-data="{ shown: false }" x-intersect="shown = true">
+            <!-- Assigned Assets -->
+            <div class="card transform transition-all duration-500 hover:-translate-y-1 hover:shadow-lg"
+                 :class="{ 'opacity-0 translate-y-4': !shown, 'opacity-100 translate-y-0': shown }"
+                 style="transition-delay: 100ms;">
+                <div class="card-body flex items-center">
+                    <div class="flex-shrink-0 w-14 h-14 rounded-lg bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center mr-4 shadow-lg">
+                        <i class="fas fa-user-check text-2xl text-white"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-medium text-gray-500">{% trans "Assigned Assets" %}</h3>
+                        <div class="text-2xl font-semibold text-gray-900" x-data="{ number: 0 }" 
+                             x-intersect="$nextTick(() => { number = {{ assigned_assets }} })"
+                             x-text="number"></div>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <!-- In Maintenance -->
-        <div class="card transform transition-transform duration-300 hover:-translate-y-1">
-            <div class="card-body flex items-center">
-                <div class="flex-shrink-0 w-14 h-14 rounded-lg bg-gradient-to-br from-warning-500 to-warning-700 flex items-center justify-center mr-4 shadow-lg">
-                    <i class="fas fa-tools text-2xl text-white"></i>
-                </div>
-                <div>
-                    <h3 class="text-sm font-medium text-gray-500">{% trans "In Maintenance" %}</h3>
-                    <div class="text-2xl font-semibold text-gray-900">{{ maintenance_assets }}</div>
+            <!-- In Maintenance -->
+            <div class="card transform transition-all duration-500 hover:-translate-y-1 hover:shadow-lg"
+                 :class="{ 'opacity-0 translate-y-4': !shown, 'opacity-100 translate-y-0': shown }"
+                 style="transition-delay: 200ms;">
+                <div class="card-body flex items-center">
+                    <div class="flex-shrink-0 w-14 h-14 rounded-lg bg-gradient-to-br from-warning-500 to-warning-700 flex items-center justify-center mr-4 shadow-lg">
+                        <i class="fas fa-tools text-2xl text-white"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-medium text-gray-500">{% trans "In Maintenance" %}</h3>
+                        <div class="text-2xl font-semibold text-gray-900" x-data="{ number: 0 }" 
+                             x-intersect="$nextTick(() => { number = {{ maintenance_assets }} })"
+                             x-text="number"></div>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Retired Assets -->
-        <div class="bg-white rounded-lg shadow-md p-6 transform transition-transform duration-300 hover:-translate-y-1">
-            <div class="flex items-center">
-                <div class="flex-shrink-0 w-14 h-14 rounded-lg bg-gradient-to-br from-purple-600 to-indigo-700 flex items-center justify-center mr-4 shadow-lg">
-                    <i class="fas fa-archive text-2xl text-purple-200"></i>
-                </div>
-                <div>
-                    <h3 class="text-sm font-medium text-gray-500">{% trans "Retired Assets" %}</h3>
-                    <div class="text-2xl font-semibold text-gray-900">{{ retired_assets }}</div>
+            <!-- Retired Assets -->
+            <div class="card transform transition-all duration-500 hover:-translate-y-1 hover:shadow-lg"
+                 :class="{ 'opacity-0 translate-y-4': !shown, 'opacity-100 translate-y-0': shown }"
+                 style="transition-delay: 300ms;">
+                <div class="card-body flex items-center">
+                    <div class="flex-shrink-0 w-14 h-14 rounded-lg bg-gradient-to-br from-purple-600 to-indigo-700 flex items-center justify-center mr-4 shadow-lg">
+                        <i class="fas fa-archive text-2xl text-white"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-medium text-gray-500">{% trans "Retired Assets" %}</h3>
+                        <div class="text-2xl font-semibold text-gray-900" x-data="{ number: 0 }" 
+                             x-intersect="$nextTick(() => { number = {{ retired_assets }} })"
+                             x-text="number"></div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -113,6 +188,7 @@
 
     <!-- Charts Grid -->
     <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 mb-6">
+        <!-- Department Asset Distribution -->
         <div class="card">
             <div class="card-body">
                 <h3 class="text-lg font-medium text-gray-900 mb-4">{% trans "Department Asset Distribution" %}</h3>
@@ -121,6 +197,8 @@
                 </div>
             </div>
         </div>
+
+        <!-- Asset Status Distribution -->
         <div class="card">
             <div class="card-body">
                 <h3 class="text-lg font-medium text-gray-900 mb-4">{% trans "Asset Status Distribution" %}</h3>
@@ -129,6 +207,8 @@
                 </div>
             </div>
         </div>
+
+        <!-- Device Models Distribution -->
         <div class="card">
             <div class="card-body">
                 <h3 class="text-lg font-medium text-gray-900 mb-4">{% trans "Device Models Distribution" %}</h3>
@@ -137,236 +217,167 @@
                 </div>
             </div>
         </div>
-    </div>
-       <!-- Asset Growth Analysis Section -->
-    <div class="card mb-6">
-        <div class="card-body">
-            <div class="flex items-center justify-between mb-6">
-                <h2 class="text-xl font-semibold text-gray-900">{% trans "Asset Growth Analysis" %}</h2>
-                <div class="flex items-center space-x-4">
-                    <!-- YoY Growth -->
-                    <div class="text-sm">
-                        <span class="text-gray-600">{% trans "Year-over-Year Growth:" %}</span>
-                        <span class="font-semibold ml-1 {% if yoy_growth > 0 %}text-green-600{% elif yoy_growth < 0 %}text-red-600{% else %}text-gray-600{% endif %}">
-                            {{ yoy_growth }}%
-                            {% if yoy_growth > 0 %}
-                                <i class="fas fa-arrow-up"></i>
-                            {% elif yoy_growth < 0 %}
-                                <i class="fas fa-arrow-down"></i>
-                            {% endif %}
-                        </span>
-                    </div>
-                    <!-- Average Growth Rate -->
-                    <div class="text-sm">
-                        <span class="text-gray-600">{% trans "Avg. Growth Rate (3M):" %}</span>
-                        <span class="font-semibold ml-1 {% if avg_growth_rate > 0 %}text-green-600{% elif avg_growth_rate < 0 %}text-red-600{% else %}text-gray-600{% endif %}">
-                            {{ avg_growth_rate }}%
-                        </span>
-                    </div>
+
+        <!-- Outlet Asset Distribution -->
+        <div class="card">
+            <div class="card-body">
+                <h3 class="text-lg font-medium text-gray-900 mb-4">{% trans "Outlet Asset Distribution" %}</h3>
+                <div class="h-[300px]">
+                    <canvas id="outletChart"></canvas>
                 </div>
-            </div>
-
-            <!-- Growth Chart -->
-            <div class="h-80 mb-6">
-                <canvas id="assetGrowthChart"></canvas>
-            </div>
-
-            <!-- Monthly Details Table -->
-            <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead>
-                        <tr>
-                            <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                {% trans "Month" %}
-                            </th>
-                            <th class="px-6 py-3 bg-gray-50 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                {% trans "New Assets" %}
-                            </th>
-                            <th class="px-6 py-3 bg-gray-50 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                {% trans "Total Assets" %}
-                            </th>
-                            <th class="px-6 py-3 bg-gray-50 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                {% trans "Growth Rate" %}
-                            </th>
-                            <th class="px-6 py-3 bg-gray-50 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                {% trans "Avg. Asset Price" %}
-                            </th>
-                            <th class="px-6 py-3 bg-gray-50 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                {% trans "Monthly Investment" %}
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody class="bg-white divide-y divide-gray-200">
-                        {% for month_data in growth_data %}
-                        <tr class="hover:bg-gray-50 transition-colors duration-150">
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                {{ month_data.month }}
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">
-                                {{ month_data.new_assets }}
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">
-                                {{ month_data.total_assets }}
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-right">
-                                <span class="{% if month_data.growth_rate > 0 %}text-green-600{% elif month_data.growth_rate < 0 %}text-red-600{% else %}text-gray-600{% endif %}">
-                                    {{ month_data.growth_rate }}%
-                                    {% if month_data.growth_rate > 0 %}
-                                        <i class="fas fa-arrow-up text-xs"></i>
-                                    {% elif month_data.growth_rate < 0 %}
-                                        <i class="fas fa-arrow-down text-xs"></i>
-                                    {% endif %}
-                                </span>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">
-                                ${{ month_data.avg_asset_price|floatformat:2 }}
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">
-                                ${{ month_data.monthly_investment|floatformat:2 }}
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
             </div>
         </div>
     </div>
 
     <!-- Company Device Statistics -->
-    <div class="mb-6">
-        <h2 class="text-xl font-semibold text-gray-900 mb-4">{% trans "Company Device Statistics" %}</h2>
+    <div class="card mb-6 overflow-hidden" x-data="{ expanded: {} }" x-init="$nextTick(() => { initializeProgressBars() })">
+        <div class="card-header bg-white border-b border-gray-200">
+            <div class="px-6 py-4">
+                <h3 class="text-xl font-semibold text-gray-900 flex items-center">
+                    <i class="fas fa-building text-blue-600 mr-3"></i>
+                    {% trans "Company Device Statistics" %}
+                </h3>
+            </div>
+        </div>
         {% if company_device_stats %}
-            <div class="space-y-4">
-                {% for company_stat in company_device_stats %}
-                    <div class="card hover:shadow-lg transition-shadow duration-300" x-data="{ expanded: false }">
+            <div class="divide-y divide-gray-100">
+                {% for company_data in company_device_stats %}
+                    <div class="p-6 stats-card" 
+                         x-data="{ isVisible: false }" 
+                         x-intersect:enter="isVisible = true"
+                         :class="{ 'animate-fade-in-scale': isVisible }">
                         <!-- Company Header -->
-                        <div class="card-body">
-                            <div class="flex items-center justify-between cursor-pointer" @click="expanded = !expanded">
-                                <div class="flex items-center space-x-4">
-                                    <div class="flex-shrink-0">
-                                        <div class="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center">
-                                            <i class="fas fa-building text-xl text-white"></i>
-                                        </div>
+                        <div class="flex items-center justify-between mb-6">
+                            <div class="flex items-center space-x-3">
+                                <div class="flex-shrink-0">
+                                    <div class="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center transform transition-transform duration-300 hover:scale-110">
+                                        <i class="fas fa-building text-xl text-blue-600"></i>
                                     </div>
-                                    <div>
-                                        <h3 class="text-lg font-medium text-gray-900">{{ company_stat.company.name }}</h3>
-                                        <div class="flex items-center space-x-4 text-sm text-gray-500">
-                                            <span>{% trans "Total Devices" %}: {{ company_stat.total }}</span>
+                                </div>
+                                <div>
+                                    <h4 class="text-lg font-semibold text-gray-900">{{ company_data.company.name }}</h4>
+                                    <p class="text-sm text-gray-500 flex items-center">
+                                        <i class="fas fa-desktop text-blue-400 mr-2"></i>
+                                        {% trans "Total Devices" %}: {{ company_data.total }}
+                                    </p>
+                                </div>
+                            </div>
+                            <button @click="expanded['company{{ forloop.counter }}'] = !expanded['company{{ forloop.counter }}']"
+                                    class="p-2 rounded-full hover:bg-gray-100 transition-colors duration-200">
+                                <i class="fas" :class="{ 'fa-chevron-down': !expanded['company{{ forloop.counter }}'], 'fa-chevron-up': expanded['company{{ forloop.counter }}'] }"></i>
+                            </button>
+                        </div>
+                        
+                        <div x-show="expanded['company{{ forloop.counter }}']" 
+                             x-collapse 
+                             x-cloak>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                <!-- Status Distribution -->
+                                <div>
+                                    <h5 class="text-sm font-semibold text-gray-700 mb-4 flex items-center">
+                                        <i class="fas fa-chart-pie text-blue-500 mr-2"></i>
+                                        {% trans "Status Distribution" %}
+                                    </h5>
+                                    <div class="space-y-5">
+                                        <!-- Available -->
+                                        <div class="progress-bar-container">
+                                            <div class="flex justify-between mb-1.5">
+                                                <span class="text-sm font-medium text-gray-600">{% trans "Available" %}</span>
+                                                <span class="text-sm font-medium text-gray-900">{{ company_data.available }}</span>
+                                            </div>
+                                            <div class="relative h-2 bg-gray-100 rounded overflow-hidden">
+                                                <div class="absolute top-0 left-0 h-2 bg-green-500 rounded opacity-0"
+                                                     style="--progress-width: {{ company_data.available_percentage }}%"
+                                                     data-percentage="{{ company_data.available_percentage }}">
+                                                </div>
+                                            </div>
+                                            <span class="absolute -top-1 text-xs text-gray-500 transform -translate-x-1/2 transition-all duration-300"
+                                                  style="left: {{ company_data.available_percentage }}%">
+                                                {{ company_data.available_percentage|floatformat:1 }}%
+                                            </span>
+                                        </div>
+
+                                        <!-- Assigned -->
+                                        <div class="progress-bar-container">
+                                            <div class="flex justify-between mb-1.5">
+                                                <span class="text-sm font-medium text-gray-600">{% trans "Assigned" %}</span>
+                                                <span class="text-sm font-medium text-gray-900">{{ company_data.assigned }}</span>
+                                            </div>
+                                            <div class="relative h-2 bg-gray-100 rounded overflow-hidden">
+                                                <div class="absolute top-0 left-0 h-2 bg-blue-500 rounded opacity-0"
+                                                     style="--progress-width: {{ company_data.assigned_percentage }}%"
+                                                     data-percentage="{{ company_data.assigned_percentage }}">
+                                                </div>
+                                            </div>
+                                            <span class="absolute -top-1 text-xs text-gray-500 transform -translate-x-1/2 transition-all duration-300"
+                                                  style="left: {{ company_data.assigned_percentage }}%">
+                                                {{ company_data.assigned_percentage|floatformat:1 }}%
+                                            </span>
+                                        </div>
+
+                                        <!-- Maintenance -->
+                                        <div class="progress-bar-container">
+                                            <div class="flex justify-between mb-1.5">
+                                                <span class="text-sm font-medium text-gray-600">{% trans "Maintenance" %}</span>
+                                                <span class="text-sm font-medium text-gray-900">{{ company_data.maintenance }}</span>
+                                            </div>
+                                            <div class="relative h-2 bg-gray-100 rounded overflow-hidden">
+                                                <div class="absolute top-0 left-0 h-2 bg-yellow-500 rounded opacity-0"
+                                                     style="--progress-width: {{ company_data.maintenance_percentage }}%"
+                                                     data-percentage="{{ company_data.maintenance_percentage }}">
+                                                </div>
+                                            </div>
+                                            <span class="absolute -top-1 text-xs text-gray-500 transform -translate-x-1/2 transition-all duration-300"
+                                                  style="left: {{ company_data.maintenance_percentage }}%">
+                                                {{ company_data.maintenance_percentage|floatformat:1 }}%
+                                            </span>
+                                        </div>
+
+                                        <!-- Retired -->
+                                        <div class="progress-bar-container">
+                                            <div class="flex justify-between mb-1.5">
+                                                <span class="text-sm font-medium text-gray-600">{% trans "Retired" %}</span>
+                                                <span class="text-sm font-medium text-gray-900">{{ company_data.retired }}</span>
+                                            </div>
+                                            <div class="relative h-2 bg-gray-100 rounded overflow-hidden">
+                                                <div class="absolute top-0 left-0 h-2 bg-red-500 rounded opacity-0"
+                                                     style="--progress-width: {{ company_data.retired_percentage }}%"
+                                                     data-percentage="{{ company_data.retired_percentage }}">
+                                                </div>
+                                            </div>
+                                            <span class="absolute -top-1 text-xs text-gray-500 transform -translate-x-1/2 transition-all duration-300"
+                                                  style="left: {{ company_data.retired_percentage }}%">
+                                                {{ company_data.retired_percentage|floatformat:1 }}%
+                                            </span>
                                         </div>
                                     </div>
                                 </div>
-                                <button class="text-gray-400 hover:text-gray-600 transition-colors duration-200">
-                                    <i class="fas" :class="{ 'fa-chevron-down': !expanded, 'fa-chevron-up': expanded }"></i>
-                                </button>
-                            </div>
-
-                            <!-- Expanded Content -->
-                            <div x-show="expanded" x-collapse>
-                                <div class="mt-6 space-y-6">
-                                    <!-- Status Distribution -->
-                                    <div>
-                                        <h4 class="text-sm font-medium text-gray-700 mb-3">{% trans "Device Status Distribution" %}</h4>
-                                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                                            <!-- Available -->
-                                            <div class="bg-green-50 rounded-lg p-4">
-                                                <div class="flex justify-between items-center">
-                                                    <div>
-                                                        <p class="text-sm text-green-600 font-medium">{% trans "Available" %}</p>
-                                                        <p class="text-2xl font-semibold text-green-700">{{ company_stat.available }}</p>
-                                                    </div>
-                                                    <div class="text-right">
-                                                        <p class="text-sm text-green-600">{{ company_stat.available_percentage|floatformat:1 }}%</p>
+                                
+                                <!-- Device Types -->
+                                <div>
+                                    <h5 class="text-sm font-semibold text-gray-700 mb-4 flex items-center">
+                                        <i class="fas fa-laptop text-blue-500 mr-2"></i>
+                                        {% trans "Device Types" %}
+                                    </h5>
+                                    <div class="space-y-5">
+                                        {% for device_type in company_data.device_types %}
+                                            <div class="progress-bar-container">
+                                                <div class="flex justify-between mb-1.5">
+                                                    <span class="text-sm font-medium text-gray-600">{{ device_type.type }}</span>
+                                                    <span class="text-sm font-medium text-gray-900">{{ device_type.count }}</span>
+                                                </div>
+                                                <div class="relative h-2 bg-gray-100 rounded overflow-hidden">
+                                                    <div class="absolute top-0 left-0 h-2 bg-indigo-500 rounded opacity-0"
+                                                         style="--progress-width: {{ device_type.percentage }}%"
+                                                         data-percentage="{{ device_type.percentage }}">
                                                     </div>
                                                 </div>
+                                                <span class="absolute -top-1 text-xs text-gray-500 transform -translate-x-1/2 transition-all duration-300"
+                                                      style="left: {{ device_type.percentage }}%">
+                                                    {{ device_type.percentage|floatformat:1 }}%
+                                                </span>
                                             </div>
-                                            <!-- Assigned -->
-                                            <div class="bg-blue-50 rounded-lg p-4">
-                                                <div class="flex justify-between items-center">
-                                                    <div>
-                                                        <p class="text-sm text-blue-600 font-medium">{% trans "Assigned" %}</p>
-                                                        <p class="text-2xl font-semibold text-blue-700">{{ company_stat.assigned }}</p>
-                                                    </div>
-                                                    <div class="text-right">
-                                                        <p class="text-sm text-blue-600">{{ company_stat.assigned_percentage|floatformat:1 }}%</p>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <!-- Maintenance -->
-                                            <div class="bg-yellow-50 rounded-lg p-4">
-                                                <div class="flex justify-between items-center">
-                                                    <div>
-                                                        <p class="text-sm text-yellow-600 font-medium">{% trans "Maintenance" %}</p>
-                                                        <p class="text-2xl font-semibold text-yellow-700">{{ company_stat.maintenance }}</p>
-                                                    </div>
-                                                    <div class="text-right">
-                                                        <p class="text-sm text-yellow-600">{{ company_stat.maintenance_percentage|floatformat:1 }}%</p>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <!-- Retired -->
-                                            <div class="bg-red-50 rounded-lg p-4">
-                                                <div class="flex justify-between items-center">
-                                                    <div>
-                                                        <p class="text-sm text-red-600 font-medium">{% trans "Retired" %}</p>
-                                                        <p class="text-2xl font-semibold text-red-700">{{ company_stat.retired }}</p>
-                                                    </div>
-                                                    <div class="text-right">
-                                                        <p class="text-sm text-red-600">{{ company_stat.retired_percentage|floatformat:1 }}%</p>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <!-- Device Types -->
-                                    <div class="mb-8">
-                                        <h4 class="text-base font-medium text-gray-900 mb-4">{% trans "Device Types" %}</h4>
-                                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                            {% for device_type in company_stat.device_types %}
-                                            <div class="bg-gray-50 rounded-lg p-4">
-                                                <div class="flex items-center">
-                                                    <!-- Device Icon -->
-                                                    <div class="flex-shrink-0 mr-3">
-                                                        {% if 'laptop' in device_type.type|lower %}
-                                                            <i class="fas fa-laptop text-2xl text-gray-600" title="{% trans 'Laptop' %}"></i>
-                                                        {% elif 'desktop' in device_type.type|lower %}
-                                                            <i class="fas fa-desktop text-2xl text-gray-600" title="{% trans 'Desktop' %}"></i>
-                                                        {% elif 'monitor' in device_type.type|lower %}
-                                                            <i class="fas fa-tv text-2xl text-gray-600" title="{% trans 'Monitor' %}"></i>
-                                                        {% elif 'printer' in device_type.type|lower %}
-                                                            <i class="fas fa-print text-2xl text-gray-600" title="{% trans 'Printer' %}"></i>
-                                                        {% elif 'server' in device_type.type|lower %}
-                                                            <i class="fas fa-server text-2xl text-gray-600" title="{% trans 'Server' %}"></i>
-                                                        {% elif 'ups' in device_type.type|lower %}
-                                                            <i class="fas fa-plug text-2xl text-gray-600" title="{% trans 'UPS' %}"></i>
-                                                        {% elif 'network' in device_type.type|lower %}
-                                                            <i class="fas fa-network-wired text-2xl text-gray-600" title="{% trans 'Network Device' %}"></i>
-                                                        {% else %}
-                                                            <i class="fas fa-microchip text-2xl text-gray-600" title="{% trans 'Other Device' %}"></i>
-                                                        {% endif %}
-                                                    </div>
-                                                    <!-- Device Info -->
-                                                    <div class="flex-1">
-                                                        <div class="flex justify-between items-start">
-                                                            <div>
-                                                                <h5 class="text-sm font-medium text-gray-900">{{ device_type.type }}</h5>
-                                                                <p class="text-xs text-gray-500">{% blocktrans with count=device_type.count %}{{ count }} units{% endblocktrans %}</p>
-                                                            </div>
-                                                            <div class="text-right">
-                                                                <span class="text-sm font-medium text-primary-600">{{ device_type.percentage|floatformat:1 }}%</span>
-                                                            </div>
-                                                        </div>
-                                                        <!-- Progress Bar -->
-                                                        <div class="mt-2">
-                                                            <div class="w-full bg-gray-200 rounded-full h-1.5">
-                                                                <div class="bg-primary-600 h-1.5 rounded-full" style="width: {{ device_type.percentage }}%"></div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            {% endfor %}
-                                        </div>
+                                        {% endfor %}
                                     </div>
                                 </div>
                             </div>
@@ -384,9 +395,192 @@
         {% endif %}
     </div>
 
+    <!-- Outlet Reports -->
+    <div class="card mb-6 overflow-hidden" x-data="{ expanded: {} }" x-init="$nextTick(() => { initializeProgressBars() })">
+        <div class="card-header bg-white border-b border-gray-200">
+            <div class="px-6 py-4">
+                <h3 class="text-xl font-semibold text-gray-900 flex items-center">
+                    <i class="fas fa-store text-purple-600 mr-3"></i>
+                    {% trans "Outlet Reports" %}
+                </h3>
+            </div>
+        </div>
+        {% if outlet_stats %}
+            <div class="divide-y divide-gray-100">
+                {% for outlet_data in outlet_stats %}
+                    <div class="p-6 stats-card"
+                         x-data="{ isVisible: false }"
+                         x-intersect:enter="isVisible = true"
+                         :class="{ 'animate-fade-in-scale': isVisible }">
+                        <!-- Outlet Header -->
+                        <div class="flex items-center justify-between mb-6">
+                            <div class="flex items-center space-x-3">
+                                <div class="flex-shrink-0">
+                                    <div class="w-12 h-12 rounded-full bg-purple-50 flex items-center justify-center transform transition-transform duration-300 hover:scale-110">
+                                        <i class="fas fa-store text-xl text-purple-600"></i>
+                                    </div>
+                                </div>
+                                <div>
+                                    <h4 class="text-lg font-semibold text-gray-900">{{ outlet_data.outlet.name }}</h4>
+                                    <p class="text-sm text-gray-500">{{ outlet_data.outlet.company.name }}</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center space-x-4">
+                                <span class="text-sm text-gray-500 flex items-center">
+                                    <i class="fas fa-desktop text-purple-400 mr-2"></i>
+                                    {% trans "Total Devices" %}: {{ outlet_data.total }}
+                                </span>
+                                <button @click="expanded['outlet{{ forloop.counter }}'] = !expanded['outlet{{ forloop.counter }}']"
+                                        class="p-2 rounded-full hover:bg-gray-100 transition-colors duration-200">
+                                    <i class="fas" :class="{ 'fa-chevron-down': !expanded['outlet{{ forloop.counter }}'], 'fa-chevron-up': expanded['outlet{{ forloop.counter }}'] }"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div x-show="expanded['outlet{{ forloop.counter }}']" 
+                             x-collapse 
+                             x-cloak>
+                            <!-- Status Distribution -->
+                            <div>
+                                <h5 class="text-sm font-semibold text-gray-700 mb-4 flex items-center">
+                                    <i class="fas fa-chart-pie text-purple-500 mr-2"></i>
+                                    {% trans "Status Distribution" %}
+                                </h5>
+                                <div class="space-y-5">
+                                    <!-- Available -->
+                                    <div class="progress-bar-container">
+                                        <div class="flex justify-between mb-1.5">
+                                            <span class="text-sm font-medium text-gray-600">{% trans "Available" %}</span>
+                                            <span class="text-sm font-medium text-gray-900">{{ outlet_data.available }}</span>
+                                        </div>
+                                        <div class="relative h-2 bg-gray-100 rounded overflow-hidden">
+                                            <div class="absolute top-0 left-0 h-2 bg-green-500 rounded opacity-0"
+                                                 style="--progress-width: {{ outlet_data.available_percentage }}%"
+                                                 data-percentage="{{ outlet_data.available_percentage }}">
+                                            </div>
+                                        </div>
+                                        <span class="absolute -top-1 text-xs text-gray-500 transform -translate-x-1/2 transition-all duration-300"
+                                              style="left: {{ outlet_data.available_percentage }}%">
+                                            {{ outlet_data.available_percentage|floatformat:1 }}%
+                                        </span>
+                                    </div>
+
+                                    <!-- Assigned -->
+                                    <div class="progress-bar-container">
+                                        <div class="flex justify-between mb-1.5">
+                                            <span class="text-sm font-medium text-gray-600">{% trans "Assigned" %}</span>
+                                            <span class="text-sm font-medium text-gray-900">{{ outlet_data.assigned }}</span>
+                                        </div>
+                                        <div class="relative h-2 bg-gray-100 rounded overflow-hidden">
+                                            <div class="absolute top-0 left-0 h-2 bg-blue-500 rounded opacity-0"
+                                                 style="--progress-width: {{ outlet_data.assigned_percentage }}%"
+                                                 data-percentage="{{ outlet_data.assigned_percentage }}">
+                                            </div>
+                                        </div>
+                                        <span class="absolute -top-1 text-xs text-gray-500 transform -translate-x-1/2 transition-all duration-300"
+                                              style="left: {{ outlet_data.assigned_percentage }}%">
+                                            {{ outlet_data.assigned_percentage|floatformat:1 }}%
+                                        </span>
+                                    </div>
+
+                                    <!-- Maintenance -->
+                                    <div class="progress-bar-container">
+                                        <div class="flex justify-between mb-1.5">
+                                            <span class="text-sm font-medium text-gray-600">{% trans "Maintenance" %}</span>
+                                            <span class="text-sm font-medium text-gray-900">{{ outlet_data.maintenance }}</span>
+                                        </div>
+                                        <div class="relative h-2 bg-gray-100 rounded overflow-hidden">
+                                            <div class="absolute top-0 left-0 h-2 bg-yellow-500 rounded opacity-0"
+                                                 style="--progress-width: {{ outlet_data.maintenance_percentage }}%"
+                                                 data-percentage="{{ outlet_data.maintenance_percentage }}">
+                                            </div>
+                                        </div>
+                                        <span class="absolute -top-1 text-xs text-gray-500 transform -translate-x-1/2 transition-all duration-300"
+                                              style="left: {{ outlet_data.maintenance_percentage }}%">
+                                            {{ outlet_data.maintenance_percentage|floatformat:1 }}%
+                                        </span>
+                                    </div>
+
+                                    <!-- Retired -->
+                                    <div class="progress-bar-container">
+                                        <div class="flex justify-between mb-1.5">
+                                            <span class="text-sm font-medium text-gray-600">{% trans "Retired" %}</span>
+                                            <span class="text-sm font-medium text-gray-900">{{ outlet_data.retired }}</span>
+                                        </div>
+                                        <div class="relative h-2 bg-gray-100 rounded overflow-hidden">
+                                            <div class="absolute top-0 left-0 h-2 bg-red-500 rounded opacity-0"
+                                                 style="--progress-width: {{ outlet_data.retired_percentage }}%"
+                                                 data-percentage="{{ outlet_data.retired_percentage }}">
+                                            </div>
+                                        </div>
+                                        <span class="absolute -top-1 text-xs text-gray-500 transform -translate-x-1/2 transition-all duration-300"
+                                              style="left: {{ outlet_data.retired_percentage }}%">
+                                            {{ outlet_data.retired_percentage|floatformat:1 }}%
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Device Types -->
+                            <div>
+                                <h5 class="text-sm font-semibold text-gray-700 mb-4 flex items-center">
+                                    <i class="fas fa-laptop text-purple-500 mr-2"></i>
+                                    {% trans "Device Types" %}
+                                </h5>
+                                <div class="space-y-5">
+                                    {% for device_type in outlet_data.device_types %}
+                                        <div class="progress-bar-container">
+                                            <div class="flex justify-between mb-1.5">
+                                                <span class="text-sm font-medium text-gray-600">{{ device_type.type }}</span>
+                                                <span class="text-sm font-medium text-gray-900">{{ device_type.count }}</span>
+                                            </div>
+                                            <div class="relative h-2 bg-gray-100 rounded overflow-hidden">
+                                                <div class="absolute top-0 left-0 h-2 bg-indigo-500 rounded opacity-0"
+                                                     style="--progress-width: {{ device_type.percentage }}%"
+                                                     data-percentage="{{ device_type.percentage }}">
+                                                </div>
+                                            </div>
+                                            <span class="absolute -top-1 text-xs text-gray-500 transform -translate-x-1/2 transition-all duration-300"
+                                                  style="left: {{ device_type.percentage }}%">
+                                                {{ device_type.percentage|floatformat:1 }}%
+                                            </span>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Additional Outlet Info -->
+                        <div class="mt-6 flex flex-wrap gap-4">
+                            <div class="flex items-center bg-gray-50 px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors duration-200">
+                                <i class="fas fa-map-marker-alt text-purple-400 mr-2"></i>
+                                <span class="text-sm text-gray-600">{{ outlet_data.outlet.address }}</span>
+                            </div>
+                            <div class="flex items-center bg-gray-50 px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors duration-200">
+                                <i class="fas fa-phone text-purple-400 mr-2"></i>
+                                <span class="text-sm text-gray-600">{{ outlet_data.outlet.phone_number }}</span>
+                            </div>
+                            <div class="flex items-center bg-gray-50 px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors duration-200">
+                                <i class="fas fa-envelope text-purple-400 mr-2"></i>
+                                <span class="text-sm text-gray-600">{{ outlet_data.outlet.email }}</span>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="text-center py-8">
+                <div class="text-gray-400 mb-4">
+                    <i class="fas fa-info-circle text-4xl"></i>
+                </div>
+                <p class="text-gray-600">{% trans "No outlet statistics available." %}</p>
+            </div>
+        {% endif %}
+    </div>
+
     <!-- Export Options -->
     <div class="flex justify-end mt-6">
-        <a href="{% url 'inventory:generate_report_pdf' %}?type={{ report_type }}&date_from={{ date_from }}&date_to={{ date_to }}" 
+        <a href="{% url 'inventory:generate_report_pdf' %}" 
            class="btn btn-primary inline-flex items-center">
             <i class="fas fa-file-pdf mr-2"></i>
             {% trans "Export as PDF" %}
@@ -397,7 +591,37 @@
 
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
+<script src="https://unpkg.com/@alpinejs/intersect@3.x.x/dist/cdn.min.js"></script>
+<script src="https://unpkg.com/@alpinejs/collapse@3.x.x/dist/cdn.min.js"></script>
 <script>
+document.addEventListener('alpine:init', () => {
+    Alpine.data('statsData', () => ({
+        expanded: {},
+        init() {
+            this.initializeProgressBars();
+        }
+    }));
+});
+
+function initializeProgressBars() {
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const progressBars = entry.target.querySelectorAll('[data-percentage]');
+                progressBars.forEach(bar => {
+                    bar.style.opacity = '1';
+                    bar.classList.add('animate-progress-bar');
+                });
+                observer.unobserve(entry.target);
+            }
+        });
+    }, { threshold: 0.2 });
+
+    document.querySelectorAll('.progress-bar-container').forEach(container => {
+        observer.observe(container);
+    });
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     // Department Chart
     const departmentCtx = document.getElementById('departmentChart').getContext('2d');
@@ -439,48 +663,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     'rgba(34, 197, 94, 0.5)',  // green
                     'rgba(59, 130, 246, 0.5)', // blue
                     'rgba(234, 179, 8, 0.5)',  // yellow
-                    'rgba(239, 68, 68, 0.5)'   // red
+                    'rgba(168, 85, 247, 0.5)'  // purple
                 ],
                 borderColor: [
                     'rgb(34, 197, 94)',
                     'rgb(59, 130, 246)',
                     'rgb(234, 179, 8)',
-                    'rgb(239, 68, 68)'
-                ],
-                borderWidth: 1
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: 'bottom'
-                }
-            }
-        }
-    });
-
-    // Model Chart
-    const modelCtx = document.getElementById('modelChart').getContext('2d');
-    new Chart(modelCtx, {
-        type: 'pie',
-        data: {
-            labels: [{% for stat in model_stats %}'{{ stat.model }}',{% endfor %}],
-            datasets: [{
-                data: [{% for stat in model_stats %}{{ stat.count }},{% endfor %}],
-                backgroundColor: [
-                    'rgba(59, 130, 246, 0.5)',
-                    'rgba(34, 197, 94, 0.5)',
-                    'rgba(234, 179, 8, 0.5)',
-                    'rgba(239, 68, 68, 0.5)',
-                    'rgba(168, 85, 247, 0.5)'
-                ],
-                borderColor: [
-                    'rgb(59, 130, 246)',
-                    'rgb(34, 197, 94)',
-                    'rgb(234, 179, 8)',
-                    'rgb(239, 68, 68)',
                     'rgb(168, 85, 247)'
                 ],
                 borderWidth: 1
@@ -491,33 +679,65 @@ document.addEventListener('DOMContentLoaded', function() {
             maintainAspectRatio: false,
             plugins: {
                 legend: {
-                    position: 'bottom',
-                    display: true
+                    position: 'right'
                 }
             }
         }
     });
 
-    // Asset Growth Chart
-    const growthCtx = document.getElementById('assetGrowthChart').getContext('2d');
-    new Chart(growthCtx, {
-        type: 'line',
+    // Model Chart
+    const modelCtx = document.getElementById('modelChart').getContext('2d');
+    new Chart(modelCtx, {
+        type: 'pie',
         data: {
-            labels: [{% for item in growth_data %}'{{ item.month }}',{% endfor %}],
+            labels: [{% for model in model_stats %}'{{ model.model }} ({{ model.asset_type__display_name }})',{% endfor %}],
             datasets: [{
-                label: '{% trans "Total Assets" %}',
-                data: [{% for item in growth_data %}{{ item.total_assets }},{% endfor %}],
-                borderColor: 'rgb(59, 130, 246)',
-                backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                fill: true,
-                tension: 0.4
-            }, {
-                label: '{% trans "New Assets" %}',
-                data: [{% for item in growth_data %}{{ item.new_assets }},{% endfor %}],
-                borderColor: 'rgb(34, 197, 94)',
-                backgroundColor: 'rgba(34, 197, 94, 0.1)',
-                fill: true,
-                tension: 0.4
+                data: [{% for model in model_stats %}{{ model.count }},{% endfor %}],
+                backgroundColor: [
+                    'rgba(59, 130, 246, 0.5)',
+                    'rgba(34, 197, 94, 0.5)',
+                    'rgba(234, 179, 8, 0.5)',
+                    'rgba(168, 85, 247, 0.5)',
+                    'rgba(239, 68, 68, 0.5)',
+                    'rgba(16, 185, 129, 0.5)'
+                ],
+                borderColor: [
+                    'rgb(59, 130, 246)',
+                    'rgb(34, 197, 94)',
+                    'rgb(234, 179, 8)',
+                    'rgb(168, 85, 247)',
+                    'rgb(239, 68, 68)',
+                    'rgb(16, 185, 129)'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'right',
+                    labels: {
+                        boxWidth: 12
+                    }
+                }
+            }
+        }
+    });
+
+    // Outlet Chart
+    const outletCtx = document.getElementById('outletChart').getContext('2d');
+    new Chart(outletCtx, {
+        type: 'bar',
+        data: {
+            labels: [{% for outlet in outlet_stats %}'{{ outlet.outlet.name }}',{% endfor %}],
+            datasets: [{
+                label: '{% trans "Assets" %}',
+                data: [{% for outlet in outlet_stats %}{{ outlet.total }},{% endfor %}],
+                backgroundColor: 'rgba(168, 85, 247, 0.5)',
+                borderColor: 'rgb(168, 85, 247)',
+                borderWidth: 1
             }]
         },
         options: {
@@ -533,24 +753,11 @@ document.addEventListener('DOMContentLoaded', function() {
             },
             plugins: {
                 legend: {
-                    position: 'bottom'
+                    position: 'top'
                 }
             }
         }
     });
 });
-
-function toggleCompany(companyId) {
-    const content = document.getElementById(companyId);
-    const icon = document.getElementById('icon-' + companyId);
-    
-    if (content.classList.contains('hidden')) {
-        content.classList.remove('hidden');
-        icon.classList.add('rotate-180');
-    } else {
-        content.classList.add('hidden');
-        icon.classList.remove('rotate-180');
-    }
-}
 </script>
 {% endblock %} 
