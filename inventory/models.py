@@ -266,6 +266,9 @@ class ITAsset(models.Model):
         if not self.delivery_letter_code and self.owner:
             self.delivery_letter_code = CompanySequence.get_next_delivery_code(self.owner)
         super().save(*args, **kwargs)
+    
+    def get_absolute_url(self):
+        return reverse('inventory:asset_detail', args=[str(self.id)])
 
 class AssetHistory(models.Model):
     ACTION_CHOICES = [

@@ -25,13 +25,7 @@ class EmployeeAdmin(admin.ModelAdmin):
             'fields': ('employee_id', 'first_name', 'last_name', 'email', 'phone_number')
         }),
         ('Employment Information', {
-            'fields': ('department', 'position', 'hire_date', 'is_active')
-        }),
-        ('Location Information', {
-            'fields': ('office_location', 'desk_number')
-        }),
-        ('System Access', {
-            'fields': ('system_username', 'system_password')
+            'fields': ('department', 'position', 'hire_date', 'company', 'is_active')
         }),
     )
 

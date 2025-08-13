@@ -13,14 +13,13 @@ class SecurityMiddleware:
 
     def __call__(self, request):
         # Define exempt paths that don't require authentication checks
-        exempt_paths = [
-            '/static/',
-            '/media/',
-            '/i18n/',
-            '/accounts/login/',
-            '/accounts/logout/',
-            '/accounts/register/',
-            '',  # Root path
+        exempt_prefixes = [
+            'static/',
+            'media/',
+            'i18n/',
+            'accounts/login/',
+            'accounts/logout/',
+            'accounts/register/',
         ]
 
         # Check if the current path is exempt
@@ -29,12 +28,15 @@ class SecurityMiddleware:
         path_without_lang = '/'.join(current_path.split('/')[1:])
 
         # Skip middleware for exempt paths and non-authenticated users
-        if any(current_path.startswith(f"{language_prefix}{path}") for path in exempt_paths):
+        if path_without_lang == '' or any(path_without_lang.startswith(prefix) for prefix in exempt_prefixes):
             return self.get_response(request)
 
         # If user is not authenticated, redirect to login
         if not request.user.is_authenticated:
             login_url = f'/{language_prefix}/accounts/login/'
+            # Avoid redirect loop: if we're already on login, let it proceed
+            if path_without_lang.startswith('accounts/login'):
+                return self.get_response(request)
             return redirect(f'{login_url}?next={request.path}')
 
         # Validate session for authenticated users

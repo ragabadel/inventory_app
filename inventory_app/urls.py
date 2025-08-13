@@ -22,6 +22,8 @@ from django.conf.urls.i18n import i18n_patterns
 from django.views.generic import RedirectView
 from inventory.views import SuperUserRegistrationView, LandingPageView
 from django.contrib.auth.views import LoginView
+from django.contrib.auth import logout
+from inventory.services.permission_service import PermissionService
 from django.urls import reverse_lazy
 
 def redirect_to_default_language(request):
@@ -40,9 +42,16 @@ class CustomLoginView(LoginView):
         return reverse_lazy('inventory:home')
 
     def dispatch(self, request, *args, **kwargs):
-        # If user is already authenticated, redirect to home
+        # If user is already authenticated
         if self.request.user.is_authenticated:
-            return redirect(self.get_success_url())
+            # If session is invalid, log out to avoid redirect loops
+            try:
+                if not PermissionService.validate_session(request):
+                    logout(request)
+                else:
+                    return redirect(self.get_success_url())
+            except Exception:
+                logout(request)
         return super().dispatch(request, *args, **kwargs)
 
 urlpatterns = [

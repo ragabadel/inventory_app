@@ -47,7 +47,9 @@ pip install -r requirements.txt
 
 4. Create a .env file:
 ```bash
-cp .env.example .env
+copy .env.example .env  # Windows
+# or
+cp .env.example .env    # Linux/Mac
 # Edit .env with your database and other configuration settings
 ```
 
@@ -70,11 +72,12 @@ python manage.py runserver
 
 Copy `.env.example` to `.env` and configure the following variables:
 
-- `DEBUG`: Set to False in production
 - `SECRET_KEY`: Django secret key
-- `DATABASE_URL`: PostgreSQL database URL
+- `DEBUG`: Set to False in production
 - `ALLOWED_HOSTS`: Comma-separated list of allowed hosts
-- `TIME_ZONE`: Your timezone (default: UTC)
+- `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `DB_HOST`, `DB_PORT`: PostgreSQL connection
+- `CSRF_TRUSTED_ORIGINS`, `CSRF_COOKIE_SAMESITE`
+- `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_USE_TLS`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`
 
 ### Production Deployment
 
