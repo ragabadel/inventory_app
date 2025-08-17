@@ -23,8 +23,10 @@
     
     <!-- Tailwind CSS -->
     <link href="{% static 'css/main.css' %}" rel="stylesheet">
-    <!-- Font Awesome -->
+    <!-- Font Awesome (primary CDN) -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <!-- Font Awesome (fallback CDN) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.4/css/all.min.css">
     <!-- Alpine.js -->
     <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <!-- HTMX -->
@@ -51,13 +53,13 @@
     </a>
 
     <!-- Navigation -->
-    <nav class="bg-blue-600 shadow-md">
+    <nav class="bg-blue-600 shadow-md sticky top-0 z-40">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-16">
                 <!-- Logo and Brand -->
                 <div class="flex">
                     <a href="{% url 'inventory:home' %}" class="flex items-center text-white">
-                        <i class="fas fa-boxes-stacked text-2xl mr-2"></i>
+                        <i class="fas fa-boxes text-2xl mr-2"></i>
                         <span class="font-bold text-xl">IT Asset Management</span>
                     </a>
                     <!-- Desktop Navigation Links -->

@@ -57,6 +57,65 @@
 {% block content %}
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
 
+    <!-- Filter Toolbar -->
+    <form method="get" class="card mb-6">
+        <div class="card-body grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
+            <div>
+                <label class="form-label text-xs text-gray-500">{% trans "Status" %}</label>
+                <select name="status" class="form-select w-full">
+                    <option value="">{% trans "All" %}</option>
+                    {% for key,label in status_choices %}
+                    <option value="{{ key }}" {% if current_filters.status == key %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="form-label text-xs text-gray-500">{% trans "Company" %}</label>
+                <select name="company" class="form-select w-full">
+                    <option value="">{% trans "All" %}</option>
+                    {% for c in companies %}
+                    <option value="{{ c.id }}" {% if current_filters.company|add:'' == c.id|add:'' %}selected{% endif %}>{{ c.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="form-label text-xs text-gray-500">{% trans "Outlet" %}</label>
+                <select name="outlet" class="form-select w-full">
+                    <option value="">{% trans "All" %}</option>
+                    {% for o in outlets %}
+                    <option value="{{ o.id }}" {% if current_filters.outlet|add:'' == o.id|add:'' %}selected{% endif %}>{{ o.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="form-label text-xs text-gray-500">{% trans "Department" %}</label>
+                <input name="department" value="{{ current_filters.department }}" class="form-input w-full" placeholder="e.g. IT" />
+            </div>
+            <div>
+                <label class="form-label text-xs text-gray-500">{% trans "From" %}</label>
+                <input type="date" name="date_from" value="{{ current_filters.date_from }}" class="form-input w-full" />
+            </div>
+            <div>
+                <label class="form-label text-xs text-gray-500">{% trans "To" %}</label>
+                <input type="date" name="date_to" value="{{ current_filters.date_to }}" class="form-input w-full" />
+            </div>
+        </div>
+        <div class="card-footer flex items-center justify-between px-4 py-3 border-t border-gray-100 bg-gray-50">
+            <div class="text-xs text-gray-500">
+                {% trans "Active filters:" %}
+                {% if current_filters.status %}<span class="inline-flex items-center px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 text-xs mr-1">{{ current_filters.status }}</span>{% endif %}
+                {% if current_filters.company %}<span class="inline-flex items-center px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 text-xs mr-1">{% trans "Company" %}</span>{% endif %}
+                {% if current_filters.outlet %}<span class="inline-flex items-center px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 text-xs mr-1">{% trans "Outlet" %}</span>{% endif %}
+                {% if current_filters.department %}<span class="inline-flex items-center px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 text-xs mr-1">{{ current_filters.department }}</span>{% endif %}
+                {% if current_filters.date_from or current_filters.date_to %}<span class="inline-flex items-center px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 text-xs mr-1">{% trans "Date" %}</span>{% endif %}
+            </div>
+            <div class="flex gap-2">
+                <a href="{% url 'inventory:reports_dashboard' %}" class="btn btn-secondary">{% trans "Clear" %}</a>
+                <button class="btn btn-primary" type="submit">{% trans "Apply" %}</button>
+            </div>
+        </div>
+    </form>
+
 
     <!-- Stats Grid -->
     <div class="space-y-4 mb-6">
@@ -72,9 +131,7 @@
                     </div>
                     <div>
                         <h3 class="text-sm font-medium text-gray-500">{% trans "Total Companies" %}</h3>
-                        <div class="text-2xl font-semibold text-gray-900" x-data="{ number: 0 }" 
-                             x-intersect="$nextTick(() => { number = {{ total_companies }} })"
-                             x-text="number"></div>
+                    <div class="text-2xl font-semibold text-gray-900">{{ total_companies }}</div>
                     </div>
                 </div>
             </div>
@@ -89,9 +146,7 @@
                     </div>
                     <div>
                         <h3 class="text-sm font-medium text-gray-500">{% trans "Total Outlets" %}</h3>
-                        <div class="text-2xl font-semibold text-gray-900" x-data="{ number: 0 }" 
-                             x-intersect="$nextTick(() => { number = {{ total_outlets }} })"
-                             x-text="number"></div>
+                    <div class="text-2xl font-semibold text-gray-900">{{ total_outlets }}</div>
                     </div>
                 </div>
             </div>
@@ -106,9 +161,7 @@
                     </div>
                     <div>
                         <h3 class="text-sm font-medium text-gray-500">{% trans "Total Assets" %}</h3>
-                        <div class="text-2xl font-semibold text-gray-900" x-data="{ number: 0 }" 
-                             x-intersect="$nextTick(() => { number = {{ total_assets }} })"
-                             x-text="number"></div>
+                    <div class="text-2xl font-semibold text-gray-900">{{ total_assets }}</div>
                     </div>
                 </div>
             </div>
@@ -123,9 +176,7 @@
                     </div>
                     <div>
                         <h3 class="text-sm font-medium text-gray-500">{% trans "Available Assets" %}</h3>
-                        <div class="text-2xl font-semibold text-gray-900" x-data="{ number: 0 }" 
-                             x-intersect="$nextTick(() => { number = {{ available_assets }} })"
-                             x-text="number"></div>
+                    <div class="text-2xl font-semibold text-gray-900">{{ available_assets }}</div>
                     </div>
                 </div>
             </div>
@@ -143,9 +194,7 @@
                     </div>
                     <div>
                         <h3 class="text-sm font-medium text-gray-500">{% trans "Assigned Assets" %}</h3>
-                        <div class="text-2xl font-semibold text-gray-900" x-data="{ number: 0 }" 
-                             x-intersect="$nextTick(() => { number = {{ assigned_assets }} })"
-                             x-text="number"></div>
+                    <div class="text-2xl font-semibold text-gray-900">{{ assigned_assets }}</div>
                     </div>
                 </div>
             </div>
@@ -160,9 +209,7 @@
                     </div>
                     <div>
                         <h3 class="text-sm font-medium text-gray-500">{% trans "In Maintenance" %}</h3>
-                        <div class="text-2xl font-semibold text-gray-900" x-data="{ number: 0 }" 
-                             x-intersect="$nextTick(() => { number = {{ maintenance_assets }} })"
-                             x-text="number"></div>
+                    <div class="text-2xl font-semibold text-gray-900">{{ maintenance_assets }}</div>
                     </div>
                 </div>
             </div>
@@ -177,9 +224,7 @@
                     </div>
                     <div>
                         <h3 class="text-sm font-medium text-gray-500">{% trans "Retired Assets" %}</h3>
-                        <div class="text-2xl font-semibold text-gray-900" x-data="{ number: 0 }" 
-                             x-intersect="$nextTick(() => { number = {{ retired_assets }} })"
-                             x-text="number"></div>
+                    <div class="text-2xl font-semibold text-gray-900">{{ retired_assets }}</div>
                     </div>
                 </div>
             </div>

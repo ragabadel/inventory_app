@@ -2539,21 +2539,44 @@ def global_asset_history(request):
 @login_required
 def reports_dashboard(request):
     """View for displaying comprehensive system reports and analytics."""
-    # Get total counts
-    total_companies = OwnerCompany.objects.count()
-    total_outlets = Outlet.objects.count()
+    # Read filters
+    status_filter = request.GET.get('status')
+    company_id = request.GET.get('company')
+    outlet_id = request.GET.get('outlet')
+    department_filter = request.GET.get('department')
+    date_from = request.GET.get('date_from')
+    date_to = request.GET.get('date_to')
+
+    # Base querysets according to filters
+    asset_qs = ITAsset.objects.all()
+    if status_filter in dict(ITAsset.STATUS_CHOICES):
+        asset_qs = asset_qs.filter(status=status_filter)
+    if company_id:
+        asset_qs = asset_qs.filter(owner_id=company_id)
+    if outlet_id:
+        asset_qs = asset_qs.filter(outlet_id=outlet_id)
 
     # Asset statistics
-    total_assets = ITAsset.objects.count()
-    available_assets = ITAsset.objects.filter(status='available').count()
-    assigned_assets = ITAsset.objects.filter(status='assigned').count()
-    maintenance_assets = ITAsset.objects.filter(status='maintenance').count()
-    retired_assets = ITAsset.objects.filter(status='retired').count()
+    total_assets = asset_qs.count()
+    available_assets = asset_qs.filter(status='available').count()
+    assigned_assets = asset_qs.filter(status='assigned').count()
+    maintenance_assets = asset_qs.filter(status='maintenance').count()
+    retired_assets = asset_qs.filter(status='retired').count()
     
     # Department statistics
+    # Department stats (filtered aggregates)
+    dept_filter_q = {}
+    if status_filter in dict(ITAsset.STATUS_CHOICES):
+        dept_filter_q['employees__itasset__status'] = status_filter
+    if company_id:
+        dept_filter_q['employees__itasset__owner_id'] = company_id
+    if outlet_id:
+        dept_filter_q['employees__itasset__outlet_id'] = outlet_id
     departments = Department.objects.annotate(
-        asset_count=Count('employees__itasset', distinct=True)
+        asset_count=Count('employees__itasset', filter=models.Q(**dept_filter_q), distinct=True)
     )
+    if department_filter:
+        departments = departments.filter(name=department_filter)
     
     # Device Model statistics
     model_stats = ITAsset.objects.values('model', 'asset_type__display_name') \
@@ -2562,17 +2585,34 @@ def reports_dashboard(request):
         .order_by('-count')
     
     # Recent activity
-    recent_activities = AssetHistory.objects.select_related(
-        'asset', 'employee'
-    ).order_by('-date')[:10]
+    recent_activities = AssetHistory.objects.select_related('asset', 'employee')
+    # Apply activity date filters
+    try:
+        if date_from:
+            recent_activities = recent_activities.filter(date__gte=timezone.datetime.fromisoformat(f"{date_from}T00:00:00"))
+        if date_to:
+            recent_activities = recent_activities.filter(date__lte=timezone.datetime.fromisoformat(f"{date_to}T23:59:59"))
+    except Exception:
+        pass
+    # Apply asset-related filters to activities
+    if status_filter in dict(ITAsset.STATUS_CHOICES):
+        recent_activities = recent_activities.filter(asset__status=status_filter)
+    if company_id:
+        recent_activities = recent_activities.filter(asset__owner_id=company_id)
+    if outlet_id:
+        recent_activities = recent_activities.filter(asset__outlet_id=outlet_id)
+    recent_activities = recent_activities.order_by('-date')[:10]
 
     # Company device statistics
     company_device_stats = []
     
     # Get all companies, even those without devices
-    for company in OwnerCompany.objects.all().order_by('name'):
+    companies_iter = OwnerCompany.objects.all().order_by('name')
+    if company_id:
+        companies_iter = companies_iter.filter(id=company_id)
+    for company in companies_iter:
         # Get base queryset for this company
-        company_assets = ITAsset.objects.filter(owner=company)
+        company_assets = asset_qs.filter(owner=company)
         total_devices = company_assets.count()
         
         # Always include the company, even if it has no devices
@@ -2617,8 +2657,11 @@ def reports_dashboard(request):
 
     # Outlet statistics
     outlet_stats = []
-    for outlet in Outlet.objects.all().order_by('name'):
-        outlet_assets = ITAsset.objects.filter(outlet=outlet)
+    outlets_iter = Outlet.objects.all().order_by('name')
+    if outlet_id:
+        outlets_iter = outlets_iter.filter(id=outlet_id)
+    for outlet in outlets_iter:
+        outlet_assets = asset_qs.filter(outlet=outlet)
         total_outlet_assets = outlet_assets.count()
         
         outlet_data = {
@@ -2660,8 +2703,8 @@ def reports_dashboard(request):
     
     context = {
         'title': _('Reports Dashboard'),
-        'total_companies': total_companies,
-        'total_outlets': total_outlets,
+        'total_companies': OwnerCompany.objects.count(),
+        'total_outlets': Outlet.objects.count(),
         'total_assets': total_assets,
         'available_assets': available_assets,
         'assigned_assets': assigned_assets,
@@ -2672,6 +2715,18 @@ def reports_dashboard(request):
         'recent_activities': recent_activities,
         'company_device_stats': company_device_stats,
         'outlet_stats': outlet_stats,
+        # Filter data for toolbar
+        'companies': OwnerCompany.objects.all().order_by('name'),
+        'outlets': Outlet.objects.all().order_by('name'),
+        'status_choices': ITAsset.STATUS_CHOICES,
+        'current_filters': {
+            'status': status_filter or '',
+            'company': company_id or '',
+            'outlet': outlet_id or '',
+            'department': department_filter or '',
+            'date_from': date_from or '',
+            'date_to': date_to or '',
+        }
     }
     
     return render(request, 'reports/reports_dashboard.html', context)
