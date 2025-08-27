@@ -415,12 +415,13 @@ class ITAssetListView(ReadOnlyMixin, ListView):
                 'Owner Company',
                 'Status',
                 'Assigned To',
+                'Added By',
                 'Department',
                 'Purchase Date',
                 'Warranty Expiry'
             ]
             ws.append(headers)
-            
+
             # Write data
             for asset in queryset:
                 row = [
@@ -432,6 +433,7 @@ class ITAssetListView(ReadOnlyMixin, ListView):
                     asset.owner.name if asset.owner else '',
                     asset.get_status_display(),
                     asset.assigned_to.get_full_name() if asset.assigned_to else '',
+                    getattr(asset, 'added_by_username', '') or '',
                     asset.assigned_to.department.name if asset.assigned_to and asset.assigned_to.department else '',
                     asset.purchase_date.strftime('%Y-%m-%d') if asset.purchase_date else '',
                     asset.warranty_expiry.strftime('%Y-%m-%d') if asset.warranty_expiry else ''
@@ -2254,6 +2256,11 @@ def mark_notification_read(request, pk):
         notification_filter,
         pk=pk
     )
+    # Attach modifier user so model can record who modified it
+    try:
+        notification._modifier_user = request.user
+    except Exception:
+        pass
     notification.mark_as_read()
     
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
@@ -2279,6 +2286,10 @@ def mark_notification_unread(request, pk):
         notification_filter,
         pk=pk
     )
+    try:
+        notification._modifier_user = request.user
+    except Exception:
+        pass
     notification.mark_as_unread()
     
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
@@ -2304,6 +2315,10 @@ def archive_notification(request, pk):
         notification_filter,
         pk=pk
     )
+    try:
+        notification._modifier_user = request.user
+    except Exception:
+        pass
     notification.archive()
     
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
@@ -2329,6 +2344,10 @@ def unarchive_notification(request, pk):
         notification_filter,
         pk=pk
     )
+    try:
+        notification._modifier_user = request.user
+    except Exception:
+        pass
     notification.unarchive()
     
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':

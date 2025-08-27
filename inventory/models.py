@@ -376,6 +376,15 @@ class Notification(models.Model):
     read_at = models.DateTimeField(_('Read At'), null=True, blank=True)
     archived_at = models.DateTimeField(_('Archived At'), null=True, blank=True)
     expires_at = models.DateTimeField(_('Expires At'), null=True, blank=True)
+    # Track who last modified the notification (status changes)
+    modified_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='modified_notifications'
+    )
+    modified_at = models.DateTimeField(null=True, blank=True)
     
     class Meta:
         ordering = ['-created_at']
@@ -394,22 +403,48 @@ class Notification(models.Model):
         if self.status == 'unread':
             self.status = 'read'
             self.read_at = timezone.now()
+            # Preserve caller ability to set modifier via attribute before save
+            self.modified_at = timezone.now()
+            try:
+                # If caller attached _modifier_user attribute, use it
+                if hasattr(self, '_modifier_user') and self._modifier_user:
+                    self.modified_by = self._modifier_user
+            except Exception:
+                pass
             self.save()
 
     def mark_as_unread(self):
         if self.status == 'read':
             self.status = 'unread'
             self.read_at = None
+            self.modified_at = timezone.now()
+            try:
+                if hasattr(self, '_modifier_user') and self._modifier_user:
+                    self.modified_by = self._modifier_user
+            except Exception:
+                pass
             self.save()
 
     def archive(self):
         self.status = 'archived'
         self.archived_at = timezone.now()
+        self.modified_at = timezone.now()
+        try:
+            if hasattr(self, '_modifier_user') and self._modifier_user:
+                self.modified_by = self._modifier_user
+        except Exception:
+            pass
         self.save()
 
     def unarchive(self):
         self.status = 'read'
         self.archived_at = None
+        self.modified_at = timezone.now()
+        try:
+            if hasattr(self, '_modifier_user') and self._modifier_user:
+                self.modified_by = self._modifier_user
+        except Exception:
+            pass
         self.save()
 
     def is_expired(self):

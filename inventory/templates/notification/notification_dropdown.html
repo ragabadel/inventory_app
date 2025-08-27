@@ -211,6 +211,9 @@
                     <div class="notification-message">{{ notification.message }}</div>
                     <div class="notification-meta">
                         <span><i class="far fa-clock me-1"></i>{{ notification.created_at|timesince }}</span>
+                        {% if notification.modified_by %}
+                            <span class="text-xs text-gray-400">&nbsp;•&nbsp;{% trans "Modified by" %}: {{ notification.modified_by.get_full_name }}</span>
+                        {% endif %}
                         {% if notification.priority in 'high,urgent' %}
                             <span class="notification-priority bg-danger text-white">
                                 {{ notification.get_priority_display }}
