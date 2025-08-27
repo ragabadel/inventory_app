@@ -5,7 +5,7 @@
 
 {% block content %}
 <!-- Dashboard Header -->
-<div class="bg-white border-b border-gray-200 mb-6 mt-4 md:mt-6">
+<div id="main-content" class="bg-white border-b border-gray-200 mb-6 mt-4 md:mt-6 scroll-mt-20">
     <div class="container mx-auto py-6 px-4">
         <div class="flex flex-col md:flex-row md:items-center md:justify-between">
             <div class="mb-4 md:mb-0">
@@ -28,11 +28,11 @@
 
 <div class="container mx-auto px-4">
     <!-- Statistics Cards -->
-    <div class="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
+    <div class="relative z-0 isolate grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
         <!-- Total Assets -->
         <a href="{% url 'inventory:asset_list' %}"
            aria-label="{% trans 'View all assets' %}"
-           class="card transform transition-transform duration-300 hover:-translate-y-1 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+           class="card z-0 transform transition-transform duration-300 hover:-translate-y-1 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
             <div class="card-body flex items-center">
                 <div class="flex-shrink-0 w-12 h-12 rounded-lg bg-primary-600 flex items-center justify-center mr-3 shadow-lg">
                     <i class="fas fa-laptop text-xl text-white"></i>
@@ -47,7 +47,7 @@
         <!-- Available Assets -->
         <a href="{% url 'inventory:asset_list' %}?status=available"
            aria-label="{% trans 'View available assets' %}"
-           class="card transform transition-transform duration-300 hover:-translate-y-1 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+           class="card z-0 transform transition-transform duration-300 hover:-translate-y-1 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
             <div class="card-body flex items-center">
                 <div class="flex-shrink-0 w-12 h-12 rounded-lg bg-success-600 flex items-center justify-center mr-3 shadow-lg">
                     <i class="fas fa-check-circle text-xl text-white"></i>
@@ -62,7 +62,7 @@
         <!-- Assigned Assets -->
         <a href="{% url 'inventory:asset_list' %}?status=assigned"
            aria-label="{% trans 'View assigned assets' %}"
-           class="card transform transition-transform duration-300 hover:-translate-y-1 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+           class="card z-0 transform transition-transform duration-300 hover:-translate-y-1 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
             <div class="card-body flex items-center">
                 <div class="flex-shrink-0 w-12 h-12 rounded-lg bg-blue-600 flex items-center justify-center mr-3 shadow-lg">
                     <i class="fas fa-user-circle text-xl text-white"></i>
@@ -77,7 +77,7 @@
         <!-- In Maintenance Assets -->
         <a href="{% url 'inventory:asset_list' %}?status=maintenance"
            aria-label="{% trans 'View assets in maintenance' %}"
-           class="card transform transition-transform duration-300 hover:-translate-y-1 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+           class="card z-0 transform transition-transform duration-300 hover:-translate-y-1 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
             <div class="card-body flex items-center">
                 <div class="flex-shrink-0 w-12 h-12 rounded-lg bg-warning-600 flex items-center justify-center mr-3 shadow-lg">
                     <i class="fas fa-tools text-xl text-white"></i>
@@ -92,7 +92,7 @@
         <!-- Retired Assets -->
         <a href="{% url 'inventory:asset_list' %}?status=retired"
            aria-label="{% trans 'View retired assets' %}"
-           class="card transform transition-transform duration-300 hover:-translate-y-1 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+           class="card z-0 transform transition-transform duration-300 hover:-translate-y-1 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
             <div class="card-body flex items-center">
                 <div class="flex-shrink-0 w-12 h-12 rounded-lg bg-danger-600 flex items-center justify-center mr-3 shadow-lg">
                     <i class="fas fa-archive text-xl text-white"></i>
@@ -107,7 +107,7 @@
         <!-- Total Employees -->
         <a href="{% url 'inventory:employee_list' %}"
            aria-label="{% trans 'View all employees' %}"
-           class="card transform transition-transform duration-300 hover:-translate-y-1 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+           class="card z-0 transform transition-transform duration-300 hover:-translate-y-1 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
             <div class="card-body flex items-center">
                 <div class="flex-shrink-0 w-12 h-12 rounded-lg bg-indigo-600 flex items-center justify-center mr-3 shadow-lg">
                     <i class="fas fa-users text-xl text-white"></i>
@@ -156,8 +156,10 @@
         <div class="card">
             <div class="card-header flex justify-between items-center">
                 <h5 class="text-lg font-medium text-gray-900">{% trans "Recent Assets" %}</h5>
-                <a href="{% url 'inventory:asset_list' %}" 
-                   class="btn btn-sm btn-outline-primary">{% trans "View All" %}</a>
+                <a href="{% url 'inventory:asset_list' %}"
+                   class="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-md border border-blue-200 text-blue-700 hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    {% trans "View All" %}
+                </a>
             </div>
             <div class="card-body">
                 <div class="overflow-x-auto">
@@ -371,124 +373,7 @@
 {% endblock %}
 
 {% block extra_js %}
-<!-- In-page Assistant (bottom-right) -->
-<div x-data="chatbot()"
-     x-cloak
-     class="fixed bottom-4 md:bottom-6 right-4 md:right-6 z-50"
-     data-asset-list-url="{% url 'inventory:asset_list' %}"
-     data-employee-list-url="{% url 'inventory:employee_list' %}"
-     data-asset-create-url="{% url 'inventory:asset_create' %}"
-     data-employee-create-url="{% url 'inventory:employee_create' %}"
-     data-backup-url="{% url 'inventory:database_backup' %}"
-     data-restore-url="{% url 'inventory:database_restore' %}"
-     data-reports-url="{% url 'inventory:reports_dashboard' %}"
-     data-history-url="{% url 'inventory:global_asset_history' %}"
-     data-notifications-url="{% url 'inventory:notification_list' %}">
-    <button @click="toggle()"
-            class="h-14 w-14 rounded-full shadow-lg bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-        <i class="fas fa-comments text-2xl"></i>
-        <span class="sr-only">Assistant</span>
-    </button>
-    <div x-show="open"
-         x-transition
-         class="fixed bottom-[7.5rem] md:bottom-24 right-4 md:right-6 w-96 max-w-[92vw] bg-white rounded-xl shadow-2xl border border-gray-200 overflow-hidden">
-        <div class="px-4 py-3 bg-blue-600 text-white flex items-center justify-between">
-            <div class="flex items-center gap-2">
-                <i class="fas fa-robot"></i>
-                <h3 class="font-semibold">Assistant</h3>
-            </div>
-            <button @click="toggle()" class="text-white/90 hover:text-white focus:outline-none">
-                <i class="fas fa-times"></i>
-                <span class="sr-only">Close</span>
-            </button>
-        </div>
-        <div class="p-4 space-y-3 max-h-80 overflow-y-auto" x-ref="messages">
-            <template x-for="(m, idx) in messages" :key="idx">
-                <div :class="m.role === 'user' ? 'text-right' : 'text-left'">
-                    <div :class="m.role === 'user' ? 'bg-blue-50 text-blue-900' : 'bg-gray-50 text-gray-800'"
-                         class="inline-block px-3 py-2 rounded-lg max-w-[85%] text-sm">
-                        <span x-text="m.text"></span>
-                    </div>
-                </div>
-            </template>
-            <div class="pt-1 flex flex-wrap gap-2">
-                <button @click="quick('Show available assets')" class="px-2 py-1 text-xs rounded-md bg-gray-100 hover:bg-gray-200">Show available assets</button>
-                <button @click="quick('Show assigned assets')" class="px-2 py-1 text-xs rounded-md bg-gray-100 hover:bg-gray-200">Show assigned assets</button>
-                <button @click="quick('Add new asset')" class="px-2 py-1 text-xs rounded-md bg-gray-100 hover:bg-gray-200">Add new asset</button>
-                <button @click="quick('Go to employees')" class="px-2 py-1 text-xs rounded-md bg-gray-100 hover:bg-gray-200">Go to employees</button>
-            </div>
-        </div>
-        <form @submit.prevent="submit" class="border-t border-gray-200">
-            <div class="flex items-center p-2 gap-2">
-                <input x-model="input" type="text" placeholder="Ask about assets, employees, reports…"
-                       class="flex-1 px-3 py-2 rounded-md border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm" />
-                <button type="submit" class="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm">Send</button>
-            </div>
-        </form>
-    </div>
-    <script>
-    function chatbot() {
-        return {
-            open: false,
-            input: '',
-            messages: [],
-            greeted: false,
-            urls: {},
-            init() {
-                const el = this.$el;
-                this.urls = {
-                    assetList: el.dataset.assetListUrl,
-                    employeeList: el.dataset.employeeListUrl,
-                    assetCreate: el.dataset.assetCreateUrl,
-                    employeeCreate: el.dataset.employeeCreateUrl,
-                    backup: el.dataset.backupUrl,
-                    restore: el.dataset.restoreUrl,
-                    reports: el.dataset.reportsUrl,
-                    history: el.dataset.historyUrl,
-                    notifications: el.dataset.notificationsUrl,
-                };
-            },
-            toggle() {
-                this.open = !this.open;
-                if (this.open && !this.greeted) {
-                    this.messages.push({ role: 'assistant', text: 'Hi! How can I help you? Try “Show available assets”, “Go to employees”, or “Create report”.' });
-                    this.greeted = true;
-                }
-                this.$nextTick(() => { if (this.open) this.$refs.messages.scrollTop = this.$refs.messages.scrollHeight; });
-            },
-            quick(q) { this.input = q; this.submit(); },
-            submit() {
-                const text = (this.input || '').trim();
-                if (!text) return;
-                this.messages.push({ role: 'user', text });
-                this.input = '';
-                const { reply, navigateTo } = this.answer(text);
-                this.messages.push({ role: 'assistant', text: reply });
-                this.$nextTick(() => { this.$refs.messages.scrollTop = this.$refs.messages.scrollHeight; });
-                if (navigateTo) { setTimeout(() => { window.location.href = navigateTo; }, 400); }
-            },
-            answer(q) {
-                const s = q.toLowerCase();
-                if (s.includes('available')) return this._nav('Here are the available assets.', `${this.urls.assetList}?status=available`);
-                if (s.includes('assigned')) return this._nav('Listing assigned assets.', `${this.urls.assetList}?status=assigned`);
-                if (s.includes('maintenance') || s.includes('maintain')) return this._nav('Assets under maintenance.', `${this.urls.assetList}?status=maintenance`);
-                if (s.includes('retired') || s.includes('archive')) return this._nav('Showing retired assets.', `${this.urls.assetList}?status=retired`);
-                if (s.includes('all assets') || (s.includes('assets') && s.includes('show'))) return this._nav('All assets.', this.urls.assetList);
-                if (s.includes('employee') && (s.includes('list') || s.includes('show') || s.includes('go'))) return this._nav('Opening employees.', this.urls.employeeList);
-                if (s.includes('add') && s.includes('asset')) return this._nav('Let’s add a new asset.', this.urls.assetCreate);
-                if (s.includes('add') && s.includes('employee')) return this._nav('Let’s add a new employee.', this.urls.employeeCreate);
-                if (s.includes('report')) return this._nav('Opening reports dashboard.', this.urls.reports);
-                if (s.includes('history')) return this._nav('Opening asset history.', this.urls.history);
-                if (s.includes('notification')) return this._nav('Opening notifications.', this.urls.notifications);
-                if (s.includes('backup')) return this._nav('Opening database backup.', this.urls.backup);
-                if (s.includes('restore')) return this._nav('Opening database restore.', this.urls.restore);
-                return { reply: 'I can help you navigate and filter. Try: “Show available assets”, “Go to employees”, “Add new asset”, “Open reports”.', navigateTo: null };
-            },
-            _nav(reply, url) { return { reply, navigateTo: url }; }
-        }
-    }
-    </script>
-</div>
+
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>

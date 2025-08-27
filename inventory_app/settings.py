@@ -207,10 +207,35 @@ DATABASES = {
         'NAME': os.getenv('DB_NAME', 'inventory_db_it'),
         'USER': os.getenv('DB_USER', 'postgres'),
         'PASSWORD': os.getenv('DB_PASSWORD', ''),
-        'HOST': os.getenv('DB_HOST', 'localhost'),
+        'HOST': os.getenv('DB_HOST', 'db'),  # Changed to 'db' for Docker
         'PORT': os.getenv('DB_PORT', '5432'),
+        'CONN_MAX_AGE': 60,  # Keep connections alive
+        'OPTIONS': {
+            'connect_timeout': 5,
+        }
     }
 }
+
+# Cache settings
+if os.getenv('USE_REDIS', 'False').lower() == 'true':
+    # Redis cache for production
+    CACHES = {
+        'default': {
+            'BACKEND': 'django_redis.cache.RedisCache',
+            'LOCATION': os.getenv('REDIS_URL', 'redis://redis:6379/0'),
+            'OPTIONS': {
+                'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+            }
+        }
+    }
+else:
+    # Local memory cache for development
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+            'LOCATION': 'unique-snowflake',
+        }
+    }
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators

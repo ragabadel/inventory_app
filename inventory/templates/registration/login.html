@@ -213,6 +213,19 @@
         to { transform: rotate(360deg); }
     }
 
+    /* Error shake feedback */
+    @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        20% { transform: translateX(-4px); }
+        40% { transform: translateX(4px); }
+        60% { transform: translateX(-3px); }
+        80% { transform: translateX(3px); }
+    }
+
+    .error-shake {
+        animation: shake 0.3s ease-in-out;
+    }
+
     /* Accessibility & Responsive Design */
     @media (prefers-reduced-motion: reduce) {
         .login-animation,
@@ -295,7 +308,7 @@
 {% endblock %}
 
 {% block content %}
-<div class="min-h-screen login-bg flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+<div class="min-h-screen login-bg flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 pt-16">
     <div class="glass-form max-w-md w-full space-y-8 p-8 rounded-2xl login-animation">
         <!-- Brand Section -->
         <div class="brand-section text-center space-y-6">
@@ -316,7 +329,7 @@
             
             <!-- Error Messages -->
                 {% if form.errors %}
-            <div class="rounded-md bg-red-50 p-4 error-shake">
+            <div class="rounded-md bg-red-50 p-4 error-shake" role="alert" aria-live="polite">
                 <div class="flex">
                     <div class="flex-shrink-0">
                         <i class="fas fa-exclamation-circle text-red-400"></i>
@@ -340,6 +353,7 @@
             <div class="space-y-4">
                 <!-- Username Field -->
                 <div class="input-wrapper">
+                        <label for="id_username" class="sr-only">{% trans "Username" %}</label>
                         <span class="input-icon">
                         <i class="fas fa-user"></i>
                         </span>
@@ -349,14 +363,17 @@
                            class="input-field {% if form.username.errors %}error-input{% endif %}"
                            placeholder="{% trans 'Username' %}"
                            required
-                           autocomplete="username">
+                           autocomplete="username"
+                           value="{{ form.username.value|default:'' }}"
+                           aria-invalid="{% if form.username.errors %}true{% else %}false{% endif %}"{% if form.username.errors %} aria-describedby="username-error"{% endif %}>
                     {% if form.username.errors %}
-                    <p class="error-message">{{ form.username.errors.0 }}</p>
+                    <p id="username-error" class="error-message">{{ form.username.errors.0 }}</p>
                     {% endif %}
                     </div>
 
                 <!-- Password Field -->
                 <div class="input-wrapper">
+                        <label for="id_password" class="sr-only">{% trans "Password" %}</label>
                         <span class="input-icon">
                         <i class="fas fa-lock"></i>
                         </span>
@@ -366,9 +383,10 @@
                            class="input-field {% if form.password.errors %}error-input{% endif %}"
                            placeholder="{% trans 'Password' %}"
                            required
-                           autocomplete="current-password">
+                           autocomplete="current-password"
+                           aria-invalid="{% if form.password.errors %}true{% else %}false{% endif %}"{% if form.password.errors %} aria-describedby="password-error"{% endif %}>
                     {% if form.password.errors %}
-                    <p class="error-message">{{ form.password.errors.0 }}</p>
+                    <p id="password-error" class="error-message">{{ form.password.errors.0 }}</p>
                     {% endif %}
                     </div>
 
@@ -386,8 +404,8 @@
                     </div>
                     <div class="text-sm">
                         <a href="{% url 'password_reset' %}" 
-                           class="link-primary">
-                           <!-- {% trans "Forgot your password?" %} -->
+                           class="link-primary" title="{% trans 'Reset your password' %}">
+                           {% trans "Forgot your password?" %}
                         </a>
                     </div>
                     </div>
@@ -413,11 +431,7 @@
             <div class="text-center mt-6">
                     <p class="text-sm text-gray-600">
                         {% trans "Don't have an account?" %}
-                        <!--    {% url 'inventory:register' %} -->
-                    <a href="#" 
-                       class="link-primary ml-1">
-                            {% trans "Create one now" %}
-                        </a>
+                        <span class="ml-1 text-gray-700">{% trans "Please contact your administrator." %}</span>
                     </p>
                 </div>
 

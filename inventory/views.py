@@ -284,6 +284,13 @@ class ITAssetListView(ReadOnlyMixin, ListView):
 
     def get_queryset(self):
         queryset = ITAsset.objects.select_related('asset_type', 'owner', 'assigned_to').all()
+
+        # Annotate with creator information from earliest history record
+        history_qs = AssetHistory.objects.filter(asset=models.OuterRef('pk')).order_by('date', 'pk')
+        queryset = queryset.annotate(
+            added_by_username=models.Subquery(history_qs.values('created_by__username')[:1]),
+            added_at=models.Subquery(history_qs.values('date')[:1])
+        )
         
         # Apply filters from request
         search = self.request.GET.get('search', '')
