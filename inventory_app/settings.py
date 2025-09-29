@@ -54,6 +54,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -204,11 +205,11 @@ WSGI_APPLICATION = 'inventory_app.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.getenv('DB_NAME', 'inventory_db_it'),
-        'USER': os.getenv('DB_USER', 'postgres'),
-        'PASSWORD': os.getenv('DB_PASSWORD', ''),
-        'HOST': os.getenv('DB_HOST', 'db'),  # Changed to 'db' for Docker
-        'PORT': os.getenv('DB_PORT', '5432'),
+        'NAME': os.getenv('POSTGRES_DB', os.getenv('DB_NAME', 'itassets_db')),
+        'USER': os.getenv('POSTGRES_USER', os.getenv('DB_USER', 'postgres')),
+        'PASSWORD': os.getenv('POSTGRES_PASSWORD', os.getenv('DB_PASSWORD', '')),
+        'HOST': os.getenv('POSTGRES_HOST', os.getenv('DB_HOST', 'db')),
+        'PORT': os.getenv('POSTGRES_PORT', os.getenv('DB_PORT', '5432')),
         'CONN_MAX_AGE': 60,  # Keep connections alive
         'OPTIONS': {
             'connect_timeout': 5,
@@ -295,6 +296,8 @@ STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'inventory/static'),
 ]
 
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
+
 # Media files
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
@@ -312,4 +315,3 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = ''  # Add your email
 EMAIL_HOST_PASSWORD = ''  # Add your email password or app-specific password
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
-

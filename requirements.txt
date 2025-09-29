@@ -21,3 +21,6 @@ redis>=5.0.1
 hiredis>=2.3.2
 uWSGI>=2.0.24
 celery>=5.3.6
+
+google-api-python-client>=2.94.0
+google-auth>=2.22.0

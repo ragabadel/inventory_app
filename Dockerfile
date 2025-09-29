@@ -1,42 +1,39 @@
-# Use Python 3.12 slim image
-FROM python:3.12-slim
+FROM python:3.11-slim
 
-# Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
-# Set work directory
 WORKDIR /app
 
-# Install system dependencies
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends \
-        postgresql-client \
-        build-essential \
-        libpq-dev \
-        libcairo2 \
-        libpango-1.0-0 \
-        libpangocairo-1.0-0 \
-        libgdk-pixbuf2.0-0 \
-        shared-mime-info \
-        mime-support \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+# Install system dependencies (avoid obsolete package names)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    gcc \
+    curl \
+    pkg-config \
+    python3-dev \
+    libssl-dev \
+    libffi-dev \
+    libpq-dev \
+    libcairo2-dev \
+    libpango1.0-dev \
+    libgdk-pixbuf-xlib-2.0-dev \
+    shared-mime-info \
+    libjpeg-dev \
+    zlib1g-dev \
+&& rm -rf /var/lib/apt/lists/*
 
-# Install Python dependencies
+# Copy and install Python dependencies
 COPY requirements.txt /app/
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --upgrade pip && pip install --no-cache-dir -r requirements.txt
 
-# Copy project
+# Copy project files
 COPY . /app/
 
-# Create media and static directories
-RUN mkdir -p /app/media /app/staticfiles
+# Create media/static dirs and collect static files
+RUN mkdir -p /app/media /app/staticfiles && python manage.py collectstatic --noinput || true
 
-# Create a non-root user
-RUN useradd -m appuser && chown -R appuser:appuser /app
-USER appuser
-
-# Run gunicorn
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "inventory_app.wsgi:application"]
+# Expose port and run
+EXPOSE 8000
+CMD ["gunicorn", "inventory_app.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "3"]
 
