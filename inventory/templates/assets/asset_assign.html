@@ -33,43 +33,154 @@
                 {% endif %}
 
                 <div class="space-y-4">
-                    <div>
-                        <label for="{{ form.asset.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                    <!-- Asset Combobox -->
+                    <div x-data="combobox('asset', {{ form.asset.field.queryset|length }})">
+                        <label for="assetInput" class="block text-sm font-medium text-gray-700">
                             {{ form.asset.label }}
                         </label>
-                        <div class="mt-1">
-                            {{ form.asset }}
+                        <div class="mt-1 relative" @click.away="close()">
+                            <input 
+                                id="assetInput" 
+                                type="text" 
+                                x-model="searchTerm" 
+                                @input="filter()" 
+                                @focus="open()"
+                                placeholder="{% trans 'Search assets...' %}" 
+                                class="form-select" 
+                                autocomplete="off" 
+                            />
+                            <select name="asset" x-model="selectedId" class="hidden">
+                                <option value="">---------</option>
+                                {% for asset in form.asset.field.queryset %}
+                                    <option value="{{ asset.id }}" data-name="{{ asset }}">{{ asset }}</option>
+                                {% endfor %}
+                            </select>
+                            <div x-show="isOpen" 
+                                 x-transition
+                                 class="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 sm:text-sm">
+                                <template x-if="filteredItems.length > 0">
+                                    <ul>
+                                        <template x-for="item in filteredItems" :key="item.id">
+                                            <li
+                                                @click="select(item)"
+                                                class="cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-blue-600 hover:text-white"
+                                                :class="{'bg-blue-600 text-white': selectedId == item.id}"
+                                                role="option"
+                                            >
+                                                <span x-text="item.name" class="block truncate"></span>
+                                            </li>
+                                        </template>
+                                    </ul>
+                                </template>
+                                <template x-if="filteredItems.length === 0">
+                                    <div class="py-2 px-3 text-gray-500">{% trans "No results found." %}</div>
+                                </template>
+                            </div>
                         </div>
                         {% if form.asset.errors %}
                             <p class="mt-2 text-sm text-red-600">{{ form.asset.errors.0 }}</p>
                         {% endif %}
                     </div>
 
-                    <div>
-                        <label for="{{ form.employee.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                    <!-- Employee Combobox -->
+                    <div x-data="combobox('employee', {{ form.employee.field.queryset|length }})">
+                        <label for="employeeInput" class="block text-sm font-medium text-gray-700">
                             {{ form.employee.label }}
                         </label>
-                        <div class="mt-1">
-                            {{ form.employee }}
+                        <div class="mt-1 relative" @click.away="close()">
+                            <input 
+                                id="employeeInput" 
+                                type="text" 
+                                x-model="searchTerm" 
+                                @input="filter()" 
+                                @focus="open()"
+                                placeholder="{% trans 'Search employees...' %}" 
+                                class="form-select" 
+                                autocomplete="off" 
+                            />
+                            <select name="employee" x-model="selectedId" class="hidden">
+                                <option value="">---------</option>
+                                {% for employee in form.employee.field.queryset %}
+                                    <option value="{{ employee.id }}" data-name="{{ employee }}">{{ employee }}</option>
+                                {% endfor %}
+                            </select>
+                            <div x-show="isOpen" 
+                                 x-transition
+                                 class="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 sm:text-sm">
+                                <template x-if="filteredItems.length > 0">
+                                    <ul>
+                                        <template x-for="item in filteredItems" :key="item.id">
+                                            <li
+                                                @click="select(item)"
+                                                class="cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-blue-600 hover:text-white"
+                                                :class="{'bg-blue-600 text-white': selectedId == item.id}"
+                                                role="option"
+                                            >
+                                                <span x-text="item.name" class="block truncate"></span>
+                                            </li>
+                                        </template>
+                                    </ul>
+                                </template>
+                                <template x-if="filteredItems.length === 0">
+                                    <div class="py-2 px-3 text-gray-500">{% trans "No results found." %}</div>
+                                </template>
+                            </div>
                         </div>
                         {% if form.employee.errors %}
                             <p class="mt-2 text-sm text-red-600">{{ form.employee.errors.0 }}</p>
                         {% endif %}
                     </div>
 
-                    <div>
-                        <label for="{{ form.outlet.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                    <!-- Outlet Combobox -->
+                    <div x-data="combobox('outlet', {{ form.outlet.field.queryset|length }})">
+                        <label for="outletInput" class="block text-sm font-medium text-gray-700">
                             {{ form.outlet.label }}
                         </label>
-                        <div class="mt-1">
-                            {{ form.outlet }}
+                        <div class="mt-1 relative" @click.away="close()">
+                            <input 
+                                id="outletInput" 
+                                type="text" 
+                                x-model="searchTerm" 
+                                @input="filter()" 
+                                @focus="open()"
+                                placeholder="{% trans 'Search outlets...' %}" 
+                                class="form-select" 
+                                autocomplete="off" 
+                            />
+                            <select name="outlet" x-model="selectedId" class="hidden">
+                                <option value="">---------</option>
+                                {% for outlet in form.outlet.field.queryset %}
+                                    <option value="{{ outlet.id }}" data-name="{{ outlet }}">{{ outlet }}</option>
+                                {% endfor %}
+                            </select>
+                            <div x-show="isOpen" 
+                                 x-transition
+                                 class="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 sm:text-sm">
+                                <template x-if="filteredItems.length > 0">
+                                    <ul>
+                                        <template x-for="item in filteredItems" :key="item.id">
+                                            <li
+                                                @click="select(item)"
+                                                class="cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-blue-600 hover:text-white"
+                                                :class="{'bg-blue-600 text-white': selectedId == item.id}"
+                                                role="option"
+                                            >
+                                                <span x-text="item.name" class="block truncate"></span>
+                                            </li>
+                                        </template>
+                                    </ul>
+                                </template>
+                                <template x-if="filteredItems.length === 0">
+                                    <div class="py-2 px-3 text-gray-500">{% trans "No results found." %}</div>
+                                </template>
+                            </div>
                         </div>
-                        {% if form.outlet.errors %}
-                            <p class="mt-2 text-sm text-red-600">{{ form.outlet.errors.0 }}</p>
-                        {% endif %}
                         <p class="mt-2 text-sm text-gray-500">
                             {% trans "You can assign an asset to either an employee or an outlet, or both." %}
                         </p>
+                        {% if form.outlet.errors %}
+                            <p class="mt-2 text-sm text-red-600">{{ form.outlet.errors.0 }}</p>
+                        {% endif %}
                     </div>
                 </div>
 
@@ -88,6 +199,81 @@
     </div>
 </div>
 
+<script>
+    function combobox(fieldName, itemCount) {
+        return {
+            isOpen: false,
+            searchTerm: '',
+            selectedId: '',
+            filteredItems: [],
+            fullList: [],
+
+            init() {
+                // Get the hidden select element and extract options
+                const selectEl = this.$el.querySelector('select[name="' + fieldName + '"]');
+                if (!selectEl) {
+                    console.error('Select element not found for:', fieldName);
+                    return;
+                }
+
+                // Extract all options from the select element
+                const options = selectEl.querySelectorAll('option');
+                this.fullList = Array.from(options)
+                    .filter(opt => opt.value !== '') // Skip the empty "-----" option
+                    .map(opt => ({
+                        id: opt.value,
+                        name: opt.textContent.trim()
+                    }));
+
+                this.filteredItems = this.fullList;
+
+                // Set initial value if form has a selected value
+                if (selectEl.value) {
+                    this.selectedId = selectEl.value;
+                    const selected = this.fullList.find(item => item.id === this.selectedId);
+                    if (selected) {
+                        this.searchTerm = selected.name;
+                    }
+                }
+
+                console.log(`${fieldName} initialized with ${this.fullList.length} items`);
+            },
+
+            open() {
+                if (this.fullList.length > 0) {
+                    this.isOpen = true;
+                    if (this.searchTerm === '') {
+                        this.filteredItems = this.fullList;
+                    }
+                }
+            },
+
+            filter() {
+                this.isOpen = true;
+                const search = this.searchTerm.toLowerCase().trim();
+                
+                if (search === '') {
+                    this.filteredItems = this.fullList;
+                } else {
+                    this.filteredItems = this.fullList.filter(item => 
+                        item.name.toLowerCase().includes(search)
+                    );
+                }
+            },
+
+            select(item) {
+                this.searchTerm = item.name;
+                this.selectedId = item.id;
+                this.isOpen = false;
+            },
+
+            close() {
+                this.isOpen = false;
+            }
+        };
+    }
+</script>
+
 <style>
     .btn {
         @apply inline-flex items-center px-4 py-2 border rounded-lg shadow-sm text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors duration-150;
@@ -105,4 +291,4 @@
         @apply mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md;
     }
 </style>
-{% endblock %} 
+{% endblock %}

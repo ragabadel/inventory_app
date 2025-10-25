@@ -1,0 +1,110 @@
+[
+{
+  "model": "auth.user",
+  "fields": {
+    "password": "pbkdf2_sha256$1000000$Kjhs246e00xkMs0XEpY895$LAyuB25uD7kxvZnFxs9PpDL2/qEZLA7R+zy/+jxBF74=",
+    "last_login": "2025-09-29T20:10:01.148Z",
+    "is_superuser": true,
+    "username": "Ragab-Adel",
+    "first_name": "",
+    "last_name": "",
+    "email": "",
+    "is_staff": true,
+    "is_active": true,
+    "date_joined": "2025-09-29T20:09:24.795Z",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "inventory.useraccesslog",
+  "pk": 1,
+  "fields": {
+    "user": [
+      "Ragab-Adel"
+    ],
+    "action": "GET_home",
+    "target_model": "inventory",
+    "target_id": null,
+    "details": {},
+    "ip_address": "172.19.0.1",
+    "timestamp": "2025-09-29T20:10:01.175Z",
+    "status": "success",
+    "session_id": "pc76w1zjmpd05b3vfrsfmzyvadwn3013"
+  }
+},
+{
+  "model": "inventory.useraccesslog",
+  "pk": 2,
+  "fields": {
+    "user": [
+      "Ragab-Adel"
+    ],
+    "action": "GET_home",
+    "target_model": "inventory",
+    "target_id": null,
+    "details": {},
+    "ip_address": "172.19.0.1",
+    "timestamp": "2025-09-29T20:23:07.077Z",
+    "status": "success",
+    "session_id": "pc76w1zjmpd05b3vfrsfmzyvadwn3013"
+  }
+},
+{
+  "model": "inventory.useraccesslog",
+  "pk": 3,
+  "fields": {
+    "user": [
+      "Ragab-Adel"
+    ],
+    "action": "GET_database_backup",
+    "target_model": "inventory",
+    "target_id": null,
+    "details": {},
+    "ip_address": "172.19.0.1",
+    "timestamp": "2025-09-29T20:23:16.910Z",
+    "status": "success",
+    "session_id": "pc76w1zjmpd05b3vfrsfmzyvadwn3013"
+  }
+},
+{
+  "model": "inventory.useraccesslog",
+  "pk": 4,
+  "fields": {
+    "user": [
+      "Ragab-Adel"
+    ],
+    "action": "POST_database_backup",
+    "target_model": "inventory",
+    "target_id": null,
+    "details": {},
+    "ip_address": "172.19.0.1",
+    "timestamp": "2025-09-29T20:23:18.856Z",
+    "status": "success",
+    "session_id": "pc76w1zjmpd05b3vfrsfmzyvadwn3013"
+  }
+},
+{
+  "model": "inventory.usersession",
+  "pk": 1,
+  "fields": {
+    "user": [
+      "Ragab-Adel"
+    ],
+    "session_key": "pc76w1zjmpd05b3vfrsfmzyvadwn3013",
+    "ip_address": "172.19.0.1",
+    "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36 Edg/140.0.0.0",
+    "last_activity": "2025-09-29T20:10:01.152Z",
+    "is_active": true,
+    "created_at": "2025-09-29T20:10:01.152Z",
+    "expires_at": "2025-09-29T21:10:01.151Z",
+    "device_id": "",
+    "location_data": {
+      "ip": "172.19.0.1",
+      "referrer": "http://localhost:8000/en/accounts/login/",
+      "timestamp": "2025-09-29T20:10:01.151286+00:00",
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36 Edg/140.0.0.0"
+    }
+  }
+}
+]

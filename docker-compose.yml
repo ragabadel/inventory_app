@@ -39,7 +39,7 @@ services:
       - redis
     networks:
       - inventory_network
-
+    restart: always
   worker:
     build: .
     command: celery -A inventory_app worker --loglevel=info
@@ -65,7 +65,7 @@ services:
       - web
     networks:
       - inventory_network
-
+    restart: always
 volumes:
   postgres_data:
   static_volume:
