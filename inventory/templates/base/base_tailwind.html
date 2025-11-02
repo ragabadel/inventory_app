@@ -8,7 +8,7 @@
     <meta name="description" content="{% block meta_description %}Inventory and Equipment Management System for Companies{% endblock %}">
     <meta name="author" content="{% block meta_author %}Company Name{% endblock %}">
     <meta name="keywords" content="{% block meta_keywords %}inventory, management, equipment, companies{% endblock %}">
-    {% csrf_token %}
+    
     <meta name="csrf-token" content="{{ csrf_token }}">
     
     <!-- Favicon -->
@@ -359,5 +359,15 @@
     </footer>
 
     {% block extra_js %}{% endblock %}
+
+      <script>
+        // ✅ عند تحميل الصفحة، خذ قيمة CSRF token من أول فورم
+        document.body.addEventListener('htmx:configRequest', (event) => {
+            const token = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
+            if (token) {
+                event.detail.headers['X-CSRFToken'] = token;
+            }
+        });
+    </script>
 </body>
 </html> 
