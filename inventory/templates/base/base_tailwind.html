@@ -8,7 +8,7 @@
     <meta name="description" content="{% block meta_description %}Inventory and Equipment Management System for Companies{% endblock %}">
     <meta name="author" content="{% block meta_author %}Company Name{% endblock %}">
     <meta name="keywords" content="{% block meta_keywords %}inventory, management, equipment, companies{% endblock %}">
-    
+    {% csrf_token %}
     <meta name="csrf-token" content="{{ csrf_token }}">
     
     <!-- Favicon -->
@@ -340,13 +340,10 @@
                 <div>
                     <h3 class="text-lg font-semibold mb-4">{% trans "Connect" %}</h3>
                     <div class="flex space-x-4">
-                        <a href="#" class="text-white hover:text-gray-300">
+                        <a href="https://github.com/ragabadel" class="text-white hover:text-gray-300">
                             <i class="fab fa-github text-xl"></i>
                         </a>
-                        <a href="#" class="text-white hover:text-gray-300">
-                            <i class="fab fa-twitter text-xl"></i>
-                        </a>
-                        <a href="#" class="text-white hover:text-gray-300">
+                        <a href="https://www.linkedin.com/in/ragab-adel-al-saidi/" class="text-white hover:text-gray-300">
                             <i class="fab fa-linkedin text-xl"></i>
                         </a>
                     </div>
