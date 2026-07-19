@@ -1,120 +1,138 @@
-from django.contrib.auth.mixins import UserPassesTestMixin, LoginRequiredMixin
+from __future__ import annotations
+
+from collections.abc import Iterable
+
+from django.conf import settings
+from django.contrib import messages
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.shortcuts import render
 from django.utils.translation import gettext as _
-from django.contrib import messages
-from django.conf import settings
-from django.contrib.auth.models import Group
+
 
 class CustomPermissionMixin(LoginRequiredMixin, UserPassesTestMixin):
-    """Custom permission mixin that handles permission checks and renders a custom 403 page"""
-    
-    permission_required = None  # Set this in the view
-    
-    def get_user_group_level(self):
-        """Get the user's highest permission group level"""
-        if self.request.user.is_superuser:
-            return 4
-            
-        highest_level = 0
-        for group in self.request.user.groups.all():
-            group_config = settings.PERMISSION_GROUPS.get(group.name, {})
-            level = group_config.get('level', 0)
-            highest_level = max(highest_level, level)
-        
-        return highest_level
+    """Enforce Django permissions and the configured permission-group rules.
 
-    def get_user_permissions(self):
-        """Get the user's combined can/cannot permissions from all groups"""
-        if self.request.user.is_superuser:
-            return {'can': ['*'], 'cannot': []}
-            
-        can_permissions = set()
-        cannot_permissions = set()
-        
-        for group in self.request.user.groups.all():
-            group_config = settings.PERMISSION_GROUPS.get(group.name, {})
-            can_permissions.update(group_config.get('can', []))
-            cannot_permissions.update(group_config.get('cannot', []))
-            
-        return {
-            'can': list(can_permissions),
-            'cannot': list(cannot_permissions)
-        }
-    
-    def check_permission(self, perm):
-        """Check if user has permission and it's not in their cannot list"""
-        permissions = self.get_user_permissions()
-        
-        # First check cannot list
-        for cannot in permissions['cannot']:
-            if cannot == '*' or cannot == perm or (cannot.endswith('_*') and perm.startswith(cannot[:-1])):
-                return False
-                
-        # Then check can list
-        for can in permissions['can']:
-            if can == '*' or can == perm or (can.endswith('_*') and perm.startswith(can[:-1])):
-                return True
-                
-        return False
+    ``permission_required`` may be a single permission or an iterable. Both
+    fully-qualified permissions (``inventory.change_itasset``) and codenames
+    (``change_itasset``) are supported.
+    """
 
-    def test_func(self):
-        # Check if user is superuser
-        if self.request.user.is_superuser:
+    permission_required: str | Iterable[str] | None = None
+
+    @staticmethod
+    def _codename(permission: str) -> str:
+        return permission.rsplit(".", 1)[-1]
+
+    @classmethod
+    def _pattern_matches(cls, pattern: str, permission: str) -> bool:
+        codename = cls._codename(permission)
+        if pattern == "*":
             return True
-            
-        # Check specific permissions
-        if self.permission_required:
-            if isinstance(self.permission_required, str):
-                perms = (self.permission_required,)
-            else:
-                perms = self.permission_required
-                
-            # Check if user has all required permissions
-            return all(self.check_permission(perm) for perm in perms)
-            
-        return False
+
+        pattern_codename = cls._codename(pattern)
+        if pattern_codename.endswith("*"):
+            return codename.startswith(pattern_codename[:-1])
+
+        return pattern == permission or pattern_codename == codename
+
+    def get_permission_required(self) -> tuple[str, ...]:
+        required = self.permission_required
+        if not required:
+            return ()
+        if isinstance(required, str):
+            return (required,)
+        return tuple(required)
+
+    def get_user_group_rules(self) -> dict[str, set[str]]:
+        if self.request.user.is_superuser:
+            return {"can": {"*"}, "cannot": set()}
+
+        can_permissions: set[str] = set()
+        cannot_permissions: set[str] = set()
+
+        for group in self.request.user.groups.all():
+            config = settings.PERMISSION_GROUPS.get(group.name, {})
+            can_permissions.update(config.get("can", []))
+            cannot_permissions.update(config.get("cannot", []))
+
+        return {"can": can_permissions, "cannot": cannot_permissions}
+
+    def check_permission(self, permission: str) -> bool:
+        user = self.request.user
+        if user.is_superuser:
+            return True
+
+        # Prefer Django's native permission framework when a full permission
+        # name is provided. The configured group rules remain supported for
+        # legacy groups that were created without Django Permission records.
+        if "." in permission and user.has_perm(permission):
+            return True
+
+        rules = self.get_user_group_rules()
+        if any(self._pattern_matches(pattern, permission) for pattern in rules["cannot"]):
+            return False
+
+        return any(self._pattern_matches(pattern, permission) for pattern in rules["can"])
+
+    def test_func(self) -> bool:
+        required = self.get_permission_required()
+        if not required:
+            return False
+        return all(self.check_permission(permission) for permission in required)
 
     def handle_no_permission(self):
+        if not self.request.user.is_authenticated:
+            return super().handle_no_permission()
+
         group_info = []
         for group in self.request.user.groups.all():
             config = settings.PERMISSION_GROUPS.get(group.name, {})
-            group_info.append({
-                'name': group.name,
-                'description': config.get('description', ''),
-                'can': config.get('can', []),
-                'cannot': config.get('cannot', [])
-            })
-            
+            group_info.append(
+                {
+                    "name": group.name,
+                    "description": config.get("description", ""),
+                    "can": config.get("can", []),
+                    "cannot": config.get("cannot", []),
+                }
+            )
+
         messages.error(self.request, _("You don't have permission to access this page."))
-        return render(self.request, '403.html', {
-            'groups': group_info,
-            'required_permissions': self.permission_required
-        }, status=403)
+        return render(
+            self.request,
+            "403.html",
+            {
+                "groups": group_info,
+                "required_permissions": self.get_permission_required(),
+            },
+            status=403,
+        )
+
 
 class ReadOnlyMixin(CustomPermissionMixin):
-    """Mixin for views that should be read-only for regular users"""
-    
-    def test_func(self):
-        # Allow view access but restrict modifications
-        if self.request.method in ['GET', 'HEAD', 'OPTIONS']:
-            return True
-        return super().test_func()
+    """Require the configured view permission for read-only views."""
+
+    pass
+
 
 class NoDeleteMixin(CustomPermissionMixin):
-    """Mixin that prevents deletion for non-admin users"""
-    
-    def test_func(self):
-        if self.request.method == 'DELETE' or self.request.POST.get('action') == 'delete':
-            # Check if operation requires approval
-            operation = f'delete_{self.model._meta.model_name}'
-            if operation in settings.OPERATIONS_REQUIRING_APPROVAL:
-                messages.warning(self.request, _('This operation requires approval from an administrator.'))
-                return False
-                
-            # Check if operation is critical
-            if operation in settings.CRITICAL_OPERATIONS:
+    """Require an explicit delete permission for Django DeleteView requests."""
+
+    def test_func(self) -> bool:
+        model = getattr(self, "model", None)
+        if model is None:
+            return super().test_func()
+
+        permission = self.permission_required or (
+            f"{model._meta.app_label}.delete_{model._meta.model_name}"
+        )
+
+        if self.request.method in {"POST", "DELETE"}:
+            operation = f"delete_{model._meta.model_name}"
+            if operation in getattr(settings, "CRITICAL_OPERATIONS", []):
                 return self.request.user.is_superuser
-                
-            # Check regular permissions
-            return self.check_permission(operation)
-        return True 
+            return self.check_permission(permission)
+
+        # A GET request may render the confirmation page, but it still requires
+        # the same delete permission so the URL cannot be used to discover
+        # protected records.
+        return self.check_permission(permission)
